@@ -18,8 +18,13 @@ export function useEmployeesDashboard() {
     const [photoTaken, setPhotoTaken] = useState(false);
     const notificationModal = useNotificationModalContext();
 
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
     const { data: todayCheckData, isSuccess: isFetchedTodayCheckIn, refetch } = useQuery({
+        queryKey: {startOfDay, endOfDay}, // Include params in queryKey
         queryFn: getTodayCheckIn,
         onSuccess: (res) => {
             console.log(res);
@@ -106,7 +111,7 @@ export function useEmployeesDashboard() {
         saveCheckInByEmp.mutate(checkInPayload, {
             onSuccess: (res) => {
                 console.log(res?.data?.checkInTime);
-                
+
                 setIsCheckedIn(true)
                 notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
 
@@ -124,7 +129,7 @@ export function useEmployeesDashboard() {
     }
 
     const handleCheckOut = () => {
- notificationModal.progress({
+        notificationModal.progress({
             heading: `Checking Out with your current location, Please await!!`,
         });
         const checkOutPayload = {
