@@ -1,0 +1,175 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import fakeData from "@/constants/fake-data";
+import { useToast } from "@/hooks/use-toast"
+import { useNotificationModalContext } from "@/components/notification-modal/provider"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { saveCheckIn, getTodayCheckIn, updateCheckOut } from "@/lib/api/employee";
+import _ from "lodash";
+
+
+export function useEmployeesDashboard() {
+    const [isCheckedIn, setIsCheckedIn] = useState(false)
+    const [checkInTime, setCheckInTime] = useState(null)
+    const [currentLocation, setCurrentLocation] = useState(null)
+    const [locationLoading, setLocationLoading] = useState(true)
+    const [showCamera, setShowCamera] = useState(false);
+    const [photoTaken, setPhotoTaken] = useState(false);
+    const notificationModal = useNotificationModalContext();
+
+
+    const { data: todayCheckData, isSuccess: isFetchedTodayCheckIn, refetch } = useQuery({
+        queryFn: getTodayCheckIn,
+        onSuccess: (res) => {
+            console.log(res);
+
+        }
+    })
+    console.log(todayCheckData?.data, "isFetchedTodayCheckIn", isFetchedTodayCheckIn);
+
+    const saveCheckInByEmp = useMutation({
+        mutationFn: saveCheckIn,
+    })
+
+    const updateCheckOutByEmp = useMutation({
+        mutationFn: updateCheckOut,
+    })
+
+    useEffect(() => {
+        if (isFetchedTodayCheckIn && !_.isEmpty(todayCheckData?.data)) {
+            setCheckInTime(todayCheckData?.data?.checkInTime);
+            setIsCheckedIn(true);
+        }
+    }, [isFetchedTodayCheckIn])
+
+    // Simulate getting location
+    useEffect(() => {
+        const getLocation = () => {
+            setLocationLoading(true)
+            // Simulate GPS loading
+            //  useEffect(() => {
+            if (!navigator.geolocation) {
+                setCurrentLocation((prev) => ({ ...prev, error: "Geolocation not supported" }));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    setCurrentLocation({
+                        lat: lat,
+                        lng: lng,
+                        error: null,
+                    });
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+                        {
+                            headers: {
+                                "User-Agent": "my-next-app (your@email.com)",
+                            },
+                        }
+                    );
+                    const data = await res.json();
+                    setCurrentLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        address: data.display_name,
+                        error: null,
+                    });
+                    setLocationLoading(false)
+                },
+                (err) => {
+                    setCurrentLocation((prev) => ({ ...prev, error: err.message }));
+                    setLocationLoading(false)
+                }
+            );
+        }
+
+        getLocation()
+    }, [])
+
+    const handleCheckIn = () => {
+        if (!currentLocation) return;
+        notificationModal.progress({
+            heading: `Checking with your current location, Please await!!`,
+        });
+        const checkInPayload = {
+            checkInLocation: {
+                latitude: currentLocation.lat || 26.641511,
+                longitude: currentLocation.lng || 84.891568,
+                address: currentLocation.address || "मोतिहारी, Turkaulia, पूर्वी चम्पारण, Bihar, 845401, India"
+            },
+            checkInTime: new Date(),
+        }
+        saveCheckInByEmp.mutate(checkInPayload, {
+            onSuccess: (res) => {
+                console.log(res?.data?.checkInTime);
+                
+                setIsCheckedIn(true)
+                notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
+
+                setCheckInTime(res?.data?.checkInTime);
+                refetch();
+
+            },
+            onError: () => {
+                setIsCheckedIn(false)
+                notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
+
+            }
+        })
+
+    }
+
+    const handleCheckOut = () => {
+ notificationModal.progress({
+            heading: `Checking Out with your current location, Please await!!`,
+        });
+        const checkOutPayload = {
+            checkOutLocation: {
+                latitude: currentLocation.lat || 26.641511,
+                longitude: currentLocation.lng || 84.891568,
+                address: currentLocation.address || "मोतिहारी, Turkaulia, पूर्वी चम्पारण, Bihar, 845401, India"
+            },
+            checkOutTime: new Date(),
+            checkInTime: todayCheckData?.data?.checkInTime,
+            check_in_id: todayCheckData?.data?.id
+        };
+        updateCheckOutByEmp.mutate(checkOutPayload, {
+            onSuccess: (res) => {
+                refetch();
+                notificationModal.success({ heading: "Success", body: `Checked Out with your live location.` });
+
+                // setIsCheckedIn(false)
+                // setCheckInTime(null)
+                // setPhotoTaken(false)
+            },
+            onError: () => {
+                notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
+
+                // setIsCheckedIn(false)
+                // setCheckInTime(null)
+                // setPhotoTaken(false)
+            }
+        })
+
+    }
+
+    const handleTakePhoto = () => {
+        setShowCamera(true)
+        // Simulate camera capture
+        setTimeout(() => {
+            setPhotoTaken(true)
+            setShowCamera(false)
+        }, 1500)
+    }
+
+
+    return {
+        isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
+        locationLoading, setLocationLoading,
+        showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut, todayCheckData
+    }
+}
