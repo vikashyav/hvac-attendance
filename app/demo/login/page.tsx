@@ -157,15 +157,15 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="admin" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="admin" className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
-                    <span className="hidden sm:inline"></span>
+                    <span className="hidden sm:inline">Admin</span>
                   </TabsTrigger>
-                  {/* <TabsTrigger value="employee" className="flex items-center space-x-2">
+                  <TabsTrigger value="employee" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">Employee</span>
-                  </TabsTrigger> */}
+                  </TabsTrigger>
                 </TabsList>
 
                 {error && (

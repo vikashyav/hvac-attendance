@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEmployeesDashboard } from "@/hooks/use-employeeDashboard";
 import { formatTimeDifference } from "@/utils/helper";
+import { Separator } from "@/components/ui/separator"
 export default function EmployeeDashboard() {
   const {
     isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
@@ -122,11 +123,12 @@ export default function EmployeeDashboard() {
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div>
                   <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Status</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex gap-4">
                     <samp className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                       {isCheckedIn ? `Checked in at ${checkInTimeLocalFormat}` : "Ready to check in"}
 
                     </samp>
+                    <Separator orientation="vertical" className="w-1 text-red-600" />
                     <samp className="text-xs sm:text-sm text-red-600">{isCheckedOut ? `  Checked out at ${checkOutTimeLocalFormat}` : ""}</samp>
                   </div>
 
