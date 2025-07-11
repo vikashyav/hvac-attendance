@@ -21,7 +21,9 @@ import {
 import { useEmployeesDashboard } from "@/hooks/use-employeeDashboard";
 import { formatTimeDifference } from "@/utils/helper";
 import { Separator } from "@/components/ui/separator"
+import { useUserFromStorage } from "@/hooks/user.context"
 export default function EmployeeDashboard() {
+      const { user, removeUser } = useUserFromStorage();
   const {
     isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
     locationLoading, setLocationLoading,
@@ -47,7 +49,7 @@ export default function EmployeeDashboard() {
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Welcome back, vikas!</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Welcome back, {user.firstName}</h1>
         <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
           Here's your daily overview for {new Date().toLocaleDateString()}
         </p>

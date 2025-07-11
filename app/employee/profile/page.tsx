@@ -13,8 +13,12 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, Calendar, Award, Bell, Shield, Save, Upload, Edit } from "lucide-react"
+import { useUserFromStorage } from "@/hooks/user.context"
 
 export default function ProfilePage() {
+  const { user, removeUser } = useUserFromStorage();
+  console.log(user, "user");
+
   const [isEditing, setIsEditing] = useState(false)
   const [notifications, setNotifications] = useState({
     email: true,
@@ -26,19 +30,20 @@ export default function ProfilePage() {
 
   const employeeData = {
     id: "EMP001",
-    name: "John Smith",
-    email: "john.smith@hvacpro.com",
-    phone: "(555) 123-4567",
-    address: "123 Main Street, Anytown, NY 12345",
-    position: "HVAC Technician",
-    department: "Field Operations",
-    hireDate: "2023-01-15",
-    supervisor: "Mike Johnson",
-    emergencyContact: {
-      name: "Jane Smith",
-      relationship: "Spouse",
-      phone: "(555) 987-6543",
-    },
+    name: `${user.firstName} ${user.lastName}`,
+    // email: ,
+    // phone: "(555) 123-4567",
+    // address: "123 Main Street, Anytown, NY 12345",
+    // position: "HVAC Technician",
+    // department: "Field Operations",
+    // hireDate: "2023-01-15",
+    // supervisor: "Mike Johnson",
+    // emergencyContact: {
+    //   name: "Jane Smith",
+    //   relationship: "Spouse",
+    //   phone: "(555) 987-6543",
+    // },
+
     skills: ["HVAC Installation", "System Maintenance", "Troubleshooting", "Safety Protocols", "Customer Service"],
     certifications: [
       {
@@ -60,6 +65,8 @@ export default function ProfilePage() {
         status: "Expiring Soon",
       },
     ],
+    ...user,
+    ...user.employee,
   }
 
   const performanceStats = {
@@ -150,7 +157,7 @@ export default function ProfilePage() {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      defaultValue="John"
+                      defaultValue={user.firstName}
                       disabled={!isEditing}
                       className={!isEditing ? "bg-muted" : ""}
                     />
@@ -159,7 +166,7 @@ export default function ProfilePage() {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      defaultValue="Smith"
+                      defaultValue={user.lastName}
                       disabled={!isEditing}
                       className={!isEditing ? "bg-muted" : ""}
                     />
@@ -206,7 +213,7 @@ export default function ProfilePage() {
                       <Label htmlFor="emergencyName">Contact Name</Label>
                       <Input
                         id="emergencyName"
-                        defaultValue={employeeData.emergencyContact.name}
+                        defaultValue={employeeData?.emergencyContact?.name}
                         disabled={!isEditing}
                         className={!isEditing ? "bg-muted" : ""}
                       />
@@ -215,7 +222,7 @@ export default function ProfilePage() {
                       <Label htmlFor="relationship">Relationship</Label>
                       <Input
                         id="relationship"
-                        defaultValue={employeeData.emergencyContact.relationship}
+                        defaultValue={employeeData?.emergencyContact?.relationship}
                         disabled={!isEditing}
                         className={!isEditing ? "bg-muted" : ""}
                       />
@@ -225,7 +232,7 @@ export default function ProfilePage() {
                     <Label htmlFor="emergencyPhone">Emergency Phone</Label>
                     <Input
                       id="emergencyPhone"
-                      defaultValue={employeeData.emergencyContact.phone}
+                      defaultValue={employeeData?.emergencyContact?.phone}
                       disabled={!isEditing}
                       className={!isEditing ? "bg-muted" : ""}
                     />

@@ -153,20 +153,20 @@ export default function LoginPage() {
           <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-xl text-center">Sign In</CardTitle>
-              <CardDescription className="text-center">Choose your account type to continue</CardDescription>
+              <CardDescription className="text-center"></CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="admin" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 mb-6">
-                  <TabsTrigger value="admin" className="flex items-center space-x-2">
+                {/* <TabsList className="grid w-full grid-cols-1 mb-6"> */}
+                  {/* <TabsTrigger value="admin" className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline"></span>
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                   {/* <TabsTrigger value="employee" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">Employee</span>
                   </TabsTrigger> */}
-                </TabsList>
+                {/* </TabsList> */}
 
                 {error && (
                   <Alert variant="destructive" className="mb-4">
@@ -182,7 +182,7 @@ export default function LoginPage() {
                         id="admin-email"
                         name="email"
                         type="email"
-                        placeholder="admin@hvacpro.com"
+                        placeholder="Enter username"
                         value={formData.email}
                         onChange={handleInputChange}
                         required
@@ -214,7 +214,7 @@ export default function LoginPage() {
                       </div>
                     </div>
                     <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign In as Admin"}
+                      {isLoading ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
                   <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
@@ -222,7 +222,7 @@ export default function LoginPage() {
                     <br />
                     Email: admin@hvacpro.com
                     <br />
-                    Password: admin123
+                    Password: password
                   </div>
                 </TabsContent>
 
