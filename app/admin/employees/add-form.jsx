@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 
 import fakeData from "@/constants/fake-data";
+import { useEmployeesPageContext } from "./use-employee";
 
 const validationSchema = Yup.object({
   firstName: Yup.string()
@@ -70,7 +71,7 @@ const validationSchema = Yup.object({
     .required("Phone number is required"),
   department: Yup.string().required("Department is required"),
   position: Yup.string().required("Position is required"),
-  location: Yup.string().required("Work location is required"),
+  // location: Yup.string().required("Work location is required"),
   address: Yup.string().required("Address is required"),
   emergencyContact: Yup.object({
     name: Yup.string().required("Emergency contact name is required"),
@@ -91,10 +92,13 @@ function EmployeeForm({
   setIsAddDrawerOpen,
   handleAddEmployee,
 }) {
+  const {selectedEmployee}=useEmployeesPageContext();
   const departments = fakeData.departments;
   const positions = fakeData.positions;
 
   const locations = fakeData.locations;
+  // console.log({selectedEmployee});
+  
   return (
     <Sheet open={isAddDrawerOpen} onOpenChange={setIsAddDrawerOpen}>
       <SheetTrigger asChild>
@@ -118,30 +122,12 @@ function EmployeeForm({
         </SheetHeader>
 
         <Formik
-          initialValues={{
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            department: "",
-            position: "",
-            location: "",
-            address: "",
-            emergencyContact: {
-              name: "",
-              relationship: "",
-              phone: "",
-            },
-            emergencyPhone: "",
-            salary: "",
-            hireDate: "",
-            notes: "",
-          }}
+          initialValues={selectedEmployee}
           validationSchema={validationSchema}
           onSubmit={handleAddEmployee}
         >
           {({ values, errors, touched, isSubmitting, setFieldValue, resetForm }) => {
-            console.log(values);
+            console.log({values, errors});
 
             return (
               <Form className="space-y-8">
@@ -608,7 +594,7 @@ function EmployeeForm({
                       )}
                     </ErrorMessage>
                     <p className="text-xs text-muted-foreground">
-                      {values.notes.length}/500 characters
+                      {values?.notes?.length}/500 characters
                     </p>
                   </div>
                 </div>
@@ -640,7 +626,7 @@ function EmployeeForm({
                     ) : (
                       <>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Add Employee
+                        {values?.id ? "Update Employee" : "Add Employee"}
                       </>
                     )}
                   </Button>

@@ -19,32 +19,21 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useEmployeesDashboard } from "@/hooks/use-employeeDashboard";
-import { formatTimeDifference } from "@/utils/helper";
 import { Separator } from "@/components/ui/separator"
 import { useUserFromStorage } from "@/hooks/user.context"
+import AttendanceComponent from "./attendance-components"
+
 export default function EmployeeDashboard() {
       const { user, removeUser } = useUserFromStorage();
   const {
     isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
     locationLoading, setLocationLoading,
     showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut,
-    todayCheckData
+    todayCheckData,
+    isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat
   } = useEmployeesDashboard();
-  console.log(new Date().toLocaleDateString(), checkInTime);
-  const isCheckedOut = todayCheckData?.data?.checkOutTime && true;
-  const workDuration = formatTimeDifference(checkInTime, todayCheckData?.data?.checkOutTime || new Date());
-  let checkInTimeFormat_ = new Date(checkInTime);
-  const checkInTimeLocalFormat = checkInTimeFormat_?.toLocaleString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-  let checkOutTimeFormat_ = new Date(todayCheckData?.data?.checkOutTime);
-  const checkOutTimeLocalFormat = checkOutTimeFormat_?.toLocaleString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
+
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
@@ -56,183 +45,7 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Large Attendance Section */}
-      <Card className="border-l-4 border-l-blue-500">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
-              <CardTitle className="text-lg sm:text-xl">Attendance Tracking</CardTitle>
-            </div>
-            <Badge variant={isCheckedIn ? "default" : "secondary"} className="text-xs sm:text-sm w-fit">
-              {isCheckedOut ? "Checked Out" : isCheckedIn ? "Checked In" :  "Not Checked In"}
-            </Badge>
-          </div>
-          <CardDescription className="text-sm">Track your work hours with location verification</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 sm:space-y-6">
-          {/* Live Location Display */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 sm:p-4 rounded-lg border">
-            <div className="flex items-center space-x-2 mb-2 sm:mb-3">
-              <div className="flex items-center space-x-2">
-                {locationLoading ? (
-                  <div className="animate-spin">
-                    <Crosshair className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                ) : (
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
-                )}
-                <span className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
-                  {locationLoading ? "Getting your location..." : "Current Location"}
-                </span>
-              </div>
-              {!locationLoading && (
-                <div className="flex items-center space-x-1">
-                  <Wifi className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-xs text-green-600 dark:text-green-400">Connected</span>
-                </div>
-              )}
-            </div>
-
-            {locationLoading ? (
-              <div className="space-y-2">
-                <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-              </div>
-            ) : currentLocation ? (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{currentLocation.address}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
-                  Coordinates: {currentLocation.lat}, {currentLocation.lng}
-                </p>
-                <div className="flex items-center space-x-2 text-xs text-green-600 dark:text-green-400">
-                  <CheckCircle className="h-3 w-3" />
-                  <span>Location verified - Within work site boundary</span>
-                </div>
-              </div>
-            ) : (
-              <Alert variant="destructive">
-                <WifiOff className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  Unable to get location. Please enable location services and try again.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          {/* Check-in Status */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div>
-                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Status</p>
-                  <div className="flex gap-4">
-                    <samp className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
-                      {isCheckedIn ? `Checked in at ${checkInTimeLocalFormat}` : "Ready to check in"}
-
-                    </samp>
-                    <Separator orientation="vertical" className="w-1 text-red-600" />
-                    <samp className="text-xs sm:text-sm text-red-600">{isCheckedOut ? `  Checked out at ${checkOutTimeLocalFormat}` : ""}</samp>
-                  </div>
-
-                </div>
-                <div className="flex items-center">
-                  {isCheckedIn ? (
-                    <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
-                  )}
-                </div>
-              </div>
-
-              {isCheckedIn && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                  <samp className="text-blue-600 dark:text-blue-400">
-                    Work duration:</samp> <samp>{workDuration} </samp>
-                  {/* {Math.floor(Math.random() * 4) + 1}h {Math.floor(Math.random() * 60)}m */}
-
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div>
-                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Photo Verification</p>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    {photoTaken ? "Photo captured" : "Take a photo to verify"}
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  {photoTaken ? (
-                    <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
-                  ) : (
-                    <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
-                  )}
-                </div>
-              </div>
-
-              {photoTaken && (
-                <div className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                  <p>✓ Photo verified and uploaded</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            {!isCheckedIn ? (
-              <Button
-                onClick={handleCheckIn}
-                className="flex-1 h-10 sm:h-12 text-sm sm:text-lg"
-                disabled={locationLoading || !currentLocation}
-              >
-                <MapPin className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Check In
-              </Button>
-            ) : (
-              <Button
-                onClick={handleCheckOut}
-                disabled={isCheckedOut}
-                variant="outline"
-                className="flex-1 h-10 sm:h-12 text-sm sm:text-lg bg-transparent"
-              >
-                <Clock className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                {isCheckedOut ? "You have been already checkout" : "Check Out"}
-              </Button>
-            )}
-
-            <Button
-              onClick={handleTakePhoto}
-              variant="outline"
-              className="h-10 sm:h-12 px-4 sm:px-6 bg-transparent"
-              disabled={showCamera}
-            >
-              {showCamera ? (
-                <div className="animate-pulse">
-                  <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-              ) : (
-                <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-              )}
-            </Button>
-
-            <Button variant="outline" className="h-10 sm:h-12 px-4 sm:px-6 bg-transparent">
-              <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          </div>
-
-          {showCamera && (
-            <Alert>
-              <Camera className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Camera is active... Taking photo for attendance verification.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
+        <AttendanceComponent />
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>

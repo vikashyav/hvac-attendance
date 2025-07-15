@@ -5,7 +5,11 @@ import fakeData from "@/constants/fake-data";
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { employeeRegistration, getEmployeeList } from "@/lib/api/employee";
+import { employeeRegistration, employeeUpdate, getEmployeeList } from "@/lib/api/employee";
+import generateContext from "@/utils/generate-context";
+import {getIntialValues} from "./form-helper";
+
+
 
 export function useEmployees() {
   const { toast } = useToast()
@@ -16,7 +20,7 @@ export function useEmployees() {
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [selectedEmployee, setSelectedEmployee] = useState(getIntialValues({}))
 
   const [employees, setEmployees] = useState(fakeData.employee)
 
@@ -24,10 +28,9 @@ export function useEmployees() {
   const positions = fakeData.positions
 
   const locations = fakeData.locations
-    const {data:employeeData, isFetching, refetch }= useQuery({
+  const { data: employeeData, isFetching, refetch } = useQuery({
     queryFn: getEmployeeList
   })
-  console.log(employeeData?.data?.data);
   const filteredEmployees = (employeeData?.data?.data || employees).filter((employee) => {
     const matchesSearch =
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,19 +39,23 @@ export function useEmployees() {
     const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment
     return matchesSearch && matchesDepartment
   })
-  
+
   const mutation = useMutation({
     mutationFn: employeeRegistration,
   })
 
+  const udateMutation= useMutation({
+    mutationFn: employeeUpdate,
+  })
   const handleAddEmployee = (values, { setSubmitting, resetForm }) => {
-  
+
     notificationModal.progress({
       heading: `Adding ${values.name} to your team, Please await!!`,
     });
-    mutation.mutate(values, {
+    const apiCall= values?.id ? udateMutation.mutate : mutation.mutate
+    apiCall(values, {
       onSuccess: (res) => {
-        console.log(res)
+        // console.log(res)
         refetch();
         notificationModal.success({ heading: "Success", body: `${values?.firstName} has been added to your team.` });
 
@@ -56,7 +63,7 @@ export function useEmployees() {
       onError: (err) => {
         // alert('Something went wrong')
         notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-        console.error(err)
+        // console.error(err)
         setIsLoading(false)
       },
     })
@@ -104,13 +111,18 @@ export function useEmployees() {
       title: "Employee Details",
       description: `Viewing details for ${employee.name} (${employee.id})`,
     })
+    // setIsAddDrawerOpen(true);
   }
 
   const openEditDialog = (employee) => {
-    setSelectedEmployee({ ...employee })
+  console.log({employee});
+
+    setSelectedEmployee(getIntialValues({ ...employee }))
     setIsEditDialogOpen(true)
+    setIsAddDrawerOpen(true);
   }
 
+  console.log({selectedEmployee});
 
   return {
     view, setView,
@@ -125,3 +137,5 @@ export function useEmployees() {
     employeeData: employeeData?.data
   }
 }
+
+export const [EmployeesPageProvider, useEmployeesPageContext] = generateContext(useEmployees);

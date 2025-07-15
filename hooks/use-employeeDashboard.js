@@ -7,9 +7,13 @@ import { useNotificationModalContext } from "@/components/notification-modal/pro
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { saveCheckIn, getTodayCheckIn, updateCheckOut } from "@/lib/api/employee";
 import _ from "lodash";
+import { formatTimeDifference } from "@/utils/helper";
+
+
 
 
 export function useEmployeesDashboard() {
+    const [isOffline, setOffline]= useState()
     const [isCheckedIn, setIsCheckedIn] = useState(false)
     const [checkInTime, setCheckInTime] = useState(null)
     const [currentLocation, setCurrentLocation] = useState(null)
@@ -17,21 +21,22 @@ export function useEmployeesDashboard() {
     const [showCamera, setShowCamera] = useState(false);
     const [photoTaken, setPhotoTaken] = useState(false);
     const notificationModal = useNotificationModalContext();
+console.log("iss", isOffline);
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
-    const { data: todayCheckData, isSuccess: isFetchedTodayCheckIn, refetch } = useQuery({
-        queryKey: {startOfDay, endOfDay}, // Include params in queryKey
+    const { data: todayCheckData, isSuccess: isFetchedTodayCheckIn, refetch, isFetching } = useQuery({
+        queryKey: { startOfDay, endOfDay }, // Include params in queryKey
         queryFn: getTodayCheckIn,
         onSuccess: (res) => {
-            console.log(res);
+            // console.log(res);
 
         }
     })
-    console.log(todayCheckData?.data, "isFetchedTodayCheckIn", isFetchedTodayCheckIn);
+    // console.log(todayCheckData?.data, "isFetchedTodayCheckIn", isFetchedTodayCheckIn);
 
     const saveCheckInByEmp = useMutation({
         mutationFn: saveCheckIn,
@@ -91,8 +96,25 @@ export function useEmployeesDashboard() {
                 }
             );
         }
+        getLocation();
 
-        getLocation()
+        //    if (typeof window !== 'undefined'){
+        const handleCheckOnline=()=> setOffline(false);
+        const handleCheckOffline=()=> setOffline(true);
+        window.addEventListener("online", ()=>{
+            console.log("listened online");
+            setOffline(false);
+        });
+        window.addEventListener("offline", ()=>{
+            console.log("listened offline");
+            // setLocationLoading(false)
+            setOffline(true);
+        });
+        return()=>{
+            // window.removeEventListener("online", handleCheckOnline);
+            // window.removeEventListener("ofline", handleCheckOffline);
+        }
+    // }
     }, [])
 
     const handleCheckIn = () => {
@@ -110,7 +132,7 @@ export function useEmployeesDashboard() {
         }
         saveCheckInByEmp.mutate(checkInPayload, {
             onSuccess: (res) => {
-                console.log(res?.data?.checkInTime);
+                // console.log(res?.data?.checkInTime);
 
                 setIsCheckedIn(true)
                 notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
@@ -171,10 +193,26 @@ export function useEmployeesDashboard() {
         }, 1500)
     }
 
+    const isCheckedOut = todayCheckData?.data?.checkOutTime && true;
+    const workDuration = formatTimeDifference(checkInTime, todayCheckData?.data?.checkOutTime || new Date());
+    let checkInTimeFormat_ = new Date(checkInTime);
+    const checkInTimeLocalFormat = checkInTimeFormat_?.toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+    let checkOutTimeFormat_ = new Date(todayCheckData?.data?.checkOutTime);
+    const checkOutTimeLocalFormat = checkOutTimeFormat_?.toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    })
+
 
     return {
         isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
-        locationLoading, setLocationLoading,
-        showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut, todayCheckData
+        locationLoading, setLocationLoading, isFetching,
+        showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut, todayCheckData,
+        isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, isOffline
     }
 }

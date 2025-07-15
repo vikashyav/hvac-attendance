@@ -7,73 +7,19 @@ import { Calendar } from "@/components/ui/calendar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Clock, MapPin, CheckCircle, TrendingUp } from "lucide-react"
+import withHOC from "@/utils/with-hoc"
+import { AttendancesPageProvider, useAttendancesPageContext } from "./use-attendance";
+import { formatWorkingHours } from "@/utils/helper"
 
-export default function AttendancePage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-
-  const attendanceHistory = [
-    {
-      date: "2024-01-15",
-      checkIn: "8:15 AM",
-      checkOut: "5:30 PM",
-      totalHours: "9h 15m",
-      site: "Downtown Office",
-      status: "Present",
-      overtime: "15m",
-    },
-    {
-      date: "2024-01-14",
-      checkIn: "8:00 AM",
-      checkOut: "5:00 PM",
-      totalHours: "9h 00m",
-      site: "Mall Project",
-      status: "Present",
-      overtime: "0m",
-    },
-    {
-      date: "2024-01-13",
-      checkIn: "8:30 AM",
-      checkOut: "5:15 PM",
-      totalHours: "8h 45m",
-      site: "Office Building",
-      status: "Late",
-      overtime: "0m",
-    },
-    {
-      date: "2024-01-12",
-      checkIn: "8:10 AM",
-      checkOut: "5:25 PM",
-      totalHours: "9h 15m",
-      site: "Residential Complex",
-      status: "Present",
-      overtime: "10m",
-    },
-    {
-      date: "2024-01-11",
-      checkIn: "-",
-      checkOut: "-",
-      totalHours: "0h 00m",
-      site: "-",
-      status: "Absent",
-      overtime: "0m",
-    },
-  ]
-
-  const weeklyStats = {
-    totalHours: "44h 15m",
-    averageCheckIn: "8:14 AM",
-    daysPresent: 4,
-    daysAbsent: 1,
-    overtimeHours: "25m",
-    punctualityScore: 80,
-  }
-
-  const monthlyTrends = [
-    { week: "Week 1", hours: 42, attendance: 100 },
-    { week: "Week 2", hours: 44, attendance: 80 },
-    { week: "Week 3", hours: 40, attendance: 100 },
-    { week: "Week 4", hours: 45, attendance: 100 },
-  ]
+function AttendancePage() {
+  const {
+    selectedDate, setSelectedDate,
+      attendanceHistory,
+      monthlyStats,
+      monthlyTrends,
+      handleCalenderSelectDate,
+    calendarSelectedData
+  }=useAttendancesPageContext();
 
   return (
     <div className="p-6 space-y-6">
@@ -89,8 +35,8 @@ export default function AttendancePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">This Week</p>
-                <p className="text-2xl font-bold text-gray-900">{weeklyStats.totalHours}</p>
+                <p className="text-sm font-medium text-gray-600">This Months</p>
+                <p className="text-2xl font-bold text-gray-900">{monthlyStats.totalHours}</p>
                 <p className="text-xs text-gray-500">Total hours worked</p>
               </div>
               <Clock className="h-8 w-8 text-blue-600" />
@@ -104,9 +50,10 @@ export default function AttendancePage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {Math.round((weeklyStats.daysPresent / (weeklyStats.daysPresent + weeklyStats.daysAbsent)) * 100)}%
+                  {/* {Math.round((monthlyStats.daysPresent / (monthlyStats.daysPresent + monthlyStats.daysAbsent)) * 100)}% */}
+                  {monthlyStats.attendanceRate}%
                 </p>
-                <p className="text-xs text-gray-500">This week</p>
+                <p className="text-xs text-gray-500">This month</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -118,7 +65,7 @@ export default function AttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Punctuality</p>
-                <p className="text-2xl font-bold text-orange-600">{weeklyStats.punctualityScore}%</p>
+                <p className="text-2xl font-bold text-orange-600">{monthlyStats.punctualityScore}%</p>
                 <p className="text-xs text-gray-500">On-time arrivals</p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
@@ -131,8 +78,8 @@ export default function AttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Overtime</p>
-                <p className="text-2xl font-bold text-purple-600">{weeklyStats.overtimeHours}</p>
-                <p className="text-xs text-gray-500">This week</p>
+                <p className="text-2xl font-bold text-purple-600">{monthlyStats.totalOvertimeHours}</p>
+                <p className="text-xs text-gray-500">This month</p>
               </div>
               <Clock className="h-8 w-8 text-purple-600" />
             </div>
@@ -170,14 +117,18 @@ export default function AttendancePage() {
                   {attendanceHistory.map((record, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{record.checkIn}</TableCell>
-                      <TableCell>{record.checkOut}</TableCell>
-                      <TableCell>{record.totalHours}</TableCell>
-                      <TableCell>{record.site}</TableCell>
+                      <TableCell>{record.checkInTime}</TableCell>
+                      <TableCell>{record.checkOutTime}</TableCell>
+                      <TableCell>{record.workHours}</TableCell>
+                      <TableCell>
+                        <span>{record?.checkInLocation?.address}</span>
+                        <span>{`${calendarSelectedData?.checkInLocation?.latitude}, ${calendarSelectedData?.checkInLocation?.longitude}`}</span>
+
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            record.status === "Present"
+                            record.status == "present"
                               ? "default"
                               : record.status === "Late"
                                 ? "secondary"
@@ -187,7 +138,7 @@ export default function AttendancePage() {
                           {record.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{record.overtime}</TableCell>
+                      <TableCell>{record.overtimeHours}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -207,7 +158,7 @@ export default function AttendancePage() {
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={setSelectedDate}
+                  onSelect={handleCalenderSelectDate}
                   className="rounded-md border"
                 />
               </CardContent>
@@ -226,14 +177,14 @@ export default function AttendancePage() {
                         <p className="text-sm font-medium text-gray-600">Check In Time</p>
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-green-600" />
-                          <span className="text-lg font-semibold">8:15 AM</span>
+                          <span className="text-lg font-semibold">{calendarSelectedData?.checkInTime}</span>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-600">Check Out Time</p>
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-red-600" />
-                          <span className="text-lg font-semibold">5:30 PM</span>
+                          <span className="text-lg font-semibold">{calendarSelectedData?.checkOutTime}</span>
                         </div>
                       </div>
                     </div>
@@ -242,7 +193,8 @@ export default function AttendancePage() {
                       <p className="text-sm font-medium text-gray-600">Work Location</p>
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-blue-600" />
-                        <span>Downtown Office Complex</span>
+                        <span>{calendarSelectedData?.checkInLocation?.address}</span>
+                        <span>{`${calendarSelectedData?.checkInLocation?.latitude}, ${calendarSelectedData?.checkInLocation?.longitude}`}</span>
                       </div>
                     </div>
 
@@ -250,7 +202,7 @@ export default function AttendancePage() {
                       <p className="text-sm font-medium text-gray-600">Total Hours Worked</p>
                       <div className="flex items-center space-x-2">
                         <TrendingUp className="h-4 w-4 text-purple-600" />
-                        <span className="text-lg font-semibold">9h 15m</span>
+                        <span className="text-lg font-semibold">{calendarSelectedData?.workHours}</span>
                       </div>
                     </div>
 
@@ -282,10 +234,10 @@ export default function AttendancePage() {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{week.week}</p>
-                        <p className="text-sm text-gray-600">{week.hours}h worked</p>
+                        <p className="text-sm text-gray-600">{week.totalHours}h worked</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">{week.attendance}%</p>
+                        <p className="font-medium">{week.attendanceRate}%</p>
                         <p className="text-sm text-gray-600">Attendance</p>
                       </div>
                     </div>
@@ -304,20 +256,20 @@ export default function AttendancePage() {
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium">Overall Attendance</span>
-                      <span className="text-sm font-bold">95%</span>
+                      <span className="text-sm font-bold">{monthlyStats.attendanceRate}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-600 h-2 rounded-full" style={{ width: "95%" }} />
+                      <div className="bg-green-600 h-2 rounded-full" style={{ width: `${monthlyStats.attendanceRate}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium">Punctuality Score</span>
-                      <span className="text-sm font-bold">88%</span>
+                      <span className="text-sm font-bold">{monthlyStats.punctualityScore}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: "88%" }} />
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${monthlyStats.punctualityScore}%` }} />
                     </div>
                   </div>
 
@@ -348,3 +300,5 @@ export default function AttendancePage() {
     </div>
   )
 }
+
+export default withHOC(AttendancesPageProvider, AttendancePage);

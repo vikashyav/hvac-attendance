@@ -61,15 +61,66 @@ employee:[
       performance: 87,
     },
   ],
-    departments :["Installation", "Maintenance", "Repair", "Sales", "Administration"],
+    departments :["Administration", "Project"],
    positions :{
     Installation: ["Technician", "Senior Technician", "Lead Installer", "Installation Manager"],
     Maintenance: ["Maintenance Technician", "Senior Maintenance Tech", "Maintenance Supervisor"],
     Repair: ["Repair Technician", "Emergency Technician", "Senior Repair Specialist"],
     Sales: ["Sales Representative", "Sales Manager", "Account Executive"],
-    Administration: ["Office Manager", "HR Coordinator", "Administrative Assistant"],
+    Administration: ["Office Manager", "Documentation", "Draftsman", "Account manager", "Purchase department", "Sale deparment"],
+    Project:["Sr Engineer", "Engineer", "Trainee engineer", "Project manager", "Supervisor", "Sr Technical", "Technician"]
   },
 
-   locations:["Downtown Office", "North Branch", "South Branch", "East Branch", "West Branch"]
+   locations:["Downtown Office", "North Branch", "South Branch", "East Branch", "West Branch"],
+
+   attendance:{
+    history:[
+    {
+      date: "2024-01-15",
+      checkInTime: "8:15 AM",
+      checkOutTime: "5:30 PM",
+      totalHours: "9h 15m",
+      site: "Downtown Office",
+      status: "Present",
+      overtime: "15m",
+    },
+    {
+      date: "2024-01-14",
+      checkInTime: "8:00 AM",
+      checkOutTime: "5:00 PM",
+      totalHours: "9h 00m",
+      site: "Mall Project",
+      status: "Present",
+      overtime: "0m",
+    },
+    {
+      date: "2024-01-13",
+      checkInTime: "8:30 AM",
+      checkOutTime: "5:15 PM",
+      totalHours: "8h 45m",
+      site: "Office Building",
+      status: "Late",
+      overtime: "0m",
+    },
+    {
+      date: "2024-01-12",
+      checkInTime: "8:10 AM",
+      checkOutTime: "5:25 PM",
+      totalHours: "9h 15m",
+      site: "Residential Complex",
+      status: "Present",
+      overtime: "10m",
+    },
+    {
+      date: "2024-01-11",
+      checkInTime: "-",
+      checkOutTime: "-",
+      totalHours: "0h 00m",
+      site: "-",
+      status: "Absent",
+      overtime: "0m",
+    },
+  ]
+   }
 
 }

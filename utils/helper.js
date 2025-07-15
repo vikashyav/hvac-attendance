@@ -12,3 +12,17 @@ export function formatTimeDifference(startTime, endTime) {
     return `${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
   }
 }
+
+
+export function formatWorkingHours(hoursDecimal) {
+  const hours = Math.floor(hoursDecimal);
+  const minutes = Math.round((hoursDecimal - hours) * 60);
+
+  const hText = hours === 1 ? "1 hour" : `${hours} h`;
+  const mText = minutes === 1 ? "1 minute" : `${minutes} m`;
+
+  if (hours && minutes) return `${hText} ${mText}`;
+  if (hours) return hText;
+  if (minutes) return mText;
+  return "0 minutes";
+}

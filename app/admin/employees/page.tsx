@@ -64,7 +64,8 @@ import {
   X,
 } from "lucide-react"
 import EmployeeForm from "./add-form";
-import {useEmployees}  from "@/hooks/use-employee";
+import withHOC from "@/utils/with-hoc";
+import {useEmployeesPageContext, EmployeesPageProvider}  from "./use-employee";
 interface Employee {
   id: string
   name: string
@@ -99,7 +100,7 @@ interface AddEmployeeFormValues {
 }
 
 
-export default function EmployeesPage() {
+function EmployeesPage() {
   const { toast } = useToast()
   // const [view, setView] = useState<"grid" | "table">("table")
   // const [searchTerm, setSearchTerm] = useState("")
@@ -120,7 +121,7 @@ export default function EmployeesPage() {
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
     handleToggleStatus, handleViewDetails, openEditDialog, employeeData
-  }= useEmployees();
+  }= useEmployeesPageContext();
 
 
   return (
@@ -561,3 +562,4 @@ export default function EmployeesPage() {
     </div>
   )
 }
+export default withHOC(EmployeesPageProvider, EmployeesPage);
