@@ -12,7 +12,8 @@ import { Users, MapPin, TrendingUp, CheckCircle,} from "lucide-react"
 
 export function useAdminDashboard() {
 
-    const { data: dashboardStats, isFetching, isSuccess } = useQuery({
+    const { data: dashboardStats, isFetching, isSuccess, refetch,  } = useQuery({
+        queryKey: ['useAdminDashboard'],
         queryFn: getAdminDashboardStats
     })
 
