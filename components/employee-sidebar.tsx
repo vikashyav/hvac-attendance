@@ -26,11 +26,11 @@ const navigation = [
     href: "/employee/schedule",
     icon: Calendar,
   },
-  {
-    name: "Performance",
-    href: "/employee/performance",
-    icon: BarChart3,
-  },
+  // {
+  //   name: "Performance",
+  //   href: "/employee/performance",
+  //   icon: BarChart3,
+  // },
   {
     name: "Profile",
     href: "/employee/profile",

@@ -244,8 +244,13 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="professional" className="space-y-6">
+            <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
             <Card>
+              
               <CardHeader>
                 <CardTitle>Employment Details</CardTitle>
                 <CardDescription>Your job information and work details</CardDescription>
@@ -347,6 +352,9 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="certifications" className="space-y-6">
+            <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -390,6 +398,9 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
+            <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>

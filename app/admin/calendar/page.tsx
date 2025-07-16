@@ -154,6 +154,9 @@ export default function CalendarPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
+        <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Calendar & Scheduling</h1>

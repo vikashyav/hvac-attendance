@@ -70,20 +70,6 @@ function AdminDashboardPage() {
             <AttendanceChart attendanceOverview={attendanceOverview} />
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-            <CardDescription>Team performance across different categories</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PerformanceChart />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Activity and Schedule Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <Card>
           <CardHeader>
@@ -107,7 +93,7 @@ function AdminDashboardPage() {
                     variant={
                       activity.status === "late"
                         ? "destructive"
-                        : activity.status === "on-time"
+                        : (activity.status === "on-time" || activity.status === "present")
                           ? "default"
                           : activity.status === "completed"
                             ? "secondary"
@@ -124,8 +110,25 @@ function AdminDashboardPage() {
           </CardContent>
         </Card>
 
+        {/* <Card>
+          <CardHeader>
+            <CardTitle>Performance Metrics</CardTitle>
+            <CardDescription>Team performance across different categories</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PerformanceChart />
+          </CardContent>
+        </Card> */}
+      </div>
+
+      {/* Activity and Schedule Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
         {/* Upcoming Schedules */}
         <Card>
+          <Badge variant="destructive" className="w-full whitespace-nowrap">
+            Work Under Progress - we are working on this module
+          </Badge>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
@@ -153,6 +156,9 @@ function AdminDashboardPage() {
 
       {/* Quick Actions */}
       <Card>
+        <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
           <CardDescription>Common administrative tasks and shortcuts</CardDescription>

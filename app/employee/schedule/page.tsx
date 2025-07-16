@@ -138,6 +138,9 @@ export default function SchedulePage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
+        <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
       <div>
         <h1 className="text-3xl font-bold">My Schedule</h1>
         <p className="text-muted-foreground">View your work schedule and upcoming assignments</p>

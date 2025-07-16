@@ -9,6 +9,7 @@ import { getAttendance } from "@/lib/api/attendance-api";
 import generateContext from "@/utils/generate-context";
 import moment from "moment";
 import { formatWorkingHours } from "@/utils/helper";
+import { useUserFromStorage } from "@/hooks/user.context";
 
 // import { getIntialValues } from "./form-helper";
 
@@ -16,6 +17,7 @@ import { formatWorkingHours } from "@/utils/helper";
 
 export function useAttendances() {
   const { toast } = useToast()
+    const { user, } = useUserFromStorage();
   const notificationModal = useNotificationModalContext();
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [attendanceHistory, setAttendanceHistory]= useState(fakeData.attendance.history);
@@ -36,6 +38,7 @@ useEffect(()=>{
     item_.checkOutTime = moment(item.checkOutTime).format('h:mm A')//.utc().format("YYYY-MM-DD, h:mm:ss a");
     item_.workHours =formatWorkingHours(item.workHours);
     item_.overtimeHours= formatWorkingHours(item.overtimeHours);
+    item_.fullName= item?.employee?.user?.fullName
     return item_
   });
   setAttendanceHistory(attendanceHistory_);    
@@ -79,7 +82,8 @@ useEffect(()=>{
     monthlyStats,
     monthlyTrends,
     handleCalenderSelectDate,
-    calendarSelectedData
+    calendarSelectedData,
+    user
   }
 }
 

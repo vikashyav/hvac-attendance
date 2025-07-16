@@ -5,6 +5,8 @@ import { getAdminDashboardStats } from "@/lib/api/dashboard-api";
 import generateContext from "@/utils/generate-context";
 // import moment from "moment";
 import { Users, MapPin, TrendingUp, CheckCircle,} from "lucide-react"
+import moment from "moment";
+import { formatWorkingHours } from "@/utils/helper";
 
 // import { getIntialValues } from "./form-helper";
 
@@ -50,7 +52,23 @@ export function useAdminDashboard() {
         },
     ]
 
-    const recentActivity = [
+    const recentActivity = dashboardStats?.data?.recentActivity?.map((item)=>{
+            const item_ = JSON.parse(JSON.stringify(item));
+            item_.date= moment(item.createdAt).format("YYYY-MM-DD");
+            const checkInTime = moment(item.checkInTime).format('h:mm A')//.format("YYYY-MM-DD, h:mm:ss a");
+            const checkOutTime = moment(item.checkOutTime).format('h:mm A')//.utc().format("YYYY-MM-DD, h:mm:ss a");
+            item_.workHours =formatWorkingHours(item.workHours);
+            item_.overtimeHours= formatWorkingHours(item.overtimeHours);
+            item_.fullName= item?.employee?.user?.fullName
+            const action= item?.checkOutTime ? "Checked Out" : "Checked in" //item?.checkInTime ?
+            const time = checkOutTime || checkInTime//.format("YYYY-MM-DD, h:mm:ss a");
+            const status= item?.status;
+            const location= `${item?.checkInLocation?.address || ""} - ${item?.checkInLocation?.latitude}, ${item?.checkInLocation?.longitude}`
+        return {
+            employee: item?.employee?.user?.fullName,
+            time, action, status,location
+        }
+    }) ||[
         {
             employee: "John Smith",
             action: "Checked in",

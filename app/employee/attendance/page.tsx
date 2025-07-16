@@ -18,8 +18,9 @@ function AttendancePage() {
       monthlyStats,
       monthlyTrends,
       handleCalenderSelectDate,
-    calendarSelectedData
+    calendarSelectedData, user
   }=useAttendancesPageContext();
+  const isAdmin= user?.role==="admin"
 
   return (
     <div className="p-6 space-y-6">
@@ -105,6 +106,7 @@ function AttendancePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    {isAdmin && <TableHead>Name</TableHead>}
                     <TableHead>Check In</TableHead>
                     <TableHead>Check Out</TableHead>
                     <TableHead>Total Hours</TableHead>
@@ -117,6 +119,7 @@ function AttendancePage() {
                   {attendanceHistory.map((record, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
+                      {isAdmin && <TableCell>{record?.fullName || "-"}</TableCell>}
                       <TableCell>{record.checkInTime}</TableCell>
                       <TableCell>{record.checkOutTime}</TableCell>
                       <TableCell>{record.workHours}</TableCell>

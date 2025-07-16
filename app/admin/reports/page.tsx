@@ -109,8 +109,13 @@ export default function ReportsPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
+        <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
       <div className="flex items-center justify-between">
+
         <div>
+                
           <h1 className="text-3xl font-bold">Reports & Analytics</h1>
           <p className="text-muted-foreground">Generate and manage attendance and performance reports</p>
         </div>
