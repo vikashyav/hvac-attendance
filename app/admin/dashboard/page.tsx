@@ -6,90 +6,13 @@ import { Button } from "@/components/ui/button"
 import { AttendanceChart } from "@/components/attendance-chart"
 import { PerformanceChart } from "@/components/performance-chart"
 import { Users, Clock, MapPin, TrendingUp, CheckCircle, Calendar, BarChart3 } from "lucide-react"
+import { AdminDashboardPageProvider, useAdminDashboardPageContext } from "./use-adminDashboard"
+import withHOC from "@/utils/with-hoc"
 
-export default function AdminDashboard() {
-  const stats = [
-    {
-      title: "Total Employees",
-      value: "24",
-      change: "+2 this month",
-      icon: Users,
-      color: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Present Today",
-      value: "18",
-      change: "75% attendance",
-      icon: CheckCircle,
-      color: "text-green-600 dark:text-green-400",
-    },
-    {
-      title: "Active Job Sites",
-      value: "8",
-      change: "3 new this week",
-      icon: MapPin,
-      color: "text-purple-600 dark:text-purple-400",
-    },
-    {
-      title: "Avg Performance",
-      value: "87%",
-      change: "+5% from last month",
-      icon: TrendingUp,
-      color: "text-orange-600 dark:text-orange-400",
-    },
-  ]
-
-  const recentActivity = [
-    {
-      employee: "John Smith",
-      action: "Checked in",
-      location: "Downtown Office",
-      time: "8:30 AM",
-      status: "on-time",
-    },
-    {
-      employee: "Sarah Johnson",
-      action: "Checked out",
-      location: "Residential Site A",
-      time: "5:15 PM",
-      status: "completed",
-    },
-    {
-      employee: "Mike Wilson",
-      action: "Late check-in",
-      location: "Commercial Site B",
-      time: "9:45 AM",
-      status: "late",
-    },
-    {
-      employee: "Emily Davis",
-      action: "Break started",
-      location: "Industrial Site C",
-      time: "12:00 PM",
-      status: "break",
-    },
-  ]
-
-  const upcomingSchedules = [
-    {
-      site: "Downtown Office",
-      employees: 6,
-      time: "8:00 AM - 5:00 PM",
-      date: "Today",
-    },
-    {
-      site: "Residential Complex",
-      employees: 4,
-      time: "9:00 AM - 6:00 PM",
-      date: "Tomorrow",
-    },
-    {
-      site: "Shopping Mall",
-      employees: 8,
-      time: "7:00 AM - 4:00 PM",
-      date: "Dec 15",
-    },
-  ]
+function AdminDashboardPage() {
+  const {
+    stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching
+  } = useAdminDashboardPageContext();
 
   return (
     <div className="space-y-6">
@@ -122,8 +45,15 @@ export default function AdminDashboard() {
               <stat.icon className={`h-5 w-5 ${stat.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+              {isFetching ?
+                <div className="space-y-2">
+                  <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
+                  <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                </div> :
+                <>
+                  <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                </>}
             </CardContent>
           </Card>
         ))}
@@ -137,7 +67,7 @@ export default function AdminDashboard() {
             <CardDescription>Daily attendance for the past 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <AttendanceChart />
+            <AttendanceChart attendanceOverview={attendanceOverview} />
           </CardContent>
         </Card>
 
@@ -251,3 +181,5 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+export default withHOC(AdminDashboardPageProvider, AdminDashboardPage);

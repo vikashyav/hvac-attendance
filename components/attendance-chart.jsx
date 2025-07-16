@@ -54,11 +54,11 @@ const attendanceData = [
   },
 ]
 
-export function AttendanceChart() {
+export function AttendanceChart({attendanceOverview}) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={attendanceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+        <LineChart data={attendanceOverview || attendanceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
           <XAxis dataKey="day" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
           <YAxis

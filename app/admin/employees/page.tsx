@@ -124,6 +124,10 @@ function EmployeesPage() {
   }= useEmployeesPageContext();
 
 
+  const totalEmployee= employeeData?.paging?.total;
+  const activeEmp= employeeData?.data?.filter((emp)=> emp?.isActive)?.length;
+  const inActiveEmp= (totalEmployee- activeEmp)||0;
+  const averagePerformance= employeeData?.stats?.averagePerformance || 0
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -143,7 +147,7 @@ function EmployeesPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{employees.length}</div>
+            <div className="text-2xl font-bold">{totalEmployee}</div>
             <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
@@ -153,7 +157,7 @@ function EmployeesPage() {
             <UserCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{employees.filter((e) => e.status === "active").length}</div>
+            <div className="text-2xl font-bold">{activeEmp}</div>
             <p className="text-xs text-muted-foreground">Currently working</p>
           </CardContent>
         </Card>
@@ -163,7 +167,7 @@ function EmployeesPage() {
             <UserX className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{employees.filter((e) => e.status === "inactive").length}</div>
+            <div className="text-2xl font-bold">{inActiveEmp}</div>
             <p className="text-xs text-muted-foreground">On leave or inactive</p>
           </CardContent>
         </Card>
@@ -174,7 +178,7 @@ function EmployeesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(employees.reduce((acc, emp) => acc + emp.performance, 0) / employees.length)}%
+              {averagePerformance}%
             </div>
             <p className="text-xs text-muted-foreground">Team average</p>
           </CardContent>
