@@ -371,8 +371,8 @@ function EmployeeForm({
                         )}
                       </ErrorMessage>
                     </div>
-
-                    <div className="space-y-2">
+                        {/* ::Todo Need enable when job site module is ready */}
+                    <div className="hidden space-y-2"> 
                       <Label htmlFor="location" className="text-sm font-medium">
                         Work Location <span className="text-red-500">*</span>
                       </Label>

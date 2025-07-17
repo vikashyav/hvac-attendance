@@ -121,6 +121,38 @@ employee:[
       overtime: "0m",
     },
   ]
-   }
+   },
 
+   adminDashboard:{
+    recentActivity:[
+        {
+            employee: "John Smith",
+            action: "Checked in",
+            location: "Downtown Office",
+            time: "8:30 AM",
+            status: "on-time",
+        },
+        {
+            employee: "Sarah Johnson",
+            action: "Checked out",
+            location: "Residential Site A",
+            time: "5:15 PM",
+            status: "completed",
+        },
+        {
+            employee: "Mike Wilson",
+            action: "Late check-in",
+            location: "Commercial Site B",
+            time: "9:45 AM",
+            status: "late",
+        },
+        {
+            employee: "Emily Davis",
+            action: "Break started",
+            location: "Industrial Site C",
+            time: "12:00 PM",
+            status: "break",
+        },
+    ]
+   }
 }

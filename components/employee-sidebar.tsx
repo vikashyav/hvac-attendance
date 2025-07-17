@@ -8,35 +8,8 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { LayoutDashboard, Clock, Calendar, BarChart3, User, LogOut, Menu, Shield } from "lucide-react"
-
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/employee/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Attendance",
-    href: "/employee/attendance",
-    icon: Clock,
-  },
-  {
-    name: "Schedule",
-    href: "/employee/schedule",
-    icon: Calendar,
-  },
-  // {
-  //   name: "Performance",
-  //   href: "/employee/performance",
-  //   icon: BarChart3,
-  // },
-  {
-    name: "Profile",
-    href: "/employee/profile",
-    icon: User,
-  },
-]
+import { User, LogOut, Shield } from "lucide-react"
+import useMenuItems from "@/hooks/use-menu"
 
 interface EmployeeSidebarProps {
   onLogout: () => void
@@ -48,6 +21,7 @@ export function EmployeeSidebar({ onLogout, userInfo, className }: EmployeeSideb
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const navigation= useMenuItems()
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">

@@ -83,6 +83,9 @@ export default function EmployeeDashboard() {
 
       {/* Today's Schedule */}
       <Card>
+        <Badge variant="destructive" className="w-full whitespace-nowrap">
+          Work Under Progress - we are working on this module
+        </Badge>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Today's Schedule</CardTitle>
           <CardDescription className="text-sm">Your assignments and tasks for today</CardDescription>

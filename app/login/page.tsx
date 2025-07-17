@@ -217,7 +217,7 @@ export default function LoginPage() {
                       {isLoading ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
-                  <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  <div className="hidden text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
                     <strong>Demo Credentials:</strong>
                     <br />
                     Email: admin@hvacpro.com
@@ -269,7 +269,7 @@ export default function LoginPage() {
                       {isLoading ? "Signing in..." : "Sign In as Employee"}
                     </Button>
                   </form>
-                  <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  <div className="hidden text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
                     <strong>Demo Credentials:</strong>
                     <br />
                     Employee ID: EMP001

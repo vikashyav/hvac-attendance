@@ -8,40 +8,40 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { LayoutDashboard, Users, MapPin, FileText, Calendar, Settings, LogOut, Menu, Shield } from "lucide-react"
-
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Employees",
-    href: "/admin/employees",
-    icon: Users,
-  },
-  {
-    name: "Job Sites",
-    href: "/admin/sites",
-    icon: MapPin,
-  },
-  {
-    name: "Reports",
-    href: "/admin/reports",
-    icon: FileText,
-  },
-  {
-    name: "Calendar",
-    href: "/admin/calendar",
-    icon: Calendar,
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
-]
+import {  Users, LogOut, Shield } from "lucide-react"
+import useMenuItems from "@/hooks/use-menu";
+// const navigation = [
+//   {
+//     name: "Dashboard",
+//     href: "/admin/dashboard",
+//     icon: LayoutDashboard,
+//   },
+//   {
+//     name: "Employees",
+//     href: "/admin/employees",
+//     icon: Users,
+//   },
+//   {
+//     name: "Job Sites",
+//     href: "/admin/sites",
+//     icon: MapPin,
+//   },
+//   {
+//     name: "Reports",
+//     href: "/admin/reports",
+//     icon: FileText,
+//   },
+//   {
+//     name: "Calendar",
+//     href: "/admin/calendar",
+//     icon: Calendar,
+//   },
+//   {
+//     name: "Settings",
+//     href: "/admin/settings",
+//     icon: Settings,
+//   },
+// ]
 
 interface AdminSidebarProps {
   className?: string
@@ -51,6 +51,8 @@ export function AdminSidebar({ className, onLogout }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const navigation= useMenuItems()
+console.log(navigation);
 
   const handleLogout = () => {
     // router.push("/login")

@@ -60,44 +60,16 @@ export function useAdminDashboard() {
             item_.workHours =formatWorkingHours(item.workHours);
             item_.overtimeHours= formatWorkingHours(item.overtimeHours);
             item_.fullName= item?.employee?.user?.fullName
+            const isCheckout= item?.checkOutTime
             const action= item?.checkOutTime ? "Checked Out" : "Checked in" //item?.checkInTime ?
-            const time = checkOutTime || checkInTime//.format("YYYY-MM-DD, h:mm:ss a");
+            const time = isCheckout ? checkOutTime : checkInTime//.format("YYYY-MM-DD, h:mm:ss a");
             const status= item?.status;
             const location= `${item?.checkInLocation?.address || ""} - ${item?.checkInLocation?.latitude}, ${item?.checkInLocation?.longitude}`
         return {
             employee: item?.employee?.user?.fullName,
             time, action, status,location
         }
-    }) ||[
-        {
-            employee: "John Smith",
-            action: "Checked in",
-            location: "Downtown Office",
-            time: "8:30 AM",
-            status: "on-time",
-        },
-        {
-            employee: "Sarah Johnson",
-            action: "Checked out",
-            location: "Residential Site A",
-            time: "5:15 PM",
-            status: "completed",
-        },
-        {
-            employee: "Mike Wilson",
-            action: "Late check-in",
-            location: "Commercial Site B",
-            time: "9:45 AM",
-            status: "late",
-        },
-        {
-            employee: "Emily Davis",
-            action: "Break started",
-            location: "Industrial Site C",
-            time: "12:00 PM",
-            status: "break",
-        },
-    ]
+    }) ||[]
 
     const upcomingSchedules = [
         {

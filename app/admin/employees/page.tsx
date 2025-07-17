@@ -66,6 +66,8 @@ import {
 import EmployeeForm from "./add-form";
 import withHOC from "@/utils/with-hoc";
 import {useEmployeesPageContext, EmployeesPageProvider}  from "./use-employee";
+import { useRouter } from 'next/navigation'
+
 interface Employee {
   id: string
   name: string
@@ -102,6 +104,8 @@ interface AddEmployeeFormValues {
 
 function EmployeesPage() {
   const { toast } = useToast()
+  const router = useRouter();
+
   // const [view, setView] = useState<"grid" | "table">("table")
   // const [searchTerm, setSearchTerm] = useState("")
   // const [selectedDepartment, setSelectedDepartment] = useState("all")
@@ -120,10 +124,17 @@ function EmployeesPage() {
     selectedEmployee, setSelectedEmployee,
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog, employeeData
+    handleToggleStatus, handleViewDetails, openEditDialog, employeeData,
+    // handleAttendanceReport
   }= useEmployeesPageContext();
 
-
+const handleAttendanceReport=(employee)=>{
+//   router.push({
+//   pathname: '/employee/attendance',
+//   query: { employee_id: employee?.id },
+// })
+router.push(`/employee/attendance?employee_id=${employee?.id}`)
+}
   const totalEmployee= employeeData?.paging?.total;
   const activeEmp= employeeData?.data?.filter((emp)=> emp?.isActive)?.length;
   const inActiveEmp= (totalEmployee- activeEmp)||0;
@@ -251,14 +262,14 @@ function EmployeesPage() {
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                               <span className="text-sm font-medium text-primary">
-                                {employee.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
+                                {employee?.fullName
+                                  ?.split(" ")
+                                  ?.map((n) => n[0])
+                                  ?.join("")}
                               </span>
                             </div>
                             <div>
-                              <div className="font-medium">{employee.name}</div>
+                              <div className="font-medium">{employee.fullName}</div>
                               <div className="text-sm text-muted-foreground">{employee.email}</div>
                             </div>
                           </div>
@@ -292,6 +303,10 @@ function EmployeesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleAttendanceReport(employee)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Attendance Reports
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleViewDetails(employee)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
@@ -359,14 +374,14 @@ function EmployeesPage() {
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-primary">
-                          {employee.name
+                          {employee.fullName
                             .split(" ")
                             .map((n) => n[0])
                             .join("")}
                         </span>
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{employee.name}</CardTitle>
+                        <CardTitle className="text-lg">{employee.fullName}</CardTitle>
                         <p className="text-sm text-muted-foreground">{employee.id}</p>
                       </div>
                     </div>

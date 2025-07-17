@@ -10,20 +10,25 @@ import generateContext from "@/utils/generate-context";
 import moment from "moment";
 import { formatWorkingHours } from "@/utils/helper";
 import { useUserFromStorage } from "@/hooks/user.context";
-
+import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 // import { getIntialValues } from "./form-helper";
 
 
 
-export function useAttendances() {
+export function useAttendances(props) {
   const { toast } = useToast()
+  const router = useRouter();
+  const pathname = usePathname()
+   const searchParams = useSearchParams()
     const { user, } = useUserFromStorage();
   const notificationModal = useNotificationModalContext();
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [attendanceHistory, setAttendanceHistory]= useState(fakeData.attendance.history);
   const [calendarSelectedData, setCalendarSelectedData]= useState({});
+  console.log("searchParams",props?.searchParams,);
+  
   const { data: attendanceData, isSuccess, refetch, isFetching } = useQuery({
-          // queryKey: { startOfDay, endOfDay }, // Include params in queryKey
+          queryKey: {employee_id: props?.searchParams?.employee_id},//{ startOfDay, endOfDay }, // Include params in queryKey
           queryFn: getAttendance,
           onSuccess: (res) => {
             console.log(res);

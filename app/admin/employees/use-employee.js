@@ -8,10 +8,11 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { employeeRegistration, employeeUpdate, getEmployeeList } from "@/lib/api/employee";
 import generateContext from "@/utils/generate-context";
 import {getIntialValues} from "./form-helper";
-
+import { useRouter } from 'next/router'
 
 
 export function useEmployees() {
+  // const router = useRouter()
   const { toast } = useToast()
   const notificationModal = useNotificationModalContext();
 
@@ -22,7 +23,7 @@ export function useEmployees() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(getIntialValues({}))
 
-  const [employees, setEmployees] = useState(fakeData.employee)
+  const [employees, setEmployees] = useState([]) //::Todo fake data for demo fakeData.employee
 
   const departments = fakeData.departments
   const positions = fakeData.positions
@@ -34,7 +35,7 @@ export function useEmployees() {
   })
   const filteredEmployees = (employeeData?.data?.data || employees).filter((employee) => {
     const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee?.fullName?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.id.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment
@@ -123,7 +124,7 @@ export function useEmployees() {
     setIsAddDrawerOpen(true);
   }
 
-  console.log({selectedEmployee});
+
 
   return {
     view, setView,
@@ -135,7 +136,8 @@ export function useEmployees() {
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
     handleToggleStatus, handleViewDetails, openEditDialog,
-    employeeData: employeeData?.data
+    employeeData: employeeData?.data,
+    // handleAttendanceReport
   }
 }
 
