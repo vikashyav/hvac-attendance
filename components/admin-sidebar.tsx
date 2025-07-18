@@ -64,11 +64,13 @@ console.log(navigation);
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
         <div className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Shield className="h-5 w-5" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg ">
+            {/* <Shield className="h-5 w-5" /> bg-primary text-primary-foreground*/}
+            <img src="/c-logo.png" />
+
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold">HVAC Pro</span>
+            <span className="text-lg text-[#00728c] font-semibold">Thermopharm</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>

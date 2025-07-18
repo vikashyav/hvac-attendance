@@ -132,10 +132,12 @@ export default function LoginPage() {
               <span className="hidden sm:inline">Back to Home</span>
             </Button>
             <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Shield className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg ">
+                {/* <Shield className="h-5 w-5" />  bg-primary text-primary-foreground*/}
+            <img src="/c-logo.png" />
+
               </div>
-              <span className="text-xl font-bold">HVAC Pro</span>
+              <span className="text-xl text-[#00728c] font-bold">Thermopharm</span>
             </div>
             <ThemeToggle />
           </div>
