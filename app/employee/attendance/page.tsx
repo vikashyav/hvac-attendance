@@ -125,7 +125,7 @@ function AttendancePage() {
                       <TableCell>{record.workHours}</TableCell>
                       <TableCell>
                         <span>{record?.checkInLocation?.address}</span>
-                        <span>{`${calendarSelectedData?.checkInLocation?.latitude}, ${calendarSelectedData?.checkInLocation?.longitude}`}</span>
+                        <span>{`${record?.checkInLocation?.latitude}, ${record?.checkInLocation?.longitude}`}</span>
 
                       </TableCell>
                       <TableCell>
@@ -180,14 +180,14 @@ function AttendancePage() {
                         <p className="text-sm font-medium text-gray-600">Check In Time</p>
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-green-600" />
-                          <span className="text-lg font-semibold">{calendarSelectedData?.checkInTime}</span>
+                          <span className="text-lg font-semibold">{calendarSelectedData?.checkInTime || "-"}</span>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-600">Check Out Time</p>
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-red-600" />
-                          <span className="text-lg font-semibold">{calendarSelectedData?.checkOutTime}</span>
+                          <span className="text-lg font-semibold">{calendarSelectedData?.checkOutTime || "-"}</span>
                         </div>
                       </div>
                     </div>
@@ -197,7 +197,7 @@ function AttendancePage() {
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-blue-600" />
                         <span>{calendarSelectedData?.checkInLocation?.address}</span>
-                        <span>{`${calendarSelectedData?.checkInLocation?.latitude}, ${calendarSelectedData?.checkInLocation?.longitude}`}</span>
+                        <span>{`${calendarSelectedData?.checkInLocation?.latitude||"-"}, ${calendarSelectedData?.checkInLocation?.longitude||"-"}`}</span>
                       </div>
                     </div>
 
@@ -210,8 +210,16 @@ function AttendancePage() {
                     </div>
 
                     <div className="pt-4 border-t">
-                      <Badge variant="default" className="mb-2">
-                        Present - On Time
+                      <Badge variant={
+                      calendarSelectedData?.status === "late"
+                        ? "destructive"
+                        : (calendarSelectedData?.status === "on-time" || calendarSelectedData?.status === "present")
+                          ? "default"
+                          : calendarSelectedData?.status === "completed"
+                            ? "secondary"
+                            : "outline"
+                    } className="mb-2">
+                        {calendarSelectedData?.status || "Not Checked"}
                       </Badge>
                       <p className="text-sm text-gray-600">
                         Great job! You arrived on time and completed your full shift.

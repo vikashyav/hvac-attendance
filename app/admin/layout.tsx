@@ -57,11 +57,11 @@ export default function AdminLayout({
       {/* Mobile Layout */}
       <div className="flex-1 flex flex-col sm:hidden">
         {/* Mobile Header */} 
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+        <div className="sticky  top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
           <MobileSidebar>
             <AdminSidebar onLogout={handleLogout} userEmail={userEmail} />
           </MobileSidebar>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">HVAC Pro Admin</h1>
+          <h1 className="text-lg font-semibold text-[#00728c]">Thermopharm</h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         <main className="py-6 px-4 sm:px-6 lg:px-8">{children}</main>
