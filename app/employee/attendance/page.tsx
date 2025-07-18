@@ -14,13 +14,13 @@ import { formatWorkingHours } from "@/utils/helper"
 function AttendancePage() {
   const {
     selectedDate, setSelectedDate,
-      attendanceHistory,
-      monthlyStats,
-      monthlyTrends,
-      handleCalenderSelectDate,
+    attendanceHistory,
+    monthlyStats,
+    monthlyTrends,
+    handleCalenderSelectDate,
     calendarSelectedData, user
-  }=useAttendancesPageContext();
-  const isAdmin= user?.role==="admin"
+  } = useAttendancesPageContext();
+  const isAdmin = user?.role === "admin"
 
   return (
     <div className="p-6 space-y-6">
@@ -197,7 +197,7 @@ function AttendancePage() {
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-blue-600" />
                         <span>{calendarSelectedData?.checkInLocation?.address}</span>
-                        <span>{`${calendarSelectedData?.checkInLocation?.latitude||"-"}, ${calendarSelectedData?.checkInLocation?.longitude||"-"}`}</span>
+                        <span>{`${calendarSelectedData?.checkInLocation?.latitude || "-"}, ${calendarSelectedData?.checkInLocation?.longitude || "-"}`}</span>
                       </div>
                     </div>
 
@@ -211,14 +211,14 @@ function AttendancePage() {
 
                     <div className="pt-4 border-t">
                       <Badge variant={
-                      calendarSelectedData?.status === "late"
-                        ? "destructive"
-                        : (calendarSelectedData?.status === "on-time" || calendarSelectedData?.status === "present")
-                          ? "default"
-                          : calendarSelectedData?.status === "completed"
-                            ? "secondary"
-                            : "outline"
-                    } className="mb-2">
+                        calendarSelectedData?.status === "late"
+                          ? "destructive"
+                          : (calendarSelectedData?.status === "on-time" || calendarSelectedData?.status === "present")
+                            ? "default"
+                            : calendarSelectedData?.status === "completed"
+                              ? "secondary"
+                              : "outline"
+                      } className="mb-2">
                         {calendarSelectedData?.status || "Not Checked"}
                       </Badge>
                       <p className="text-sm text-gray-600">
