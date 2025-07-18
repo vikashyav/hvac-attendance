@@ -93,7 +93,8 @@ useEffect(()=>{
     monthlyTrends,
     handleCalenderSelectDate,
     calendarSelectedData,
-    user, dateRange, setDateRange
+    user, dateRange, setDateRange,
+    attendanceData: attendanceData?.data
   }
 }
 

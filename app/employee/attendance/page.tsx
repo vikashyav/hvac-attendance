@@ -15,20 +15,22 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { useSearchParams, useRouter } from 'next/navigation';
 import moment from "moment"
+import { cn } from "@/lib/utils"
 function AttendancePage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     selectedDate, setSelectedDate,
     attendanceHistory,
     monthlyStats,
     monthlyTrends,
     handleCalenderSelectDate,
-    calendarSelectedData, user, dateRange, setDateRange
+    calendarSelectedData, user, dateRange, setDateRange,
+    attendanceData
   } = useAttendancesPageContext();
   const isAdmin = user?.role === "admin"
 
-   const updateSearchParam = (key: string, value: string) => {
+  const updateSearchParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     router.push(`?${params.toString()}`);
@@ -57,15 +59,16 @@ function AttendancePage() {
               <Calendar
                 mode="range"
                 selected={{ from: dateRange.from, to: dateRange.to }}
-                onSelect={(range) =>{ range && setDateRange(range)
+                onSelect={(range) => {
+                  range && setDateRange(range)
                   router.push(`?from=${moment(dateRange.from).format("YYYY-MM-DD")}&to=${moment(dateRange.to).format("YYYY-MM-DD")}`)
                   // updateSearchParam("key")
                 }}
                 // numberOfMonths={2}
                 disabled={{ after: new Date() }}
               />
-              <div  className="flex justify-center">
-              <Button variant="outline" onClick={()=> setDateRange({from:"", to:""})}>Reset</Button>
+              <div className="flex justify-center">
+                <Button variant="outline" onClick={() => setDateRange({ from: "", to: "" })}>Reset</Button>
 
               </div>
             </PopoverContent>
@@ -134,7 +137,7 @@ function AttendancePage() {
       <Tabs defaultValue="history" className="space-y-6">
         <TabsList>
           <TabsTrigger value="history">Attendance History</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+          <TabsTrigger value="calendar" className={cn(isAdmin && "hidden")}>Calendar View</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -206,7 +209,7 @@ function AttendancePage() {
                   selected={selectedDate}
                   onSelect={handleCalenderSelectDate}
                   className="rounded-md border"
-                  disabled={{after: new Date()}}
+                  disabled={{ after: new Date() }}
                 />
               </CardContent>
             </Card>
@@ -328,7 +331,7 @@ function AttendancePage() {
                     </div>
                   </div>
 
-                  <div>
+                  {/* <div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium">Overtime Compliance</span>
                       <span className="text-sm font-bold">92%</span>
@@ -336,15 +339,16 @@ function AttendancePage() {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div className="bg-purple-600 h-2 rounded-full" style={{ width: "92%" }} />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="pt-4 border-t">
                     <h4 className="font-medium mb-2">Achievements This Month</h4>
-                    <ul className="space-y-1 text-sm text-gray-600">
-                      <li>• Perfect attendance for 2 weeks</li>
-                      <li>• Consistently early arrivals</li>
-                      <li>• Zero safety incidents</li>
-                    </ul>
+                    {attendanceData?.perfectAttendance &&
+                      <ul className="space-y-1 text-sm text-gray-600">
+                        <li>• Perfect attendance for {attendanceData?.perfectAttendance?.totalPerfectWeeks} weeks; that is {attendanceData?.perfectAttendance?.perfectWeeks?.map((item)=> `${item},`)}</li>
+                        <li>• Consistently early arrivals</li>
+                        {/* <li>• Zero safety incidents</li> */}
+                      </ul>}
                   </div>
                 </div>
               </CardContent>
