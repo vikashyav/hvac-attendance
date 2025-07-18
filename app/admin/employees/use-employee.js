@@ -136,7 +136,7 @@ export function useEmployees() {
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
     handleToggleStatus, handleViewDetails, openEditDialog,
-    employeeData: employeeData?.data,
+    employeeData: employeeData?.data, isFetching
     // handleAttendanceReport
   }
 }

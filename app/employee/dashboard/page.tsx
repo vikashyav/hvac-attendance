@@ -30,7 +30,7 @@ export default function EmployeeDashboard() {
     locationLoading, setLocationLoading,
     showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut,
     todayCheckData,
-    isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat
+    isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, dashboardStats
   } = useEmployeesDashboard();
 
 
@@ -51,23 +51,25 @@ export default function EmployeeDashboard() {
         <Card>
           <CardContent className="p-3 sm:p-4 text-center">
             <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-green-600 dark:text-green-400 mb-2" />
-            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">95%</p>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Attendance Rate</p>
+            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats?.data?.attendanceRate}%</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Attendance Rate </p>
+            <small className="text-xs p-0 text-gray-600 dark:text-gray-400">(this month to till now)</small>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-3 sm:p-4 text-center">
             <Clock className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-blue-600 dark:text-blue-400 mb-2" />
-            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">88%</p>
+            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats?.data?.punctualityRate}%</p>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Punctuality</p>
+            <small className="text-xs p-0 text-gray-600 dark:text-gray-400">(this month to till now)</small>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-3 sm:p-4 text-center">
             <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-orange-600 dark:text-orange-400 mb-2" />
-            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">12</p>
+            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats?.data?.dayStreak || "-"}</p>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Day Streak</p>
           </CardContent>
         </Card>
@@ -75,7 +77,7 @@ export default function EmployeeDashboard() {
         <Card>
           <CardContent className="p-3 sm:p-4 text-center">
             <Calendar className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-purple-600 dark:text-purple-400 mb-2" />
-            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">3</p>
+            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats?.data?.tasksToday || "-"}</p>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Tasks Today</p>
           </CardContent>
         </Card>

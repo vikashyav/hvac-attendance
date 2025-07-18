@@ -6,28 +6,71 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Clock, MapPin, CheckCircle, TrendingUp } from "lucide-react"
+import { Clock, MapPin, CheckCircle, TrendingUp, CalendarIcon } from "lucide-react"
 import withHOC from "@/utils/with-hoc"
 import { AttendancesPageProvider, useAttendancesPageContext } from "./use-attendance";
 import { formatWorkingHours } from "@/utils/helper"
-
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
+import { useSearchParams, useRouter } from 'next/navigation';
+import moment from "moment"
 function AttendancePage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
   const {
     selectedDate, setSelectedDate,
     attendanceHistory,
     monthlyStats,
     monthlyTrends,
     handleCalenderSelectDate,
-    calendarSelectedData, user
+    calendarSelectedData, user, dateRange, setDateRange
   } = useAttendancesPageContext();
   const isAdmin = user?.role === "admin"
+
+   const updateSearchParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(key, value);
+    router.push(`?${params.toString()}`);
+  };
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
-        <p className="text-gray-600">Monitor your attendance history and performance metrics</p>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
+          <p className="text-gray-600">Monitor your attendance history and performance metrics</p>
+        </div>
+        <div hidden className="space-y-2">
+          <label className="text-sm font-medium">Date Range</label>
+          <Popover >
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange.from && dateRange.to
+                  ? `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd, yyyy")}`
+                  : "Select date range"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={{ from: dateRange.from, to: dateRange.to }}
+                onSelect={(range) =>{ range && setDateRange(range)
+                  router.push(`?from=${moment(dateRange.from).format("YYYY-MM-DD")}&to=${moment(dateRange.to).format("YYYY-MM-DD")}`)
+                  // updateSearchParam("key")
+                }}
+                // numberOfMonths={2}
+                disabled={{ after: new Date() }}
+              />
+              <div  className="flex justify-center">
+              <Button variant="outline" onClick={()=> setDateRange({from:"", to:""})}>Reset</Button>
+
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -163,6 +206,7 @@ function AttendancePage() {
                   selected={selectedDate}
                   onSelect={handleCalenderSelectDate}
                   className="rounded-md border"
+                  disabled={{after: new Date()}}
                 />
               </CardContent>
             </Card>
@@ -219,7 +263,7 @@ function AttendancePage() {
                               ? "secondary"
                               : "outline"
                       } className="mb-2">
-                        {calendarSelectedData?.status || "Not Checked"}
+                        {calendarSelectedData?.status || "Not Checked In"}
                       </Badge>
                       <p className="text-sm text-gray-600">
                         Great job! You arrived on time and completed your full shift.

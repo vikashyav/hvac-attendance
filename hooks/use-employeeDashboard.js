@@ -8,6 +8,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { saveCheckIn, getTodayCheckIn, updateCheckOut } from "@/lib/api/employee";
 import _ from "lodash";
 import { formatTimeDifference } from "@/utils/helper";
+import { getEmployeeDashboardStats } from "@/lib/api/dashboard-api";
 
 
 
@@ -36,6 +37,10 @@ console.log("iss", isOffline);
 
         }
     })
+        const { data: dashboardStats, isFetching: isFetchingdashboardStats, isSuccess, refetch: refetchdashboardStats,  } = useQuery({
+            queryKey: ['dashboardStats-emp'],
+            queryFn: getEmployeeDashboardStats
+        })
     // console.log(todayCheckData?.data, "isFetchedTodayCheckIn", isFetchedTodayCheckIn);
 
     const saveCheckInByEmp = useMutation({
@@ -213,6 +218,6 @@ console.log("iss", isOffline);
         isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
         locationLoading, setLocationLoading, isFetching,
         showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut, todayCheckData,
-        isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, isOffline
+        isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, isOffline, dashboardStats
     }
 }

@@ -14,7 +14,6 @@ import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 // import { getIntialValues } from "./form-helper";
 
 
-
 export function useAttendances(props) {
   const { toast } = useToast()
   const router = useRouter();
@@ -25,10 +24,16 @@ export function useAttendances(props) {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [attendanceHistory, setAttendanceHistory]= useState(fakeData.attendance.history);
   const [calendarSelectedData, setCalendarSelectedData]= useState({});
-  console.log("searchParams",props?.searchParams,);
+  const [dateRange, setDateRange] = useState({
+    from: moment().startOf('month').toDate(),
+    to: moment().endOf('day' || 'month').toDate(),
+  })
+  console.log("searchParams",props);
   
   const { data: attendanceData, isSuccess, refetch, isFetching } = useQuery({
-          queryKey: {employee_id: props?.searchParams?.employee_id},//{ startOfDay, endOfDay }, // Include params in queryKey
+          queryKey: {employee_id: props?.searchParams?.employee_id,
+            //  from: dateRange.from, to: dateRange.to 
+            },//{ startOfDay, endOfDay }, // Include params in queryKey
           queryFn: getAttendance,
           onSuccess: (res) => {
             console.log(res);
@@ -88,7 +93,7 @@ useEffect(()=>{
     monthlyTrends,
     handleCalenderSelectDate,
     calendarSelectedData,
-    user
+    user, dateRange, setDateRange
   }
 }
 

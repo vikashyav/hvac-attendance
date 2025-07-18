@@ -65,7 +65,7 @@ import {
 } from "lucide-react"
 import EmployeeForm from "./add-form";
 import withHOC from "@/utils/with-hoc";
-import {useEmployeesPageContext, EmployeesPageProvider}  from "./use-employee";
+import { useEmployeesPageContext, EmployeesPageProvider } from "./use-employee";
 import { useRouter } from 'next/navigation'
 
 interface Employee {
@@ -124,21 +124,21 @@ function EmployeesPage() {
     selectedEmployee, setSelectedEmployee,
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog, employeeData,
+    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching
     // handleAttendanceReport
-  }= useEmployeesPageContext();
+  } = useEmployeesPageContext();
 
-const handleAttendanceReport=(employee)=>{
-//   router.push({
-//   pathname: '/employee/attendance',
-//   query: { employee_id: employee?.id },
-// })
-router.push(`/employee/attendance?employee_id=${employee?.id}`)
-}
-  const totalEmployee= employeeData?.paging?.total;
-  const activeEmp= employeeData?.data?.filter((emp)=> emp?.isActive)?.length;
-  const inActiveEmp= (totalEmployee- activeEmp)||0;
-  const averagePerformance= employeeData?.stats?.averagePerformance || 0
+  const handleAttendanceReport = (employee) => {
+    //   router.push({
+    //   pathname: '/employee/attendance',
+    //   query: { employee_id: employee?.id },
+    // })
+    router.push(`/employee/attendance?employee_id=${employee?.id}`)
+  }
+  const totalEmployee = employeeData?.paging?.total;
+  const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
+  const inActiveEmp = (totalEmployee - activeEmp) || 0;
+  const averagePerformance = employeeData?.stats?.averagePerformance || 0
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -158,8 +158,15 @@ router.push(`/employee/attendance?employee_id=${employee?.id}`)
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalEmployee}</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            {isFetching ?
+              <div className="space-y-2">
+                <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+              </div> :
+              <>
+                <div className="text-2xl font-bold">{totalEmployee}</div>
+                <p className="text-xs text-muted-foreground">+2 from last month</p>
+              </>}
           </CardContent>
         </Card>
         <Card>
@@ -168,8 +175,15 @@ router.push(`/employee/attendance?employee_id=${employee?.id}`)
             <UserCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
+            {isFetching ?
+              <div className="space-y-2">
+                <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+              </div> :
+              <>
             <div className="text-2xl font-bold">{activeEmp}</div>
             <p className="text-xs text-muted-foreground">Currently working</p>
+            </>}
           </CardContent>
         </Card>
         <Card>
@@ -178,8 +192,15 @@ router.push(`/employee/attendance?employee_id=${employee?.id}`)
             <UserX className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
+            {isFetching ?
+              <div className="space-y-2">
+                <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+              </div> :
+              <>
             <div className="text-2xl font-bold">{inActiveEmp}</div>
             <p className="text-xs text-muted-foreground">On leave or inactive</p>
+            </>}
           </CardContent>
         </Card>
         <Card>
@@ -188,10 +209,16 @@ router.push(`/employee/attendance?employee_id=${employee?.id}`)
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
+            {isFetching ?
+              <div className="space-y-2">
+                <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
+                <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+              </div> :<>
             <div className="text-2xl font-bold">
               {averagePerformance}%
             </div>
             <p className="text-xs text-muted-foreground">Team average</p>
+            </>}
           </CardContent>
         </Card>
       </div>
