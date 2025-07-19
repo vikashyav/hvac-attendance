@@ -22,7 +22,7 @@ export function useAttendances(props) {
     const { user, } = useUserFromStorage();
   const notificationModal = useNotificationModalContext();
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [attendanceHistory, setAttendanceHistory]= useState(fakeData.attendance.history);
+  const [attendanceHistory, setAttendanceHistory]= useState([]);
   const [calendarSelectedData, setCalendarSelectedData]= useState({});
   const [dateRange, setDateRange] = useState({
     from: moment().startOf('month').toDate(),
@@ -44,8 +44,8 @@ useEffect(()=>{
   const attendanceHistory_ = attendanceData?.data?.data?.map((item)=> {
     const item_ = JSON.parse(JSON.stringify(item));
     item_.date= moment(item.createdAt).format("YYYY-MM-DD");
-    item_.checkInTime = moment(item.checkInTime).format('h:mm A')//.format("YYYY-MM-DD, h:mm:ss a");
-    item_.checkOutTime = moment(item.checkOutTime).format('h:mm A')//.utc().format("YYYY-MM-DD, h:mm:ss a");
+    item_.checkInTime =  moment(item.checkInTime).isValid() ? moment(item.checkInTime).format('h:mm A') : "-";//.format("YYYY-MM-DD, h:mm:ss a");
+    item_.checkOutTime = moment(item.checkOutTime).isValid() ? moment(item.checkOutTime).format('h:mm A') : "-";//.utc().format("YYYY-MM-DD, h:mm:ss a");
     item_.workHours =formatWorkingHours(item.workHours);
     item_.overtimeHours= formatWorkingHours(item.overtimeHours);
     item_.fullName= item?.employee?.user?.fullName

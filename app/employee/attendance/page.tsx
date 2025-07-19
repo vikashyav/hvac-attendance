@@ -167,11 +167,11 @@ function AttendancePage() {
                       <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
                       {isAdmin && <TableCell>{record?.fullName || "-"}</TableCell>}
                       <TableCell>{record.checkInTime}</TableCell>
-                      <TableCell>{record.checkOutTime}</TableCell>
+                      <TableCell>{record.checkOutTime || "-"}</TableCell>
                       <TableCell>{record.workHours}</TableCell>
                       <TableCell>
                         <span>{record?.checkInLocation?.address}</span>
-                        <span>{`${record?.checkInLocation?.latitude}, ${record?.checkInLocation?.longitude}`}</span>
+                        <span>{` ${record?.checkInLocation?.latitude}, ${record?.checkInLocation?.longitude}`}</span>
 
                       </TableCell>
                       <TableCell>

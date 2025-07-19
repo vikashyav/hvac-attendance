@@ -37,23 +37,27 @@ export default function LoginPage() {
     mutationFn: auth.userLogin,
     onSuccess: (res) => {
       console.log(res)
-      const userInfo= res.data.userInfo;
-      setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res.data.token);
+      if (res) {
+        const userInfo = res?.data?.userInfo;
+        setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res?.data?.token);
 
-        setUser(res.data.userInfo);
-      notificationModal.success({ heading: "Sign successfully.." });
-      // Redirect to admin dashboard
-      if (userInfo.role=== "admin") {
-      router.push("/admin/dashboard")
+        setUser(res?.data?.userInfo);
+        notificationModal.success({ heading: "Sign successfully.." });
+        // Redirect to admin dashboard
+        if (userInfo?.role === "admin") {
+          router.push("/admin/dashboard")
+        } else {
+          router.push("/employee/dashboard")
+        }
       }else{
-      router.push("/employee/dashboard")
+      setIsLoading(false)
+
       }
       // alert('Post created!')
     },
     onError: (err) => {
       // alert('Something went wrong')
       notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-      console.error(err)
       setIsLoading(false)
     },
   })
@@ -134,7 +138,7 @@ export default function LoginPage() {
             <div className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg ">
                 {/* <Shield className="h-5 w-5" />  bg-primary text-primary-foreground*/}
-            <img src="/c-logo.png" />
+                <img src="/c-logo.png" />
 
               </div>
               <span className="text-xl text-[#00728c] font-bold">Thermopharm</span>
@@ -160,11 +164,11 @@ export default function LoginPage() {
             <CardContent>
               <Tabs defaultValue="admin" className="w-full">
                 {/* <TabsList className="grid w-full grid-cols-1 mb-6"> */}
-                  {/* <TabsTrigger value="admin" className="flex items-center space-x-2">
+                {/* <TabsTrigger value="admin" className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline"></span>
                   </TabsTrigger> */}
-                  {/* <TabsTrigger value="employee" className="flex items-center space-x-2">
+                {/* <TabsTrigger value="employee" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">Employee</span>
                   </TabsTrigger> */}
