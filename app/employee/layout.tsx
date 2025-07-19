@@ -15,7 +15,7 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode
 }) {
-    const { user, removeUser } = useUserFromStorage();
+    const { user, removeUser, handleLogout } = useUserFromStorage();
   
   const router = useRouter()
   const [userInfo, setuserInfo] = useState("")
@@ -36,12 +36,6 @@ export default function EmployeeLayout({
     setuserInfo(user || "admin@hvacpro.com")
     setIsLoading(false)
   }, [router])
-
-  const handleLogout = () => {
-    storageService.clear();
-    removeUser();
-    router.push("/login")
-  }
 
   if (isLoading) {
     return (

@@ -1,5 +1,6 @@
 "use client"
 import React, { useContext, createContext, useEffect, useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation"
 
 import storageService from "../lib/services/storage.service";
 
@@ -10,6 +11,7 @@ const UserContext = createContext();
 
 export function UserProvider(props) {
   const { children } = props;
+  const router = useRouter()
 
   // const  _getItem = (keyName) =>{
   //   if (typeof window === 'undefined') return {};
@@ -76,8 +78,16 @@ console.log(data);
     };
   }, []);
 
+  const handleLogout = () => {
+    storageService.clear();
+    removeUser();
+    document.cookie = 'access_token=; path=/; max-age=0';
+    document.cookie = 'userInfo=; path=/; max-age=0';
+    router.push("/login")
+  }
+
   const value = useMemo(() => {
-    return { user: formattedData, setUser, removeUser, checkAccess };
+    return { user: formattedData, setUser, removeUser, checkAccess, handleLogout };
   }, [checkAccess, formattedData]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,7 @@ export default function LoginPage() {
     employeeId: "",
   })
   const notificationModal = useNotificationModalContext();
-  const { setUser } = useUserFromStorage();
+  const { setUser, user } = useUserFromStorage();
 
 
   const mutation = useMutation({
@@ -40,7 +40,9 @@ export default function LoginPage() {
       if (res) {
         const userInfo = res?.data?.userInfo;
         setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res?.data?.token);
-
+        const maxAge = 30 * 24 * 60 * 60; //30 days Convert days to seconds
+        document.cookie = `${constants.TOKEN_TYPE.ACCESS}=${res?.data?.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
         setUser(res?.data?.userInfo);
         notificationModal.success({ heading: "Sign successfully.." });
         // Redirect to admin dashboard
@@ -49,8 +51,8 @@ export default function LoginPage() {
         } else {
           router.push("/employee/dashboard")
         }
-      }else{
-      setIsLoading(false)
+      } else {
+        setIsLoading(false)
 
       }
       // alert('Post created!')
@@ -77,25 +79,7 @@ export default function LoginPage() {
       heading: "Sign in Please await!!",
     });
     mutation.mutate({ username: formData.email, password: formData.password, })
-    // try {
-    //   await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    //   if (formData.email === "admin@hvacpro.com" && formData.password === "admin123") {
-    //     // Store user session
-    //     localStorage.setItem("userRole", "admin")
-    //     localStorage.setItem("userEmail", formData.email)
-    //     localStorage.setItem("isAuthenticated", "true")
-
-    //     // Redirect to admin dashboard
-    //     router.push("/admin/dashboard")
-    //   } else {
-    //     setError("Invalid email or password")
-    //   }
-    // } catch (err) {
-    //   setError("Login failed. Please try again.")
-    // } finally {
-    //   setIsLoading(false)
-    // }
   }
 
   const handleEmployeeLogin = async (e: React.FormEvent) => {
@@ -103,27 +87,20 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      if (formData.employeeId === "EMP001" && formData.password === "employee123") {
-        // Store user session
-        localStorage.setItem("userRole", "employee")
-        localStorage.setItem("userEmail", "john.smith@hvacpro.com")
-        localStorage.setItem("employeeId", formData.employeeId)
-        localStorage.setItem("isAuthenticated", "true")
-
-        // Redirect to employee dashboard
-        router.push("/employee/dashboard")
-      } else {
-        setError("Invalid employee ID or password")
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
   }
+
+  // useEffect(() => {
+  //   if (user.role === "admin") {
+  //     // return 
+  //     return router.push("/admin/dashboard")
+  //     // return <AdminDashboardPage />
+  //   }
+  //   if (user.role === "employee") {
+  //     return router.push("/employee/dashboard")
+
+  //     // return <EmployeeDashboard />
+  //   }
+  // }, [user])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">

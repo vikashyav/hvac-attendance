@@ -14,7 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { user, removeUser } = useUserFromStorage();
+  const { user, removeUser, handleLogout } = useUserFromStorage();
 
   const [userEmail, setUserEmail] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -33,11 +33,7 @@ export default function AdminLayout({
     setIsLoading(false)
   }, [router])
 
-  const handleLogout = () => {
-    storageService.clear();
-    removeUser();
-    router.push("/login")
-  }
+  
 
   if (isLoading) {
     return (
