@@ -96,11 +96,11 @@ export default function SettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="companyName">Company Name</Label>
-                  <Input id="companyName" defaultValue="HVAC Pro Solutions" />
+                  <Input id="companyName" defaultValue="Thermopharm Solutions" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companyEmail">Company Email</Label>
-                  <Input id="companyEmail" type="email" defaultValue="info@hvacpro.com" />
+                  <Input id="companyEmail" type="email" defaultValue="info@thermopharm.in" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companyPhone">Company Phone</Label>

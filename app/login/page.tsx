@@ -30,7 +30,7 @@ export default function LoginPage() {
     employeeId: "",
   })
   const notificationModal = useNotificationModalContext();
-  const { setUser, user } = useUserFromStorage();
+  const { setUser, user, setCookies } = useUserFromStorage();
 
 
   const mutation = useMutation({
@@ -41,16 +41,19 @@ export default function LoginPage() {
         const userInfo = res?.data?.userInfo;
         setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res?.data?.token);
         const maxAge = 30 * 24 * 60 * 60; //30 days Convert days to seconds
-        document.cookie = `${constants.TOKEN_TYPE.ACCESS}=${res?.data?.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-        document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        // document.cookie = `${constants.TOKEN_TYPE.ACCESS}=${res?.data?.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        setCookies(constants.CONTEXT_TYPE.TOKEN , {[constants.TOKEN_TYPE.ACCESS]: res?.data?.token});
+        // document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
         notificationModal.success({ heading: "Sign successfully.." });
         // Redirect to admin dashboard
-        if (userInfo?.role === "admin") {
-          router.push("/admin/dashboard")
-        } else {
-          router.push("/employee/dashboard")
-        }
+        // if (userInfo?.role === "admin") {
+        //   router.push("/admin/dashboard")
+        // } else {
+        //   router.push("/employee/dashboard")
+        // }
+        window.location.reload(); // to trigger middleware check
       } else {
         setIsLoading(false)
 
@@ -130,7 +133,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome Back</h1>
-            <p className="text-muted-foreground mt-2">Sign in to your HVAC Pro account</p>
+            <p className="text-muted-foreground mt-2">Sign in to your Thermopharm account</p>
           </div>
 
           <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur">

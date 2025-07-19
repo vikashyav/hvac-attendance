@@ -15,7 +15,7 @@ import UserProvider from "@/hooks/user.context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "HVAC Pro - Employee Attendance System",
+  title: "Thermopharm - Employee Attendance System",
   description: "Modern employee attendance and performance tracking system for HVAC companies",
   generator: 'v0.dev'
 }

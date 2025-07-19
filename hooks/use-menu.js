@@ -1,3 +1,4 @@
+import constants from "@/constants";
 import { useUserFromStorage } from "./user.context"
 import {
     LayoutDashboard, Clock, Calendar, BarChart3, User, LogOut, Menu, Shield,
@@ -7,8 +8,7 @@ import {
 // import {  LogOut, Menu, Shield } from "lucide-react"
 
 export default function useMenuItems() {
-    const { user } = useUserFromStorage();
-
+    const { user, getCookies } = useUserFromStorage();
     const menuItems = [
         {
             name: "Dashboard",
@@ -36,13 +36,12 @@ export default function useMenuItems() {
             access: ["employee", "admin"]
 
         },
-        {
-            name: "Schedule",
-            href: "/employee/schedule",
-            icon: Calendar,
-            access: ["employee"]
-
-        },
+        // {
+        //     name: "Schedule",
+        //     href: "/employee/schedule",
+        //     icon: Calendar,
+        //     access: ["employee"]
+        // },
         // {
         //   name: "Performance",
         //   href: "/employee/performance",
@@ -54,32 +53,31 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-        {
-            name: "Job Sites",
-            href: "/admin/sites",
-            icon: MapPin,
-            access: ["admin"]
-        },
+        // {
+        //     name: "Job Sites",
+        //     href: "/admin/sites",
+        //     icon: MapPin,
+        //     access: ["admin"]
+        // },
         // {
         //     name: "Reports",
         //     href: "/admin/reports",
         //     icon: FileText,
         //     access: ["admin"]
         // },
-        {
-            name: "Calendar",
-            href: "/admin/calendar",
-            icon: Calendar,
-            access: ["admin"]
-        },
-        {
-            name: "Settings",
-            href: "/admin/settings",
-            icon: Settings,
-            access: ["admin"]
-        },
+        // {
+        //     name: "Calendar",
+        //     href: "/admin/calendar",
+        //     icon: Calendar,
+        //     access: ["admin"]
+        // },
+        // {
+        //     name: "Settings",
+        //     href: "/admin/settings",
+        //     icon: Settings,
+        //     access: ["admin"]
+        // },
     ].filter((item) => item.access.includes(user.role))
-    console.log(user);
 
     return menuItems
 }

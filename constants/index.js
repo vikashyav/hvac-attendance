@@ -7,6 +7,7 @@ export default{
     CONTEXT_TYPE: {
         USER: "user",
         TOKEN: "token",
+        USER_INFO:"userInfo",
       },
       TOKEN_TYPE: {
         ACCESS: "access_token",

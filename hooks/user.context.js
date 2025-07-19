@@ -27,7 +27,7 @@ export function UserProvider(props) {
   const [data, setData] = useState(() => {
     return storageService.getItem(Const.CONTEXT_TYPE.USER) || {};//storageService.getItem(Const.CONTEXT_TYPE.USER) || {};
   });
-console.log(data);
+  console.log(data);
 
   const formattedData = useMemo(() => {
     if (Object.keys(data || {}).length <= 0) return {};
@@ -86,8 +86,23 @@ console.log(data);
     router.push("/login")
   }
 
+  const setCookies = (name, value, days = 30) => {
+    const encryptVal = encodeURIComponent(JSON.stringify(value)) //window.btoa(JSON.stringify(keyValue))
+    const maxAge = days * 24 * 60 * 60; // Convert days to seconds
+    document.cookie = `${name}=${encryptVal}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
+
+  const getCookies = (name) => {
+    const cookies = document.cookie.split('; ');
+    const cookie = cookies.find(row => row.startsWith(name + '='));
+    const val= decodeURIComponent(cookie.split('=')[1]);
+          if (is.null(val) || is.undefined(val)|| val=='undefined') return "";
+  return JSON.parse(val||'{}')
+    // return cookie ? decodeURIComponent(cookie.split('=')[1]) : null; //decodeURIComponent(cookie.split('=')[1])
+  }
+
   const value = useMemo(() => {
-    return { user: formattedData, setUser, removeUser, checkAccess, handleLogout };
+    return { user: formattedData, setUser, removeUser, checkAccess, handleLogout, setCookies, getCookies };
   }, [checkAccess, formattedData]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
