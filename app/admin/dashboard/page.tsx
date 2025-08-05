@@ -11,7 +11,7 @@ import withHOC from "@/utils/with-hoc"
 
 function AdminDashboardPage() {
   const {
-    stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching
+    stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching, handleGenerateReport
   } = useAdminDashboardPageContext();
 
   return (
@@ -28,7 +28,7 @@ function AdminDashboardPage() {
               <Calendar className="mr-2 h-4 w-4" />
               View Calendar
             </Button>
-            <Button className="w-full sm:w-auto">
+            <Button onClick={handleGenerateReport} className="w-full sm:w-auto">
               <BarChart3 className="mr-2 h-4 w-4" />
               Generate Report
             </Button>
