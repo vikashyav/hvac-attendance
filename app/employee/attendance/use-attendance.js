@@ -105,7 +105,8 @@ useEffect(()=>{
     handleCalenderSelectDate,
     calendarSelectedData,
     user, dateRange, setDateRange,
-    attendanceData: attendanceData?.data
+    attendanceData: attendanceData?.data,
+    isFetching
   }
 }
 

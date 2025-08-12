@@ -26,7 +26,8 @@ function AttendancePage() {
     monthlyTrends,
     handleCalenderSelectDate,
     calendarSelectedData, user, dateRange, setDateRange,
-    attendanceData
+    attendanceData,
+    isFetching
   } = useAttendancesPageContext();
   const isAdmin = user?.role === "admin"
 
@@ -82,9 +83,15 @@ function AttendancePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">This Months</p>
-                <p className="text-2xl font-bold text-gray-900">{monthlyStats.totalHours}</p>
-                <p className="text-xs text-gray-500">Total hours worked</p>
+                    <p className="text-sm font-medium text-gray-600">This Months</p>
+                {isFetching ?
+                  <div className="space-y-2">
+                    <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-4/4"></div>
+                  </div> : <>
+                    <p className="text-2xl font-bold text-gray-900">{monthlyStats.totalHours}</p>
+                    <p className="text-xs text-gray-500">Total hours worked</p>
+                  </>}
               </div>
               <Clock className="h-8 w-8 text-blue-600" />
             </div>
@@ -96,11 +103,17 @@ function AttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {/* {Math.round((monthlyStats.daysPresent / (monthlyStats.daysPresent + monthlyStats.daysAbsent)) * 100)}% */}
-                  {monthlyStats.attendanceRate}%
-                </p>
-                <p className="text-xs text-gray-500">This month</p>
+                {isFetching ?
+                  <div className="space-y-2">
+                    <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/4"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                  </div> : <>
+                    <p className="text-2xl font-bold text-green-600">
+                      {monthlyStats.attendanceRate}%
+                    </p>
+                    <p className="text-xs text-gray-500">This month</p>
+                  </>}
+
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -112,8 +125,14 @@ function AttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Punctuality</p>
+                {isFetching ?
+                  <div className="space-y-2">
+                    <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/4"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                  </div> : <>
                 <p className="text-2xl font-bold text-orange-600">{monthlyStats.punctualityScore}%</p>
                 <p className="text-xs text-gray-500">On-time arrivals</p>
+                </>}
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
             </div>
@@ -125,8 +144,14 @@ function AttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Overtime</p>
+                {isFetching ?
+                  <div className="space-y-2">
+                    <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/4"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                  </div> : <>
                 <p className="text-2xl font-bold text-purple-600">{monthlyStats.totalOvertimeHours}</p>
                 <p className="text-xs text-gray-500">This month</p>
+                </>}
               </div>
               <Clock className="h-8 w-8 text-purple-600" />
             </div>
@@ -345,7 +370,7 @@ function AttendancePage() {
                     <h4 className="font-medium mb-2">Achievements This Month</h4>
                     {attendanceData?.perfectAttendance &&
                       <ul className="space-y-1 text-sm text-gray-600">
-                        <li>• Perfect attendance for {attendanceData?.perfectAttendance?.totalPerfectWeeks} weeks; that is {attendanceData?.perfectAttendance?.perfectWeeks?.map((item)=> `${item},`)}</li>
+                        <li>• Perfect attendance for {attendanceData?.perfectAttendance?.totalPerfectWeeks} weeks; that is {attendanceData?.perfectAttendance?.perfectWeeks?.map((item) => `${item},`)}</li>
                         <li>• Consistently early arrivals</li>
                         {/* <li>• Zero safety incidents</li> */}
                       </ul>}
