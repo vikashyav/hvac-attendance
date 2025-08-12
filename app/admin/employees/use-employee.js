@@ -113,6 +113,7 @@ export function useEmployees() {
       title: "Employee Details",
       description: `Viewing details for ${employee.name} (${employee.id})`,
     })
+    openEditDialog(employee)
     // setIsAddDrawerOpen(true);
   }
 

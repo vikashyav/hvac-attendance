@@ -27,7 +27,7 @@ export function UserProvider(props) {
   const [data, setData] = useState(() => {
     return storageService.getItem(Const.CONTEXT_TYPE.USER) || {};//storageService.getItem(Const.CONTEXT_TYPE.USER) || {};
   });
-  console.log(data);
+  // console.log(data);
 
   const formattedData = useMemo(() => {
     if (Object.keys(data || {}).length <= 0) return {};

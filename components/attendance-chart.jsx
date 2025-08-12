@@ -3,55 +3,55 @@
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts"
 
 const attendanceData = [
-  {
-    day: "Mon",
-    present: 22,
-    total: 24,
-    percentage: 92,
-    date: "Dec 9",
-  },
-  {
-    day: "Tue",
-    present: 20,
-    total: 24,
-    percentage: 83,
-    date: "Dec 10",
-  },
-  {
-    day: "Wed",
-    present: 23,
-    total: 24,
-    percentage: 96,
-    date: "Dec 11",
-  },
-  {
-    day: "Thu",
-    present: 21,
-    total: 24,
-    percentage: 88,
-    date: "Dec 12",
-  },
-  {
-    day: "Fri",
-    present: 24,
-    total: 24,
-    percentage: 100,
-    date: "Dec 13",
-  },
-  {
-    day: "Sat",
-    present: 18,
-    total: 20,
-    percentage: 90,
-    date: "Dec 14",
-  },
-  {
-    day: "Sun",
-    present: 16,
-    total: 18,
-    percentage: 89,
-    date: "Dec 15",
-  },
+  // {
+  //   day: "Mon",
+  //   present: 22,
+  //   total: 24,
+  //   percentage: 92,
+  //   date: "Dec 9",
+  // },
+  // {
+  //   day: "Tue",
+  //   present: 20,
+  //   total: 24,
+  //   percentage: 83,
+  //   date: "Dec 10",
+  // },
+  // {
+  //   day: "Wed",
+  //   present: 23,
+  //   total: 24,
+  //   percentage: 96,
+  //   date: "Dec 11",
+  // },
+  // {
+  //   day: "Thu",
+  //   present: 21,
+  //   total: 24,
+  //   percentage: 88,
+  //   date: "Dec 12",
+  // },
+  // {
+  //   day: "Fri",
+  //   present: 24,
+  //   total: 24,
+  //   percentage: 100,
+  //   date: "Dec 13",
+  // },
+  // {
+  //   day: "Sat",
+  //   present: 18,
+  //   total: 20,
+  //   percentage: 90,
+  //   date: "Dec 14",
+  // },
+  // {
+  //   day: "Sun",
+  //   present: 16,
+  //   total: 18,
+  //   percentage: 89,
+  //   date: "Dec 15",
+  // },
 ]
 
 export function AttendanceChart({attendanceOverview}) {

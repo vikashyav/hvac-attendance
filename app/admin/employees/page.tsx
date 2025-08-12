@@ -431,7 +431,7 @@ function EmployeesPage() {
                     </div>
                     <div className="flex items-center text-sm">
                       <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>Joined {new Date(employee.joinDate).toLocaleDateString()}</span>
+                      <span>Joined {new Date(employee.hireDate).toLocaleDateString()}</span>
                     </div>
                   </div>
 
@@ -461,6 +461,7 @@ function EmployeesPage() {
                       size="sm"
                       className="flex-1 bg-transparent"
                       onClick={() => handleViewDetails(employee)}
+                      // onClick={() => openEditDialog(employee)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View

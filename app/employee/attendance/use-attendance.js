@@ -13,13 +13,13 @@ import { useUserFromStorage } from "@/hooks/user.context";
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { downloadReports } from "@/lib/api/dashboard-api";
 // import { getIntialValues } from "./form-helper";
-
+// import { useSearchParams } from 'next/navigation'
 
 export function useAttendances(props) {
   const { toast } = useToast()
   const router = useRouter();
   const pathname = usePathname()
-   const searchParams = useSearchParams()
+   const searchParams = useSearchParams()//.getAll();
     const { user, } = useUserFromStorage();
   const notificationModal = useNotificationModalContext();
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -29,10 +29,12 @@ export function useAttendances(props) {
     from: moment().startOf('month').toDate(),
     to: moment().endOf('day' || 'month').toDate(),
   })
-  console.log("searchParams",props);
+  const [queryParmas, setQueryParmas]= useState({})
+  
+  // console.log("searchParams",searchParams.get("employee_id"), pathname);
   
   const { data: attendanceData, isSuccess, refetch, isFetching } = useQuery({
-          queryKey: {employee_id: props?.searchParams?.employee_id,
+          queryKey: {employee_id: queryParmas?.employee_id || props?.searchParams?.employee_id,
             //  from: dateRange.from, to: dateRange.to 
             },//{ startOfDay, endOfDay }, // Include params in queryKey
           queryFn: getAttendance,
@@ -62,13 +64,20 @@ useEffect(()=>{
   }
 },[isSuccess])
 
+useEffect(()=>{
+  searchParams.forEach((value, key) => {
+  // console.log(value, key);
+  setQueryParmas({...queryParmas, [key]: value})
+})
+},[])
+
   const monthlyStats = {
-    totalHours: formatWorkingHours(attendanceData?.data?.totalHours) || "44h 15m",
-    attendanceRate: attendanceData?.data?.attendanceRate || "80",
+    totalHours: formatWorkingHours(attendanceData?.data?.totalHours) || "0h 0m",
+    attendanceRate: attendanceData?.data?.attendanceRate || "0",
     averagecheckInTime: "8:14 AM",
     daysPresent: 4,
     daysAbsent: 1,
-    totalOvertimeHours: formatWorkingHours(attendanceData?.data?.totalOvertimeHours) || "25m",
+    totalOvertimeHours: formatWorkingHours(attendanceData?.data?.totalOvertimeHours) || "0m",
     punctualityScore: attendanceData?.data?.punctualityRate,
   }
 
