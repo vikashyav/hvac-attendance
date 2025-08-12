@@ -29,7 +29,7 @@ export function useAdminDashboard() {
         {
             title: "Total Employees",
             value: dashboardStats?.data?.totalEmployees,
-            change: "+2 this month",
+            change: `+${dashboardStats?.data?.newEmployeeThisMonths} this month`,
             icon: Users,
             color: "text-blue-600 dark:text-blue-400",
         },
@@ -44,7 +44,7 @@ export function useAdminDashboard() {
             title: "Active Job Sites",
             value: dashboardStats?.data?.activeJobSites,
 
-            change: "3 new this week",
+            change: "0 new this week",
             icon: MapPin,
             color: "text-purple-600 dark:text-purple-400",
         },
