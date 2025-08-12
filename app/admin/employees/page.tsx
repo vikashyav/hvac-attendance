@@ -135,6 +135,63 @@ function EmployeesPage() {
     // })
     router.push(`/employee/attendance?employee_id=${employee?.id}`)
   }
+
+  const dropdownMenuItems = (employee) => {
+    return <DropdownMenuContent align="end">
+      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+      <DropdownMenuItem onClick={() => handleAttendanceReport(employee)}>
+        <Eye className="mr-2 h-4 w-4" />
+        View Attendance Reports
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleViewDetails(employee)}>
+        <Eye className="mr-2 h-4 w-4" />
+        View Details
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => openEditDialog(employee)}>
+        <Edit className="mr-2 h-4 w-4" />
+        Edit Employee
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
+        {employee.isActive ? (
+          <>
+            <UserX className="mr-2 h-4 w-4" />
+            Deactivate
+          </>
+        ) : (
+          <>
+            <UserCheck className="mr-2 h-4 w-4" />
+            Activate
+          </>
+        )}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Employee
+          </DropdownMenuItem>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the employee record and
+              remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DropdownMenuContent>
+  }
+
   const totalEmployee = employeeData?.paging?.total;
   const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
   const inActiveEmp = (totalEmployee - activeEmp) || 0;
@@ -181,9 +238,9 @@ function EmployeesPage() {
                 <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
               </div> :
               <>
-            <div className="text-2xl font-bold">{activeEmp}</div>
-            <p className="text-xs text-muted-foreground">Currently working</p>
-            </>}
+                <div className="text-2xl font-bold">{activeEmp}</div>
+                <p className="text-xs text-muted-foreground">Currently working</p>
+              </>}
           </CardContent>
         </Card>
         <Card>
@@ -198,9 +255,9 @@ function EmployeesPage() {
                 <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
               </div> :
               <>
-            <div className="text-2xl font-bold">{inActiveEmp}</div>
-            <p className="text-xs text-muted-foreground">On leave or inactive</p>
-            </>}
+                <div className="text-2xl font-bold">{inActiveEmp}</div>
+                <p className="text-xs text-muted-foreground">On leave or inactive</p>
+              </>}
           </CardContent>
         </Card>
         <Card>
@@ -213,12 +270,12 @@ function EmployeesPage() {
               <div className="space-y-2">
                 <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4"></div>
                 <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-              </div> :<>
-            <div className="text-2xl font-bold">
-              {averagePerformance}%
-            </div>
-            <p className="text-xs text-muted-foreground">Team average</p>
-            </>}
+              </div> : <>
+                <div className="text-2xl font-bold">
+                  {averagePerformance}%
+                </div>
+                <p className="text-xs text-muted-foreground">Team average</p>
+              </>}
           </CardContent>
         </Card>
       </div>
@@ -328,59 +385,7 @@ function EmployeesPage() {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleAttendanceReport(employee)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Attendance Reports
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewDetails(employee)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openEditDialog(employee)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Employee
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
-                                {employee.isActive ? (
-                                  <>
-                                    <UserX className="mr-2 h-4 w-4" />
-                                    Deactivate
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    Activate
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Employee
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the employee record and
-                                      remove all associated data.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </DropdownMenuContent>
+                                  {dropdownMenuItems(employee)}
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
@@ -461,7 +466,7 @@ function EmployeesPage() {
                       size="sm"
                       className="flex-1 bg-transparent"
                       onClick={() => handleViewDetails(employee)}
-                      // onClick={() => openEditDialog(employee)}
+                    // onClick={() => openEditDialog(employee)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View
@@ -481,7 +486,7 @@ function EmployeesPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      {/* <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
                           {employee.status === "active" ? (
                             <>
@@ -519,7 +524,8 @@ function EmployeesPage() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </DropdownMenuContent>
+                      </DropdownMenuContent> */}
+                                  {dropdownMenuItems(employee)}
                     </DropdownMenu>
                   </div>
                 </CardContent>
