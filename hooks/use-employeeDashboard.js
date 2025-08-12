@@ -129,9 +129,9 @@ console.log("iss", isOffline);
         });
         const checkInPayload = {
             checkInLocation: {
-                latitude: currentLocation.lat || 26.641511,
-                longitude: currentLocation.lng || 84.891568,
-                address: currentLocation.address || "मोतिहारी, Turkaulia, पूर्वी चम्पारण, Bihar, 845401, India"
+                latitude: currentLocation?.lat,
+                longitude: currentLocation?.lng,
+                address: currentLocation?.address
             },
             checkInTime: new Date(),
         }
@@ -161,9 +161,9 @@ console.log("iss", isOffline);
         });
         const checkOutPayload = {
             checkOutLocation: {
-                latitude: currentLocation.lat || 26.641511,
-                longitude: currentLocation.lng || 84.891568,
-                address: currentLocation.address || "मोतिहारी, Turkaulia, पूर्वी चम्पारण, Bihar, 845401, India"
+                latitude: currentLocation?.lat,
+                longitude: currentLocation?.lng,
+                address: currentLocation?.address
             },
             checkOutTime: new Date(),
             checkInTime: todayCheckData?.data?.checkInTime,
