@@ -10,7 +10,7 @@ export function useNotificationSubscrption() {
         mutationFn: saveSubscrption,
     })
 
-    const deleteSubscrptionMut= useMutation({
+    const deleteSubscrptionMut = useMutation({
         mutationFn: deleteSubscrption
     })
     const subscribeForPush = async (userId) => {
@@ -29,14 +29,14 @@ export function useNotificationSubscrption() {
                     title: "Success",
                     description: "Subscribed For Notification update",
                 })
-        window.location.reload(); // to trigger middleware check
+                window.location.reload(); // to trigger middleware check
             },
             onError: () => {
                 toast({
                     title: "Error",
                     description: "failed Something went wrong!!!",
                 })
-        window.location.reload(); // to trigger middleware check
+                window.location.reload(); // to trigger middleware check
 
             }
         })
@@ -63,7 +63,7 @@ export function useNotificationSubscrption() {
         console.log('Push subscription reset & saved.');
     }
 
-    const unsubscribeNotification= async()=> {
+    const unsubscribeNotification = async () => {
         // Wait for service worker to be ready
         const registration = await navigator.serviceWorker.ready;
 
@@ -73,17 +73,19 @@ export function useNotificationSubscrption() {
         // If yes, unsubscribe from it
         if (existingSubscription) {
             console.log('Unsubscribing old push subscription...');
-        deleteSubscrptionMut.mutate({endpoint: existingSubscription.endpoint},{
-            onSuccess:async()=>{
-            await existingSubscription.unsubscribe();
-            },
-            onError:()=>{
-                toast({
-                    title: "Error",
-                    description: "unable to unsubcribe notification",
-                })
-            }
-        })
+            deleteSubscrptionMut.mutate({ endpoint: existingSubscription.endpoint }, {
+                onSuccess: async () => {
+                    await existingSubscription.unsubscribe();
+                    window.location.reload(); // to trigger middleware check
+                },
+                onError: () => {
+                    toast({
+                        title: "Error",
+                        description: "unable to unsubcribe notification",
+                    })
+                    window.location.reload(); // to trigger middleware check
+                }
+            })
         }
     }
 
