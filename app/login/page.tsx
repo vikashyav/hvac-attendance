@@ -18,8 +18,11 @@ import { useNotificationModalContext } from "@/components/notification-modal/pro
 import constants from "@/constants"
 import { setTokenDataToStorage } from "@/hooks/token.context"
 import { useUserFromStorage } from "@/hooks/user.context";
+import { useNotificationSubscrption } from "@/hooks/notification-sub-hook"
+
 
 export default function LoginPage() {
+  const { subscribeForPush, resetAndSubscribe } = useNotificationSubscrption();
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -35,17 +38,22 @@ export default function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: auth.userLogin,
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       console.log(res)
       if (res) {
         const userInfo = res?.data?.userInfo;
         setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res?.data?.token);
         const maxAge = 30 * 24 * 60 * 60; //30 days Convert days to seconds
         // document.cookie = `${constants.TOKEN_TYPE.ACCESS}=${res?.data?.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-        setCookies(constants.CONTEXT_TYPE.TOKEN , {[constants.TOKEN_TYPE.ACCESS]: res?.data?.token});
+        setCookies(constants.CONTEXT_TYPE.TOKEN, { [constants.TOKEN_TYPE.ACCESS]: res?.data?.token });
         // document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
         setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
+        await subscribeForPush(res?.data?.userInfo?.email).then(()=>{
+        }).catch((err) => {
+          console.log(err)
+        window.location.reload(); // to trigger middleware check
+        })
         notificationModal.success({ heading: "Sign successfully.." });
         // Redirect to admin dashboard
         // if (userInfo?.role === "admin") {
@@ -53,7 +61,6 @@ export default function LoginPage() {
         // } else {
         //   router.push("/employee/dashboard")
         // }
-        window.location.reload(); // to trigger middleware check
       } else {
         setIsLoading(false)
 

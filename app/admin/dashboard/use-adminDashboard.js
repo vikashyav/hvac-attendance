@@ -8,13 +8,16 @@ import { Users, MapPin, TrendingUp, CheckCircle, } from "lucide-react"
 import moment from "moment";
 import { formatWorkingHours } from "@/utils/helper";
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
-
+import { useEffect } from "react";
+// import {useNotificationSubscrption} from "@/hooks/notification-sub-hook"
+// import {subscribeForPush} from "@/utils/subscribeForPush";
 // import { getIntialValues } from "./form-helper";
 
 
 
 export function useAdminDashboard() {
     const notificationModal = useNotificationModalContext();
+    // const {subscribeForPush}= useNotificationSubscrption();
 
     const { data: dashboardStats, isFetching, isSuccess, refetch, } = useQuery({
         queryKey: ['useAdminDashboard'],
@@ -129,7 +132,6 @@ export function useAdminDashboard() {
             }
         })
     }
-
 
     return {
         stats, recentActivity, upcomingSchedules, attendanceOverview: dashboardStats?.data?.last7DaysAttendanceOverview,

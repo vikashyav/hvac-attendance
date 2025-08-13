@@ -6,12 +6,14 @@ import storageService from "../lib/services/storage.service";
 
 import Const from "../constants";
 import is from "@/utils/is";
+import { useNotificationSubscrption } from "./notification-sub-hook";
 
 const UserContext = createContext();
 
 export function UserProvider(props) {
   const { children } = props;
   const router = useRouter()
+  const {unsubscribeNotification}= useNotificationSubscrption();
 
   // const  _getItem = (keyName) =>{
   //   if (typeof window === 'undefined') return {};
@@ -78,11 +80,12 @@ export function UserProvider(props) {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
     storageService.clear();
     removeUser();
     document.cookie = 'access_token=; path=/; max-age=0';
     document.cookie = 'userInfo=; path=/; max-age=0';
+    await unsubscribeNotification();
     router.push("/login")
   }
 
