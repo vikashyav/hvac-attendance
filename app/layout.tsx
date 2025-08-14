@@ -11,6 +11,7 @@ import { AxiosInterceptorProvider } from "@/lib/api"
 import QueryProvider from "./QueryProvider"
 // import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UserProvider from "@/hooks/user.context"
+import InstallPrompt from "./installPrompt";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-
+         <InstallPrompt />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <NotificationModalProvider>
             <AxiosInterceptorProvider>
