@@ -56,6 +56,10 @@ export function useNotificationSubscrption() {
             return;
         }
         await navigator.serviceWorker.register('/sw.js')
+        toast({
+            title: "2.33",
+            description: "Subscribed For Notification update",
+        })
         // await navigator.serviceWorker.register('/sw.js')
         const reg = await navigator.serviceWorker.ready;
         // alert("3")
