@@ -58,6 +58,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.14.1",
     "next": "14.2.16",
+    "next-pwa": "^5.6.0",
     "next-themes": "latest",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",

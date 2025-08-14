@@ -17,7 +17,12 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Thermopharm - Employee Attendance System",
   description: "Modern employee attendance and performance tracking system for HVAC companies",
-  generator: 'v0.dev'
+  generator: 'v0.dev',
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/c-logo.png",
+    apple: "/c-logo.png",
+  },
 }
 
 export default function RootLayout({
