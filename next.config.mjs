@@ -13,7 +13,7 @@
 
 // export default nextConfig
 
-import withPWA from 'next-pwa';
+// import withPWA from 'next-pwa';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -28,11 +28,13 @@ const nextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',      // service worker file will be placed in /public
-  register: true,      // automatically registers service worker
-  skipWaiting: true,   // activate new SW without refreshing
-  swSrc: 'lib/custom-sw.js', // ✅ custom SW with push + cache
-  // buildExcludes: [/middleware-manifest\.json$/], // prevent caching build artifacts
-  // disable: process.env.NODE_ENV === 'development', // disable in dev mode
-})(nextConfig);
+export default nextConfig
+
+// export default withPWA({
+//   dest: 'public',      // service worker file will be placed in /public
+//   register: true,      // automatically registers service worker
+//   skipWaiting: true,   // activate new SW without refreshing
+//   swSrc: 'lib/custom-sw.js', // ✅ custom SW with push + cache
+//   // buildExcludes: [/middleware-manifest\.json$/], // prevent caching build artifacts
+//   // disable: process.env.NODE_ENV === 'development', // disable in dev mode
+// })(nextConfig);
