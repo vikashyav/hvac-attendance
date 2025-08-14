@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { saveSubscrption, deleteSubscrption } from "@/lib/api/dashboard-api";
 import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
 
 export function useNotificationSubscrption() {
     const { toast } = useToast()
@@ -12,52 +13,87 @@ export function useNotificationSubscrption() {
 
     const deleteSubscrptionMut = useMutation({
         mutationFn: deleteSubscrption
-    })
+    });
+
+    const [isSupported, setIsSupported] = useState(false);
+    const [isSubscribed, setIsSubscribed] = useState(false);
+
+    useEffect(() => {
+        const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+        setIsSupported(supported);
+
+        if (supported) {
+            checkSubscription();
+        }
+    }, []);
+
+    async function checkSubscription() {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setIsSubscribed(!!sub);
+    }
+
     const subscribeForPush = async (userId) => {
-        if (!('serviceWorker' in navigator)) {
-            alert('❌ Service workers are not supported on this app, Please contact support team.');
-            toast({
-                    title: "Error",
-                    description: "❌ Service workers are not supported on this app, Please contact support team.",
-                    variant: "destructive",
-                })
-            return false;
-        }
-        if (!('PushManager' in window)) {
-            alert('❌ Push notifications are not supported on this app, Please contact support team.');
-            toast({
-                    title: "Error",
-                    description: "❌ Push notifications are not supported on this app, Please contact support team.",
-                    variant: "destructive",
-                })
-            return false;
-        }
-        console.log("hit subs11");
-        const registration = await navigator.serviceWorker.register('/sw.js');
-
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
-            // urlBase64ToUint8Array("BNoCJ9EsZTsNyxtdOpwiCFIknD3Acr_bcxW6bycN5ib7xJ7SSJMKbTHlrK8gubKhMNmz6_dLBgxFoOsbcFzetDc" || process.env.NEXT_PUBLIC_VAPID_KEY)
-        });
-
-        return saveSubscrptionMutation.mutate({ userId, subscription }, {
-            onSuccess: (res) => {
-                toast({
-                    title: "Success",
-                    description: "Subscribed For Notification update",
-                })
-                window.location.reload(); // to trigger middleware check
-            },
-            onError: () => {
-                toast({
-                    title: "Error",
-                    description: "failed Subscribed For Notification update, Please contact support team",
-                    variant: "destructive",
-                })
-                window.location.reload(); // to trigger middleware check
+        // alert("1")
+        // try {
+            if (Notification.permission === "denied") {
+                alert("Notifications are blocked. Please enable them in browser settings.");
+                return;
             }
-        })
+
+            const permission = await Notification.requestPermission();
+        // alert("2")
+            if (permission !== "granted") {
+                alert("Notifications permission not granted.");
+                return;
+            }
+            await navigator.serviceWorker.register('/sw.js')
+            // await navigator.serviceWorker.register('/sw.js')
+            const reg = await navigator.serviceWorker.ready;
+        // alert("3")
+
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
+            });
+            if (sub) {
+                return saveSubscrptionMutation.mutate({ userId, subscription: sub }, {
+                    onSuccess: (res) => {
+                        toast({
+                            title: "Success",
+                            description: "Subscribed For Notification update",
+                        })
+                        console.log("✅ Push subscribed:", sub);
+                        setIsSubscribed(true);
+                        window.location.reload(); // to trigger middleware check
+                    },
+                    onError: () => {
+                        toast({
+                            title: "Error",
+                            description: "failed Subscribed For Notification update, Please contact support team",
+                            variant: "destructive",
+                        })
+                        alert("something went wrong")
+                        setTimeout(() => {
+                            window.location.reload(); // to trigger middleware check
+                        }, 100);
+                    }
+                })
+            }
+        // } catch (error) {
+            // console.error("❌ Push subscription failed:", err);
+            // alert("❌ Push subscription failed:", err)
+        // }
+
+        // const registration = await navigator.serviceWorker.register('/sw.js').catch((err) => {
+        //     console.log("register error", err)
+        // });
+
+        // const subscription = await registration.pushManager.subscribe({
+        //     userVisibleOnly: true,
+        //     applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
+        //     // urlBase64ToUint8Array("BNoCJ9EsZTsNyxtdOpwiCFIknD3Acr_bcxW6bycN5ib7xJ7SSJMKbTHlrK8gubKhMNmz6_dLBgxFoOsbcFzetDc" || process.env.NEXT_PUBLIC_VAPID_KEY)
+        // }).catch(console.log);
 
     }
 
@@ -91,10 +127,11 @@ export function useNotificationSubscrption() {
         // If yes, unsubscribe from it
         if (existingSubscription) {
             console.log('Unsubscribing old push subscription...');
-            deleteSubscrptionMut.mutate({ endpoint: existingSubscription.endpoint }, {
+            return deleteSubscrptionMut.mutate({ endpoint: existingSubscription.endpoint }, {
                 onSuccess: async () => {
                     await existingSubscription.unsubscribe();
                     window.location.reload(); // to trigger middleware check
+                    return
                 },
                 onError: () => {
                     toast({

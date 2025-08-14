@@ -49,12 +49,12 @@ export default function LoginPage() {
         // document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
         setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
-        await subscribeForPush(res?.data?.userInfo?.email).then(()=>{
-        }).catch((err) => {
+        notificationModal.success({ heading: "Sign successfully.." });
+        await subscribeForPush(res?.data?.userInfo?.email || "").catch((err) => {
           console.log(err)
+          alert(err)
         window.location.reload(); // to trigger middleware check
         })
-        notificationModal.success({ heading: "Sign successfully.." });
         // Redirect to admin dashboard
         // if (userInfo?.role === "admin") {
         //   router.push("/admin/dashboard")
@@ -63,7 +63,6 @@ export default function LoginPage() {
         // }
       } else {
         setIsLoading(false)
-
       }
       // alert('Post created!')
     },

@@ -7,12 +7,14 @@ import storageService from "../lib/services/storage.service";
 import Const from "../constants";
 import is from "@/utils/is";
 import { useNotificationSubscrption } from "./notification-sub-hook";
+import { useNotificationModalContext } from "@/components/notification-modal/provider";
 
 const UserContext = createContext();
 
 export function UserProvider(props) {
   const { children } = props;
   const router = useRouter()
+    const notificationModal = useNotificationModalContext();
   const {unsubscribeNotification}= useNotificationSubscrption();
 
   // const  _getItem = (keyName) =>{
@@ -81,11 +83,15 @@ export function UserProvider(props) {
   }, []);
 
   const handleLogout = async() => {
+        notificationModal.progress({ heading: "logging out....Please await!!" });
     storageService.clear();
     removeUser();
     document.cookie = 'access_token=; path=/; max-age=0';
     document.cookie = 'userInfo=; path=/; max-age=0';
-    await unsubscribeNotification();
+    await unsubscribeNotification().catch(()=>{
+                    window.location.reload(); // to trigger middleware check
+    });
+                    window.location.reload(); // to trigger middleware check
     router.push("/login")
   }
 
