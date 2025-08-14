@@ -55,7 +55,11 @@ export function useNotificationSubscrption() {
             alert("Notifications permission not granted.");
             return;
         }
-        const reg = await navigator.serviceWorker.register('/sw.js')
+        let reg = await navigator.serviceWorker.ready;
+        if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js')
+            
+        }
         toast({
             title: "2.33",
             description: "Subscribed For Notification update",
