@@ -24,6 +24,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   console.log('👆 [SW] Notification click event fired');
+  const payload = event.data ? event.data.json() : {};
   event.notification.close();
   event.waitUntil(
     clients.openWindow(payload.url || '/')
