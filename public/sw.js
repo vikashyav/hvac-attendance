@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
       badge: payload.badge || '/icons/badge.png',
       image: payload.image,   // Large banner image (Chrome/Edge only)
     //   badge: '/icons/badge.png', // Optional small monochrome badge
-      data: { url: data.url }
+      data: { url: payload.url }
     })
   );
 });
