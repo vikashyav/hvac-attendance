@@ -18,15 +18,18 @@ self.addEventListener('push', (event) => {
       body: payload.body || 'No message body',
       icon: payload.icon || '/icons/icon-192x192.png',
       badge: payload.badge || '/icons/badge.png',
+      image: payload.image,   // Large banner image (Chrome/Edge only)
+    //   badge: '/icons/badge.png', // Optional small monochrome badge
+      data: { url: data.url }
     })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   console.log('👆 [SW] Notification click event fired');
-  const payload = event.data ? event.data.json() : {};
+//   const payload = event.data ? event.data.json() : {};
   event.notification.close();
   event.waitUntil(
-    clients.openWindow(payload.url || '/')
+    clients.openWindow(event.notification.data.url || '/')
   );
 });
