@@ -14,6 +14,24 @@ export function useNotificationSubscrption() {
         mutationFn: deleteSubscrption
     })
     const subscribeForPush = async (userId) => {
+        if (!('serviceWorker' in navigator)) {
+            alert('❌ Service workers are not supported on this app, Please contact support team.');
+            toast({
+                    title: "Error",
+                    description: "❌ Service workers are not supported on this app, Please contact support team.",
+                    variant: "destructive",
+                })
+            return false;
+        }
+        if (!('PushManager' in window)) {
+            alert('❌ Push notifications are not supported on this app, Please contact support team.');
+            toast({
+                    title: "Error",
+                    description: "❌ Push notifications are not supported on this app, Please contact support team.",
+                    variant: "destructive",
+                })
+            return false;
+        }
         console.log("hit subs11");
         const registration = await navigator.serviceWorker.register('/sw.js');
 
@@ -34,10 +52,10 @@ export function useNotificationSubscrption() {
             onError: () => {
                 toast({
                     title: "Error",
-                    description: "failed Something went wrong!!!",
+                    description: "failed Subscribed For Notification update, Please contact support team",
+                    variant: "destructive",
                 })
                 window.location.reload(); // to trigger middleware check
-
             }
         })
 
