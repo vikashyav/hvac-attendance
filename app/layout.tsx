@@ -35,12 +35,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-         <InstallPrompt />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <NotificationModalProvider>
             <AxiosInterceptorProvider>
               <ModalProvider>
                 <Toaster />
+                <InstallPrompt />
                 <NotificationModal />
                 <QueryProvider >
                   <UserProvider>

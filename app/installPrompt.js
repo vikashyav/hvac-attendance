@@ -1,51 +1,66 @@
 "use client";
 import { useEffect, useState } from "react";
-
+import { useToast } from "@/hooks/use-toast"
+import { ToastAction } from "@/components/ui/toast";
+// import { useModal } from "@/components/comfirmation-modal"
 export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showButton, setShowButton] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showButton, setShowButton] = useState(false);
+    const { toast } = useToast()
 
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e); // Save event for later
-      setShowButton(true);  // Show install button
+    useEffect(() => {
+        const handler = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e); // Save event for later
+            setShowButton(true);  // Show install button
+        };
+
+        window.addEventListener("beforeinstallprompt", handler);
+
+        return () => {
+            window.removeEventListener("beforeinstallprompt", handler);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (showButton) {
+            toast({
+                title: "Install Attendance App",
+                description: "Add the app to your home screen for quick access.",
+                action: (
+                    <ToastAction altText="Install App"
+                        onClick={handleInstallClick}
+                    >
+                        Install App
+                    </ToastAction>
+                ),
+                duration: 180000, // auto-hide after 3min
+            });
+        }
+    }, [showButton])
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt(); // Show native install prompt
+        // alert("hii")
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response: ${outcome}`);
+        setDeferredPrompt(null);
+        setShowButton(false);
     };
 
-    window.addEventListener("beforeinstallprompt", handler);
+    // if (!showButton) 
+    return null;
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt(); // Show native install prompt
-
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response: ${outcome}`);
-    setDeferredPrompt(null);
-    setShowButton(false);
-  };
-
-  if (!showButton) return null;
-
-  return (
-    <div style={{ padding: 10, background: "#2563eb", color: "white" }}>
-      <p>Install our Attendance App for quick access.</p>
-      <button
-        onClick={handleInstallClick}
-        style={{
-          padding: "6px 12px",
-          background: "white",
-          color: "#2563eb",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        Install App
-      </button>
-    </div>
-  );
+    // return (
+    //     <div className=" bg-blue-600 bg-opacity-50 z-50 flex flex-col items-center justify-center px-4 py-2">
+    //         <p>Install our Attendance App for quick access.</p>
+    //         <button
+    //             onClick={handleInstallClick}
+    //             className="px-4 py-2 rounded bg-white text-blue-600 hover:bg-blue-700 text-sm"
+    //         >
+    //             Install App
+    //         </button>
+    //     </div>
+    // );
 }

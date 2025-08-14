@@ -26,8 +26,8 @@ export const ModalProvider = ({ children }) => {
     setModal({ ...modal, isOpen: false });
   };
 
-  const confirm = () => {
-    if (modal.onConfirm) modal.onConfirm();
+  const confirm = (e) => {
+    if (modal.onConfirm) modal.onConfirm(e);
     hideModal();
   };
 
