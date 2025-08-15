@@ -127,7 +127,11 @@ export default function LoginPage() {
                 <img src="/c-logo.png" />
 
               </div>
-              <span className="text-xl text-[#00728c] font-bold">Thermopharm</span>
+              <span className="text-xl h-22 w-44 text-[#00728c] font-bold">
+                {/* Thermopharm */}
+                <img src="/c-logo.jpeg" />
+
+                </span>
             </div>
             <ThemeToggle />
           </div>
