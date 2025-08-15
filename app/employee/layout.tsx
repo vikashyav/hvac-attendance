@@ -60,7 +60,10 @@ export default function EmployeeLayout({
             <EmployeeSidebar onLogout={handleLogout} userInfo={userInfo} />
           </MobileSidebar>
           {/* <h1 className="text-lg font-semibold">HVAC Pro</h1> */}
-          <h1 className="text-lg font-semibold text-[#00728c]">Thermopharm</h1>
+          <h1 className="text-lg  font-semibold text-[#00728c]">
+            {/* Thermopharm */}
+            <img className="h-10" src="/c-logo.jpeg" />
+            </h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         <main className="flex-1 p-4 sm:p-6">{children}</main>

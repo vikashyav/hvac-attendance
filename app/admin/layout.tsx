@@ -57,7 +57,10 @@ export default function AdminLayout({
           <MobileSidebar>
             <AdminSidebar onLogout={handleLogout} userEmail={userEmail} />
           </MobileSidebar>
-          <h1 className="text-lg font-semibold text-[#00728c]">Thermopharm</h1>
+          <h1 className="text-lg font-semibold text-[#00728c]">
+            <img className="h-10" src="/c-logo.jpeg" />
+            {/* Thermopharm */}
+            </h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         <main className="py-6 px-4 sm:px-6 lg:px-8">{children}</main>
