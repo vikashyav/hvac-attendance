@@ -12,13 +12,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Calendar, Award, Bell, Shield, Save, Upload, Edit } from "lucide-react"
+import { User, Calendar, Award, Bell, Shield, Save, Upload, Edit, AlertCircle } from "lucide-react"
 import { useUserFromStorage } from "@/hooks/user.context"
+import { UserProfileProvider, useUserProfilePageContext } from "./use-profile";
+import { ErrorMessage, Field, Form, Formik } from "formik"
+import * as yup from 'yup';
+import withHOC from "@/utils/with-hoc"
 
-export default function ProfilePage() {
+// export default 
+function ProfilePage(props) {
   const { user, removeUser } = useUserFromStorage();
-  console.log(user, "user");
-
+  const { handleChangePassword, queryParmas } = useUserProfilePageContext()
+  // console.log(user, "user");
+  const [activeTab, setActiveTab]=useState(props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal");
   const [isEditing, setIsEditing] = useState(false)
   const [notifications, setNotifications] = useState({
     email: true,
@@ -28,6 +34,17 @@ export default function ProfilePage() {
     reminders: true,
   })
 
+  const validationSchema = yup.object({
+    currentPassword: yup.string().required('Password is required'),
+    newPassword: yup
+      .string()
+      .required('Password is required')
+      .min(6, 'Your password is too short.')
+      .matches(/[a-zA-Z0-9]/, 'Password can only contain Latin letters.'),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref('newPassword')], 'Passwords must match')
+  });
   const employeeData = {
     id: "EMP001",
     name: `${user.firstName} ${user.lastName}`,
@@ -90,6 +107,7 @@ export default function ProfilePage() {
         return "outline"
     }
   }
+  console.log("props", props, queryParmas?.acive_tab,);
 
   return (
     <div className="p-6 space-y-6">
@@ -106,7 +124,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile Tabs */}
-      <Tabs defaultValue="personal" className="space-y-6">
+      <Tabs defaultValue={activeTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="professional">Professional</TabsTrigger>
@@ -244,13 +262,13 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="professional" className="space-y-6">
-            <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
+          <Badge variant="destructive" className="w-full whitespace-nowrap">
+            Work Under Progress - we are working on this module
+          </Badge>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
+
             <Card>
-              
+
               <CardHeader>
                 <CardTitle>Employment Details</CardTitle>
                 <CardDescription>Your job information and work details</CardDescription>
@@ -352,9 +370,9 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="certifications" className="space-y-6">
-            <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
+          <Badge variant="destructive" className="w-full whitespace-nowrap">
+            Work Under Progress - we are working on this module
+          </Badge>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -398,9 +416,9 @@ export default function ProfilePage() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
-            <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
+          {user.isDefaultPassword && <Badge variant="destructive" className="w-full whitespace-nowrap">
+            You have sign in from default password, Please change it.
+          </Badge>}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -486,19 +504,90 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input id="currentPassword" type="password" placeholder="Enter current password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input id="newPassword" type="password" placeholder="Enter new password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input id="confirmPassword" type="password" placeholder="Confirm new password" />
-                  </div>
-                  <Button className="w-full">Update Password</Button>
+                  <Formik
+                    initialValues={{
+                      currentPassword: "",
+                      newPassword: "",
+                      confirmPassword: ""
+                    }}
+                    validationSchema={validationSchema}
+                    onSubmit={handleChangePassword}
+                  >
+                    {({ values, errors, touched, isSubmitting, setFieldValue, resetForm }) => {
+                      console.log({ values, errors });
+
+                      return (
+                        <Form className="space-y-8">
+                          <div className="space-y-2">
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            {/* <Input id="currentPassword" type="password" placeholder="Enter current password" /> */}
+                            <Field
+                              as={Input}
+                              id="currentPassword"
+                              name="currentPassword"
+                              placeholder="Enter first name"
+                              className={`transition-all ${errors.currentPassword && touched.currentPassword
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                  : "focus:border-blue-500 focus:ring-blue-500"
+                                }`}
+                            />
+                            <ErrorMessage name="currentPassword">
+                              {(msg) => (
+                                <div className="text-red-500 text-sm flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {msg}
+                                </div>
+                              )}
+                            </ErrorMessage>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="newPassword">New Password</Label>
+                            {/* <Input id="newPassword" type="password" placeholder="Enter new password" /> */}
+                            <Field
+                              as={Input}
+                              id="newPassword"
+                              name="newPassword"
+                              placeholder="Enter first name"
+                              className={`transition-all ${errors.newPassword && touched.newPassword
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                  : "focus:border-blue-500 focus:ring-blue-500"
+                                }`}
+                            />
+                            <ErrorMessage name="newPassword">
+                              {(msg) => (
+                                <div className="text-red-500 text-sm flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {msg}
+                                </div>
+                              )}
+                            </ErrorMessage>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            {/* <Input id="confirmPassword" type="password" placeholder="Confirm new password" /> */}
+                            <Field
+                              as={Input}
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              placeholder="Enter first name"
+                              className={`transition-all ${errors.confirmPassword && touched.confirmPassword
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                  : "focus:border-blue-500 focus:ring-blue-500"
+                                }`}
+                            />
+                            <ErrorMessage name="confirmPassword">
+                              {(msg) => (
+                                <div className="text-red-500 text-sm flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {msg}
+                                </div>
+                              )}
+                            </ErrorMessage>
+                          </div>
+                          <Button className="w-full">Update Password</Button>
+                        </Form>)
+                    }}
+                  </Formik>
                 </div>
 
                 <Separator />
@@ -534,3 +623,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
+export default withHOC(UserProfileProvider, ProfilePage);

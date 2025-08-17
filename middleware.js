@@ -5,8 +5,8 @@ import { NextResponse } from 'next/server';
 
 const getCookies = (name, request) => {
   const val = decodeURIComponent(request.cookies.get(name)?.value);
-      if (is.null(val) || is.undefined(val)|| val=='undefined') return "";
-  return JSON.parse(val||'{}')
+  if (is.null(val) || is.undefined(val) || val == 'undefined') return "";
+  return JSON.parse(val || '{}')
 }
 
 export default function middleware(request) {
@@ -33,9 +33,16 @@ export default function middleware(request) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url))
     }
     if (role === "employee") {
+      if (userInfo.isDefaultPassword) {
+        console.log("dfff");
+
+        return NextResponse.redirect(new URL('/employee/profile?acive_tab=settings', request.url))
+      }
       return NextResponse.redirect(new URL('/employee/dashboard', request.url))
     }
   }
+
+
   // Route protection based on role
   // const requiredRole= ["admin", "employee"];
   // if (pathname.startsWith('/admin') && role !== 'admin') {
