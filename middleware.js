@@ -34,8 +34,6 @@ export default function middleware(request) {
     }
     if (role === "employee") {
       if (userInfo.isDefaultPassword) {
-        console.log("dfff");
-
         return NextResponse.redirect(new URL('/employee/profile?acive_tab=settings', request.url))
       }
       return NextResponse.redirect(new URL('/employee/dashboard', request.url))

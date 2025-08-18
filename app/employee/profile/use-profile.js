@@ -37,7 +37,9 @@ useEffect(()=>{
         changePasswordMutFn.mutate(payload, {
             onSuccess: () => {
                 notificationModal.success({ heading: "Success", body: `Please login with your new password` });
+                setTimeout(() => {
                 handleLogout();
+                }, 1000);
             },
             onError: () => {
                 notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });

@@ -36,7 +36,7 @@ export function useNotificationSubscrption() {
     const subscribeForPush = async (userId) => {
         // alert("1")
         toast({
-            title: "111",
+            title: "1",
             description: "Subscribed For Notification update",
         })
         // try {
@@ -48,7 +48,7 @@ export function useNotificationSubscrption() {
         const permission = await Notification.requestPermission();
         // alert("2")
         toast({
-            title: "222",
+            title: "2",
             description: "Subscribed For Notification update",
         })
         if (permission !== "granted") {
@@ -58,14 +58,14 @@ export function useNotificationSubscrption() {
         // let reg = await navigator.serviceWorker.ready;
         const registration = await navigator.serviceWorker.register('/sw.js');
         toast({
-            title: "2.33",
+            title: "2.5",
             description: "Subscribed For Notification update",
         })
         // await navigator.serviceWorker.register('/sw.js')
         const reg  = await navigator.serviceWorker.ready;
         // alert("3")
         toast({
-            title: "333",
+            title: "3",
             description: "Subscribed For Notification update",
         })
 
@@ -74,7 +74,7 @@ export function useNotificationSubscrption() {
             applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
         });
         toast({
-            title: "444",
+            title: "4",
             description: "Subscribed For Notification update",
         })
         if (sub) {
@@ -94,7 +94,7 @@ export function useNotificationSubscrption() {
                         description: "failed Subscribed For Notification update, Please contact support team",
                         variant: "destructive",
                     })
-                    alert("something went wrong")
+                    // alert("something went wrong")
                     setTimeout(() => {
                         window.location.reload(); // to trigger middleware check
                     }, 100);

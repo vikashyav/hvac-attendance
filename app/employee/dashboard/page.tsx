@@ -22,9 +22,14 @@ import { useEmployeesDashboard } from "@/hooks/use-employeeDashboard";
 import { Separator } from "@/components/ui/separator"
 import { useUserFromStorage } from "@/hooks/user.context"
 import AttendanceComponent from "./attendance-components"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from 'next/navigation'
 
 export default function EmployeeDashboard() {
-      const { user, removeUser } = useUserFromStorage();
+  const router = useRouter();
+    const { toast } = useToast()
+
+  const { user, removeUser } = useUserFromStorage();
   const {
     isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
     locationLoading, setLocationLoading,
@@ -33,6 +38,15 @@ export default function EmployeeDashboard() {
     isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, dashboardStats
   } = useEmployeesDashboard();
 
+  if (user.isDefaultPassword) {
+    toast({
+      title: "Security alert!, Please change your password",
+      description: "You have sign in by default password, Please change it..!!",
+    })
+    router.push('/employee/profile?acive_tab=settings');
+    // alert("You have sign in by default password, Please change it..!!")
+    return
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -45,7 +59,7 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Large Attendance Section */}
-        <AttendanceComponent />
+      <AttendanceComponent />
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
