@@ -1,6 +1,8 @@
 "use client"
+// at top of your page file
+export const dynamic = "force-dynamic";
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,12 +21,18 @@ import { ErrorMessage, Field, Form, Formik } from "formik"
 import * as yup from 'yup';
 import withHOC from "@/utils/with-hoc"
 
+// export async function getData(context) {
+//   console.log("context", context);
+  
+//   return context
+// }
+
 // export default 
 function ProfilePage(props) {
   const { user, removeUser } = useUserFromStorage();
-  const { handleChangePassword, queryParmas } = useUserProfilePageContext()
+  const { handleChangePassword, queryParmas } = useUserProfilePageContext(props)
   // console.log(user, "user");
-  const [activeTab, setActiveTab]=useState(props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal");
+  const [activeTab, setActiveTab]=useState("");
   const [isEditing, setIsEditing] = useState(false)
   const [notifications, setNotifications] = useState({
     email: true,
@@ -107,14 +115,14 @@ function ProfilePage(props) {
         return "outline"
     }
   }
-  console.log("props", props, queryParmas?.acive_tab,);
+  console.log(props, "props active tab",props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal");
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
+          <h1 className="text-3xl font-bold">My Profile {queryParmas?.acive_tab}</h1>
           <p className="text-muted-foreground">Manage your personal information and preferences</p>
         </div>
         <Button onClick={() => setIsEditing(!isEditing)}>
@@ -124,7 +132,11 @@ function ProfilePage(props) {
       </div>
 
       {/* Profile Tabs */}
-      <Tabs defaultValue={activeTab} className="space-y-6">
+      <Tabs 
+      defaultValue={props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal"}
+      value={activeTab || props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal"}
+      onValueChange={setActiveTab}
+      className="space-y-6">
         <TabsList>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="professional">Professional</TabsTrigger>
@@ -514,7 +526,7 @@ function ProfilePage(props) {
                     onSubmit={handleChangePassword}
                   >
                     {({ values, errors, touched, isSubmitting, setFieldValue, resetForm }) => {
-                      console.log({ values, errors });
+                      // console.log({ values, errors });
 
                       return (
                         <Form className="space-y-8">

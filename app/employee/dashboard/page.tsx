@@ -45,7 +45,7 @@ export default function EmployeeDashboard() {
     })
     router.push('/employee/profile?acive_tab=settings');
     // alert("You have sign in by default password, Please change it..!!")
-    return
+    return <></>
   }
 
   return (
