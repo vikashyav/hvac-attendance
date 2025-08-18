@@ -14,15 +14,17 @@ import { getEmployeeDashboardStats } from "@/lib/api/dashboard-api";
 
 
 export function useEmployeesDashboard() {
-    const [isOffline, setOffline]= useState()
+    const { toast } = useToast()
+    const [isOffline, setOffline] = useState()
     const [isCheckedIn, setIsCheckedIn] = useState(false)
     const [checkInTime, setCheckInTime] = useState(null)
     const [currentLocation, setCurrentLocation] = useState(null)
     const [locationLoading, setLocationLoading] = useState(true)
     const [showCamera, setShowCamera] = useState(false);
     const [photoTaken, setPhotoTaken] = useState(false);
+    const [imgData, setImgData] = useState("")
     const notificationModal = useNotificationModalContext();
-console.log("iss", isOffline);
+    console.log("iss", isOffline);
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -37,10 +39,10 @@ console.log("iss", isOffline);
 
         }
     })
-        const { data: dashboardStats, isFetching: isFetchingdashboardStats, isSuccess, refetch: refetchdashboardStats,  } = useQuery({
-            queryKey: ['dashboardStats-emp'],
-            queryFn: getEmployeeDashboardStats
-        })
+    const { data: dashboardStats, isFetching: isFetchingdashboardStats, isSuccess, refetch: refetchdashboardStats, } = useQuery({
+        queryKey: ['dashboardStats-emp'],
+        queryFn: getEmployeeDashboardStats
+    })
     // console.log(todayCheckData?.data, "isFetchedTodayCheckIn", isFetchedTodayCheckIn);
 
     const saveCheckInByEmp = useMutation({
@@ -104,26 +106,34 @@ console.log("iss", isOffline);
         getLocation();
 
         //    if (typeof window !== 'undefined'){
-        const handleCheckOnline=()=> setOffline(false);
-        const handleCheckOffline=()=> setOffline(true);
-        window.addEventListener("online", ()=>{
+        const handleCheckOnline = () => setOffline(false);
+        const handleCheckOffline = () => setOffline(true);
+        window.addEventListener("online", () => {
             console.log("listened online");
             setOffline(false);
         });
-        window.addEventListener("offline", ()=>{
+        window.addEventListener("offline", () => {
             console.log("listened offline");
             // setLocationLoading(false)
             setOffline(true);
         });
-        return()=>{
+        return () => {
             // window.removeEventListener("online", handleCheckOnline);
             // window.removeEventListener("ofline", handleCheckOffline);
         }
-    // }
+        // }
     }, [])
 
     const handleCheckIn = () => {
-        if (!currentLocation) return;
+        if (!currentLocation || !imgData) {
+            toast({
+                title: "Check in selfie and gps coordinate is required",
+                description: "Tap the camera button (next to Check-In) to take a selfie.",
+                variant: "destructive",
+                duration: 2000
+            })
+            return;
+        }
         notificationModal.progress({
             heading: `Checking with your current location, Please await!!`,
         });
@@ -134,6 +144,7 @@ console.log("iss", isOffline);
                 address: currentLocation?.address
             },
             checkInTime: new Date(),
+            photoData: imgData
         }
         saveCheckInByEmp.mutate(checkInPayload, {
             onSuccess: (res) => {
@@ -141,7 +152,7 @@ console.log("iss", isOffline);
 
                 setIsCheckedIn(true)
                 notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
-
+                setImgData("");
                 setCheckInTime(res?.data?.checkInTime);
                 refetch();
 
@@ -156,6 +167,15 @@ console.log("iss", isOffline);
     }
 
     const handleCheckOut = () => {
+        if (!currentLocation || !imgData) {
+            toast({
+                title: "Check in selfie and gps coordinate is required",
+                description: "Tap the camera button (next to Check-In) to take a selfie.",
+                variant: "destructive",
+                duration: 2000
+            })
+            return;
+        }
         notificationModal.progress({
             heading: `Checking Out with your current location, Please await!!`,
         });
@@ -167,13 +187,15 @@ console.log("iss", isOffline);
             },
             checkOutTime: new Date(),
             checkInTime: todayCheckData?.data?.checkInTime,
-            check_in_id: todayCheckData?.data?.id
+            check_in_id: todayCheckData?.data?.id,
+            photoData: imgData
         };
         updateCheckOutByEmp.mutate(checkOutPayload, {
             onSuccess: (res) => {
                 refetch();
                 notificationModal.success({ heading: "Success", body: `Checked Out with your live location.` });
-
+                setShowCamera(false)
+                setImgData("");
                 // setIsCheckedIn(false)
                 // setCheckInTime(null)
                 // setPhotoTaken(false)
@@ -189,13 +211,19 @@ console.log("iss", isOffline);
 
     }
 
-    const handleTakePhoto = () => {
-        setShowCamera(true)
-        // Simulate camera capture
-        setTimeout(() => {
+    const handleTakePhoto = (imgData, props = {}) => {
+        console.log("hit empddd", imgData);
+        if (imgData && props?.isCaptured) {
+            setImgData(imgData);
             setPhotoTaken(true)
             setShowCamera(false)
-        }, 1500)
+        }
+        setShowCamera(true)
+        // Simulate camera capture
+        // setTimeout(() => {
+        //     setPhotoTaken(true)
+        //     setShowCamera(false)
+        // }, 2000)
     }
 
     const isCheckedOut = todayCheckData?.data?.checkOutTime && true;
