@@ -74,9 +74,12 @@ export function useAdminDashboard() {
         const time = isCheckout ? checkOutTime : checkInTime//.format("YYYY-MM-DD, h:mm:ss a");
         const status = item?.status;
         const location = `${item?.checkInLocation?.address || ""} - ${item?.checkInLocation?.latitude}, ${item?.checkInLocation?.longitude}`
+        const checkOutPhoto = item_?.checkOutPhoto;
+        const checkInPhoto = item_?.checkInPhoto;
         return {
+            // ...item_,
             employee: item?.employee?.user?.fullName,
-            time, action, status, location
+            time, action, status, location, checkOutPhoto, checkInPhoto
         }
     }) || []
 

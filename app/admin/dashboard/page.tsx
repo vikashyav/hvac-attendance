@@ -8,6 +8,7 @@ import { PerformanceChart } from "@/components/performance-chart"
 import { Users, Clock, MapPin, TrendingUp, CheckCircle, Calendar, BarChart3 } from "lucide-react"
 import { AdminDashboardPageProvider, useAdminDashboardPageContext } from "./use-adminDashboard"
 import withHOC from "@/utils/with-hoc"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 function AdminDashboardPage() {
   const {
@@ -84,9 +85,23 @@ function AdminDashboardPage() {
               <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{activity.employee}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {activity.action} at {activity.location}
-                  </p>
+
+                  <div className="flex gap-2">
+                    {/* <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" /> */}
+                    <Popover>
+                    <PopoverTrigger asChild>
+                    <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-1/4 h-1/4" />
+                      
+                    </PopoverContent>
+                  </Popover>
+                    <p className="text-xs text-muted-foreground">
+                      {activity.action} at {activity.location}
+                    </p>
+                  </div>
+
                 </div>
                 <div className="flex items-center gap-2 ml-4">
                   <Badge

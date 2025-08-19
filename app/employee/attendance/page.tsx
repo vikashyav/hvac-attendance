@@ -83,7 +83,7 @@ function AttendancePage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                    <p className="text-sm font-medium text-gray-600">This Months</p>
+                <p className="text-sm font-medium text-gray-600">This Months</p>
                 {isFetching ?
                   <div className="space-y-2">
                     <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
@@ -130,9 +130,9 @@ function AttendancePage() {
                     <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/4"></div>
                     <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
                   </div> : <>
-                <p className="text-2xl font-bold text-orange-600">{monthlyStats.punctualityScore}%</p>
-                <p className="text-xs text-gray-500">On-time arrivals</p>
-                </>}
+                    <p className="text-2xl font-bold text-orange-600">{monthlyStats.punctualityScore}%</p>
+                    <p className="text-xs text-gray-500">On-time arrivals</p>
+                  </>}
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
             </div>
@@ -149,9 +149,9 @@ function AttendancePage() {
                     <div className="h-8 sm:h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/4"></div>
                     <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
                   </div> : <>
-                <p className="text-2xl font-bold text-purple-600">{monthlyStats.totalOvertimeHours}</p>
-                <p className="text-xs text-gray-500">This month</p>
-                </>}
+                    <p className="text-2xl font-bold text-purple-600">{monthlyStats.totalOvertimeHours}</p>
+                    <p className="text-xs text-gray-500">This month</p>
+                  </>}
               </div>
               <Clock className="h-8 w-8 text-purple-600" />
             </div>
@@ -182,6 +182,7 @@ function AttendancePage() {
                     <TableHead>Check Out</TableHead>
                     <TableHead>Total Hours</TableHead>
                     <TableHead>Site</TableHead>
+                    <TableHead>Check In/Out photo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Overtime</TableHead>
                   </TableRow>
@@ -198,6 +199,24 @@ function AttendancePage() {
                         <span>{record?.checkInLocation?.address}</span>
                         <span>{` ${record?.checkInLocation?.latitude}, ${record?.checkInLocation?.longitude}`}</span>
 
+                      </TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <img data-popover-target="popover-default" src={record?.checkOutPhoto || record?.checkInPhoto} className="w-8 h-8 rounded-full" />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto" align="start">
+                            <div className="w-full flex" >
+                            {record?.checkInPhoto &&
+                              <img data-popover-target="popover-default" src={record?.checkInPhoto} className="w-1/4 h-1/4" />
+                            }
+                            {
+                              record?.checkOutPhoto &&
+                              <img data-popover-target="popover-default" src={record?.checkOutPhoto} className="w-1/4 h-1/4" />
+                            }
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </TableCell>
                       <TableCell>
                         <Badge
