@@ -62,7 +62,7 @@ export function useNotificationSubscrption() {
             description: "Subscribed For Notification update",
         })
         // await navigator.serviceWorker.register('/sw.js')
-        const reg  = await navigator.serviceWorker.ready;
+        const reg = await navigator.serviceWorker.ready;
         // alert("3")
         toast({
             title: "3",
@@ -78,7 +78,7 @@ export function useNotificationSubscrption() {
             description: "Subscribed For Notification update",
         })
         if (sub) {
-            return saveSubscrptionMutation.mutate({ userId, subscription: sub }, {
+            return saveSubscrptionMutation.mutateAsync({ userId, subscription: sub }, {
                 onSuccess: (res) => {
                     toast({
                         title: "Success",
@@ -94,28 +94,13 @@ export function useNotificationSubscrption() {
                         description: "failed Subscribed For Notification update, Please contact support team",
                         variant: "destructive",
                     })
-                    // alert("something went wrong")
+                    alert("something went wrong")
                     setTimeout(() => {
                         window.location.reload(); // to trigger middleware check
-                    }, 100);
+                    }, 500);
                 }
             })
         }
-        // } catch (error) {
-        // console.error("❌ Push subscription failed:", err);
-        // alert("❌ Push subscription failed:", err)
-        // }
-
-        // const registration = await navigator.serviceWorker.register('/sw.js').catch((err) => {
-        //     console.log("register error", err)
-        // });
-
-        // const subscription = await registration.pushManager.subscribe({
-        //     userVisibleOnly: true,
-        //     applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
-        //     // urlBase64ToUint8Array("BNoCJ9EsZTsNyxtdOpwiCFIknD3Acr_bcxW6bycN5ib7xJ7SSJMKbTHlrK8gubKhMNmz6_dLBgxFoOsbcFzetDc" || process.env.NEXT_PUBLIC_VAPID_KEY)
-        // }).catch(console.log);
-
     }
 
 
@@ -139,30 +124,45 @@ export function useNotificationSubscrption() {
     }
 
     const unsubscribeNotification = async () => {
-        // Wait for service worker to be ready
-        const registration = await navigator.serviceWorker.ready;
+        try {
+            // Wait for service worker to be ready
+            const registration = await navigator.serviceWorker.ready;
 
-        // Check if there's an existing subscription
-        const existingSubscription = await registration.pushManager.getSubscription();
+            // Check if there's an existing subscription
+            const existingSubscription = await registration.pushManager.getSubscription();
 
-        // If yes, unsubscribe from it
-        if (existingSubscription) {
-            console.log('Unsubscribing old push subscription...');
-            return deleteSubscrptionMut.mutate({ endpoint: existingSubscription.endpoint }, {
-                onSuccess: async () => {
-                    await existingSubscription.unsubscribe();
-                    window.location.reload(); // to trigger middleware check
-                    return
-                },
-                onError: () => {
-                    toast({
-                        title: "Error",
-                        description: "unable to unsubcribe notification",
-                    })
-                    window.location.reload(); // to trigger middleware check
-                }
+            // If yes, unsubscribe from it
+            if (existingSubscription) {
+                console.log('Unsubscribing old push subscription...');
+                return deleteSubscrptionMut.mutateAsync({ endpoint: existingSubscription.endpoint }, {
+                    onSuccess: async () => {
+                        await existingSubscription.unsubscribe();
+                        window.location.reload(); // to trigger middleware check
+                        return
+                    },
+                    onError: () => {
+                        toast({
+                            title: "Error",
+                            description: "unable to unsubcribe notification",
+                        })
+                        // to trigger middleware check
+                        setTimeout(() => {
+                            window.location.reload(); // to trigger middleware check
+                        }, 500);
+                    }
+                })
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error,
             })
+            // to trigger middleware check
+            setTimeout(() => {
+                window.location.reload(); // to trigger middleware check
+            }, 500);
         }
+
     }
 
 

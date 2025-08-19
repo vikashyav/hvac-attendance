@@ -14,8 +14,8 @@ const UserContext = createContext();
 export function UserProvider(props) {
   const { children } = props;
   const router = useRouter()
-    const notificationModal = useNotificationModalContext();
-  const {unsubscribeNotification}= useNotificationSubscrption();
+  const notificationModal = useNotificationModalContext();
+  const { unsubscribeNotification } = useNotificationSubscrption();
 
   // const  _getItem = (keyName) =>{
   //   if (typeof window === 'undefined') return {};
@@ -82,17 +82,18 @@ export function UserProvider(props) {
     };
   }, []);
 
-  const handleLogout = async() => {
-        notificationModal.progress({ heading: "logging out....Please await!!" });
+  const handleLogout = async () => {
+    notificationModal.progress({ heading: "logging out....Please await!!" });
     storageService.clear();
     removeUser();
     document.cookie = 'access_token=; path=/; max-age=0';
     document.cookie = 'userInfo=; path=/; max-age=0';
-    await unsubscribeNotification().catch(()=>{
-                    window.location.reload(); // to trigger middleware check
+    await unsubscribeNotification().catch(() => {
+      alert("something went wrong!!, unable to unscribe push notification")
+      window.location.reload(); // to trigger middleware check
     });
-                    window.location.reload(); // to trigger middleware check
-    router.push("/login")
+    // window.location.reload(); // to trigger middleware check
+    // router.push("/login")
   }
 
   const setCookies = (name, value, days = 30) => {
@@ -104,9 +105,9 @@ export function UserProvider(props) {
   const getCookies = (name) => {
     const cookies = document.cookie.split('; ');
     const cookie = cookies.find(row => row.startsWith(name + '='));
-    const val= decodeURIComponent(cookie.split('=')[1]);
-          if (is.null(val) || is.undefined(val)|| val=='undefined') return "";
-  return JSON.parse(val||'{}')
+    const val = decodeURIComponent(cookie.split('=')[1]);
+    if (is.null(val) || is.undefined(val) || val == 'undefined') return "";
+    return JSON.parse(val || '{}')
     // return cookie ? decodeURIComponent(cookie.split('=')[1]) : null; //decodeURIComponent(cookie.split('=')[1])
   }
 
