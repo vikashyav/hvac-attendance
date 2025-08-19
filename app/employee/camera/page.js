@@ -185,31 +185,6 @@ export default function AttendanceSelfie(props) {
         }
     };
 
-    // useEffect(async () => {
-    //     if (!modelsLoaded) return;
-
-    //     let intervalId;
-
-    //     const runDetection = async () => {
-    //         if (!videoRef.current) return;
-
-    //         const detection = await faceapi
-    //             .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-    //             .withFaceLandmarks()
-    //             .withFaceDescriptor();
-    //         if (detection) {
-    //             setStatusMsg("✅ Face detected!");
-    //         } else {
-    //             setStatusMsg("❌ No face detected");
-    //         }
-    //     };
-
-    //     // Run detection every 1 second
-    //     intervalId = setInterval(runDetection, 1000);
-
-    //     return () => clearInterval(intervalId);
-    // }, [modelsLoaded]);
-
     const verifyFace = async () => {
         if (!modelsLoaded || !videoRef.current) return;
 
@@ -259,9 +234,9 @@ export default function AttendanceSelfie(props) {
                 autoPlay
                 className={`rounded-full w-64 h-64 object-cover ${captured ? "hidden" : "block"}`}
             />
-            <img
-                // ref={canvasRef}
-                src={imgData}
+            <canvas
+                ref={canvasRef}
+                // src={imgData}
                 className={`rounded-full w-64 h-64 ${captured ? "block" : "hidden"}`}
             />
             <button
