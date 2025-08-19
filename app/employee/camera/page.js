@@ -9,9 +9,10 @@ export default function AttendanceSelfie(props) {
     const [captured, setCaptured] = useState(false);
     const [loading, setLoading] = useState(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
+    const [retryNo, setRetryNo]= useState(0);
     const [statusMsg, setStatusMsg] = useState("Loading models...");
     const [imgData, setImgData] = useState()
-    const [intervalTimeId, setIntervalTimeId]=useState();
+    const [intervalTimeId, setIntervalTimeId] = useState();
 
     useEffect(() => {
         // let stream;
@@ -38,9 +39,13 @@ export default function AttendanceSelfie(props) {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                intervalId = setInterval(detectFace, 1000);
-                setIntervalTimeId(intervalId);
-                return () => clearInterval(intervalId);
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current.play();
+                    detectFace(); // start detection loop
+                };
+                // intervalId = setInterval(detectFace, 1500);
+                // setIntervalTimeId(intervalId);
+                // return () => clearInterval(intervalId);
             }
         } catch (err) {
             alert("Camera access denied!");
@@ -51,33 +56,11 @@ export default function AttendanceSelfie(props) {
         const video = videoRef?.current;
         const stream = video?.srcObject;
         if (stream) {
-            // const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
             stream.getTracks().forEach(track => track.stop()); // Stop all tracks in the stream
-            //   setStream(null); // Clear the stream state
+            video.srcObject = null;
         }
+         video?.pause();
     };
-
-    //   const captureSelfie = () => {
-    //     const video = videoRef.current;
-    //     const canvas = canvasRef.current;
-
-    //     if (!video || !canvas) {
-    //       alert("Camera or canvas not ready!");
-    //       return;
-    //     }
-
-    //     const context = canvas.getContext("2d");
-    //     if (!context) {
-    //       alert("Could not get canvas context!");
-    //       return;
-    //     }
-
-    //     canvas.width = video.videoWidth || 300; // fallback width
-    //     canvas.height = video.videoHeight || 300; // fallback height
-    //     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    //     setCaptured(true);
-    //   };
 
     const captureSelfie = () => {
         const video = videoRef.current;
@@ -92,7 +75,7 @@ export default function AttendanceSelfie(props) {
         const imageData = canvas.toDataURL("image/png");
         setImgData(imageData)
         if (props?.handleTakePhoto) {
-            props?.handleTakePhoto(imageData, {isCaptured:true})
+            props?.handleTakePhoto(imageData, { isCaptured: true })
         }
         // ✅ Properly stop all media tracks
         if (video.srcObject) {
@@ -107,10 +90,8 @@ export default function AttendanceSelfie(props) {
 
         // ✅ Pause video (extra safe)
         video.pause();
-
         setCaptured(true);
         return () => clearInterval(intervalTimeId);
-
     };
 
 
@@ -130,7 +111,7 @@ export default function AttendanceSelfie(props) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                category:"attendance-log",
+                category: "attendance-log",
                 // employeeId: "EMP123", // TODO: replace with logged-in employeeId
                 file: imageData,
                 timestamp: new Date().toISOString(),
@@ -156,6 +137,7 @@ export default function AttendanceSelfie(props) {
 
     const detectFace = async () => {
         if (!videoRef.current) return;
+        if (captured) return;
         const detections = await faceapi
             .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
             .withFaceLandmarks()
@@ -173,13 +155,19 @@ export default function AttendanceSelfie(props) {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL("image/png");
             if (props?.handleTakePhoto) {
-                // props?.handleTakePhoto(imageData, {isCaptured:true})
-                captureSelfie();
+                setStatusMsg("Face detected ✅, Photo captured");
+                setImgData(imageData);
+                setCaptured(true);
+                props?.handleTakePhoto(imageData, { isCaptured: true })
+                stopCamera(); 
             }
             setStatusMsg("Face detected ✅, Photo captured");
             console.log(detections);
+            return
         } else {
-            setStatusMsg("No face found ❌, Please Smile and blink your eyes");
+            setRetryNo((prev)=> prev++);
+            setStatusMsg(`${retryNo && `retrying..${retryNo}`} No face found ❌, Please Smile and blink your eyes`);
+            setTimeout(detectFace, 1000); // retry after 0.5 sec
         }
     };
 
@@ -251,28 +239,29 @@ export default function AttendanceSelfie(props) {
 
     return (
         <div className="flex flex-col items-center space-y-4">
+            <p className="text-lg font-bold">{statusMsg}</p>
             <video
                 ref={videoRef}
                 autoPlay
                 className={`rounded-full w-64 h-64 object-cover ${captured ? "hidden" : "block"}`}
             />
-            <canvas
-                ref={canvasRef}
+            <img
+                // ref={canvasRef}
+                src={imgData}
                 className={`rounded-full w-64 h-64 ${captured ? "block" : "hidden"}`}
             />
-            <p className="text-lg font-bold">{statusMsg}</p>
             <button
                 onClick={verifyFace}
                 className="hidden px-4 py-2 bg-blue-600 text-white rounded"
             >
                 Verify Face
             </button>
-                <button
-                    onClick={captureSelfie}
-                    className=" hidden px-4 py-2 bg-blue-600 text-white rounded-lg"
-                >
-                    📸 Capture
-                </button>
+            <button
+                onClick={captureSelfie}
+                className=" hidden px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+                📸 Capture
+            </button>
             {/* <button
                 onClick={detectFace}
                 className="px-4 py-2 bg-blue-600 text-white rounded mt-4"
