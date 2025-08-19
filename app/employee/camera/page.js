@@ -11,7 +11,7 @@ export default function AttendanceSelfie(props) {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [statusMsg, setStatusMsg] = useState("Loading models...");
     const [imgData, setImgData] = useState()
-    const [intervalTimeId, setIntervalTimeId]=useEffect();
+    const [intervalTimeId, setIntervalTimeId]=useState();
 
     useEffect(() => {
         // let stream;
