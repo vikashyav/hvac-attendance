@@ -1,4 +1,5 @@
 "use client"
+import dynamic from "next/dynamic";
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +26,7 @@ import { useUserFromStorage } from "@/hooks/user.context"
 import _ from "lodash";
 import { cn } from "@/lib/utils"
 import AttendanceSelfie from "../camera/page"
+// const AttendanceSelfie = dynamic(() => import("../camera/page"), { ssr: false });
 
 
 export default function AttendanceComponent() {

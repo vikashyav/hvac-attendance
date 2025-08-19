@@ -1,7 +1,8 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { useRef, useState, useEffect } from "react";
-import * as faceapi from "face-api.js";
+// import * as faceapi from "face-api.js";
+import * as faceapi from "face-api.js/dist/face-api.js";
 
 export default function AttendanceSelfie(props) {
     const videoRef = useRef(null);
@@ -9,7 +10,7 @@ export default function AttendanceSelfie(props) {
     const [captured, setCaptured] = useState(false);
     const [loading, setLoading] = useState(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
-    const [retryNo, setRetryNo]= useState(0);
+    const [retryNo, setRetryNo] = useState(0);
     const [statusMsg, setStatusMsg] = useState("Loading models...");
     const [imgData, setImgData] = useState()
     const [intervalTimeId, setIntervalTimeId] = useState();
@@ -41,7 +42,9 @@ export default function AttendanceSelfie(props) {
                 videoRef.current.srcObject = stream;
                 videoRef.current.onloadedmetadata = () => {
                     videoRef.current.play();
-                    detectFace(); // start detection loop
+                    setStatusMsg("Please await while detecting your face");
+                    // detectFace(); // start detection loop
+                    setTimeout(detectFace, 1500)
                 };
                 // intervalId = setInterval(detectFace, 1500);
                 // setIntervalTimeId(intervalId);
@@ -59,7 +62,7 @@ export default function AttendanceSelfie(props) {
             stream.getTracks().forEach(track => track.stop()); // Stop all tracks in the stream
             video.srcObject = null;
         }
-         video?.pause();
+        video?.pause();
     };
 
     const captureSelfie = () => {
@@ -138,36 +141,47 @@ export default function AttendanceSelfie(props) {
     const detectFace = async () => {
         if (!videoRef.current) return;
         if (captured) return;
-        const detections = await faceapi
-            .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+        try {
+            setStatusMsg("Please await while detecting your face...");
+            console.log("deet", 1);
+            const detections = await faceapi
+                .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+            console.log("deet", detections);
 
-        if (detections) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
+            if (detections) {
+                const video = videoRef.current;
+                const canvas = canvasRef.current;
 
-            if (!video || !canvas) return;
+                if (!video || !canvas) return;
 
-            const context = canvas.getContext("2d");
-            canvas.width = video.videoWidth || 300;
-            canvas.height = video.videoHeight || 300;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL("image/png");
-            if (props?.handleTakePhoto) {
+                const context = canvas.getContext("2d");
+                canvas.width = video.videoWidth || 300;
+                canvas.height = video.videoHeight || 300;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL("image/png");
+                if (props?.handleTakePhoto) {
+                    setStatusMsg("Face detected ✅, Photo captured");
+                    setImgData(imageData);
+                    setCaptured(true);
+                    props?.handleTakePhoto(imageData, { isCaptured: true })
+                    stopCamera();
+                }
                 setStatusMsg("Face detected ✅, Photo captured");
-                setImgData(imageData);
-                setCaptured(true);
-                props?.handleTakePhoto(imageData, { isCaptured: true })
-                stopCamera(); 
+                console.log(detections);
+                return
+            } else {
+                console.log("retrying.............");
+
+                setRetryNo((prev) => {
+                    setStatusMsg(`No face found ❌, retrying..${prev + 1},  Please Smile and blink your eyes`);
+                    return prev + 1
+                });
+                setTimeout(detectFace, 1500); // retry after 1.5 sec
             }
-            setStatusMsg("Face detected ✅, Photo captured");
-            console.log(detections);
-            return
-        } else {
-            setRetryNo((prev)=> prev++);
-            setStatusMsg(`${retryNo && `retrying..${retryNo}`} No face found ❌, Please Smile and blink your eyes`);
-            setTimeout(detectFace, 1000); // retry after 0.5 sec
+        } catch (error) {
+            console.log("eeeeeeeee", error);
         }
     };
 
