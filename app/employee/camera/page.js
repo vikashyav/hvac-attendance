@@ -114,34 +114,6 @@ export default function AttendanceSelfie(props) {
     };
 
 
-    const checkIn = async () => {
-        setLoading(true);
-        const canvas = canvasRef.current;
-
-        if (!canvas) {
-            alert("No selfie captured!");
-            setLoading(false);
-            return;
-        }
-
-        const imageData = canvas.toDataURL("image/png");
-
-        const res = await fetch("https://project.thermopharm.in/file-upload-api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                category:"attendance-log",
-                // employeeId: "EMP123", // TODO: replace with logged-in employeeId
-                file: imageData,
-                timestamp: new Date().toISOString(),
-            }),
-        });
-
-        const result = await res.json();
-        alert(result.message || "Check-in completed!");
-        setLoading(false);
-    };
-
     const retakeSelfie = async () => {
         setCaptured(false);
         try {
@@ -182,31 +154,6 @@ export default function AttendanceSelfie(props) {
             setStatusMsg("No face found ❌, Please Smile and blink your eyes");
         }
     };
-
-    // useEffect(async () => {
-    //     if (!modelsLoaded) return;
-
-    //     let intervalId;
-
-    //     const runDetection = async () => {
-    //         if (!videoRef.current) return;
-
-    //         const detection = await faceapi
-    //             .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-    //             .withFaceLandmarks()
-    //             .withFaceDescriptor();
-    //         if (detection) {
-    //             setStatusMsg("✅ Face detected!");
-    //         } else {
-    //             setStatusMsg("❌ No face detected");
-    //         }
-    //     };
-
-    //     // Run detection every 1 second
-    //     intervalId = setInterval(runDetection, 1000);
-
-    //     return () => clearInterval(intervalId);
-    // }, [modelsLoaded]);
 
     const verifyFace = async () => {
         if (!modelsLoaded || !videoRef.current) return;
@@ -251,6 +198,7 @@ export default function AttendanceSelfie(props) {
 
     return (
         <div className="flex flex-col items-center space-y-4">
+            <p className="text-lg font-bold">{statusMsg}</p>
             <video
                 ref={videoRef}
                 autoPlay
@@ -258,9 +206,12 @@ export default function AttendanceSelfie(props) {
             />
             <canvas
                 ref={canvasRef}
+                // className={`rounded-full w-64 h-64 ${captured ? "block" : "hidden"}`}
+            />
+            <img
+                src={imgData}
                 className={`rounded-full w-64 h-64 ${captured ? "block" : "hidden"}`}
             />
-            <p className="text-lg font-bold">{statusMsg}</p>
             <button
                 onClick={verifyFace}
                 className="hidden px-4 py-2 bg-blue-600 text-white rounded"
