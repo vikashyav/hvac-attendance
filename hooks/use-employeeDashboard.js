@@ -125,7 +125,7 @@ export function useEmployeesDashboard() {
     }, [])
 
     const handleCheckIn = () => {
-        if (!currentLocation || !imgData) {
+        if (!currentLocation || !currentLocation?.lat || !imgData) {
             toast({
                 title: "Check in selfie and gps coordinate is required",
                 description: "Tap the camera button (next to Check-In) to take a selfie.",
@@ -153,6 +153,7 @@ export function useEmployeesDashboard() {
                 setIsCheckedIn(true)
                 notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
                 setImgData("");
+                setShowCamera(false)
                 setCheckInTime(res?.data?.checkInTime);
                 refetch();
 
@@ -167,7 +168,7 @@ export function useEmployeesDashboard() {
     }
 
     const handleCheckOut = () => {
-        if (!currentLocation || !imgData) {
+        if (!currentLocation || !currentLocation?.lat || !imgData) {
             toast({
                 title: "Check in selfie and gps coordinate is required",
                 description: "Tap the camera button (next to Check-In) to take a selfie.",
