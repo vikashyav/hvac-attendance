@@ -11,6 +11,7 @@ export default function AttendanceSelfie(props) {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [statusMsg, setStatusMsg] = useState("Loading models...");
     const [imgData, setImgData] = useState()
+    const [intervalTimeId, setIntervalTimeId]=useEffect();
 
     useEffect(() => {
         // let stream;
@@ -38,6 +39,7 @@ export default function AttendanceSelfie(props) {
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 intervalId = setInterval(detectFace, 1000);
+                setIntervalTimeId(intervalId);
                 return () => clearInterval(intervalId);
             }
         } catch (err) {
@@ -107,6 +109,8 @@ export default function AttendanceSelfie(props) {
         video.pause();
 
         setCaptured(true);
+        return () => clearInterval(intervalTimeId);
+
     };
 
 
@@ -169,12 +173,13 @@ export default function AttendanceSelfie(props) {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL("image/png");
             if (props?.handleTakePhoto) {
-                props?.handleTakePhoto(imageData, {isCaptured:true})
+                // props?.handleTakePhoto(imageData, {isCaptured:true})
+                captureSelfie();
             }
             setStatusMsg("Face detected ✅, Photo captured");
             console.log(detections);
         } else {
-            setStatusMsg("No face found ❌");
+            setStatusMsg("No face found ❌, Please Smile and blink your eyes");
         }
     };
 
@@ -262,14 +267,12 @@ export default function AttendanceSelfie(props) {
             >
                 Verify Face
             </button>
-            {!captured ? (
                 <button
                     onClick={captureSelfie}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                    className=" hidden px-4 py-2 bg-blue-600 text-white rounded-lg"
                 >
                     📸 Capture
                 </button>
-            ) : (<></>)}
             {/* <button
                 onClick={detectFace}
                 className="px-4 py-2 bg-blue-600 text-white rounded mt-4"
