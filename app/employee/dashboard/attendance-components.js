@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator"
 import { useUserFromStorage } from "@/hooks/user.context"
 import _ from "lodash";
 import { cn } from "@/lib/utils"
+import AttendanceSelfie from "../camera/page"
 
 
 export default function AttendanceComponent() {
@@ -275,12 +276,13 @@ export default function AttendanceComponent() {
                 </div>
 
                 {showCamera && (
-                    <Alert>
-                        <Camera className="h-4 w-4" />
-                        <AlertDescription className="text-sm">
-                            Camera is active... Taking photo for attendance verification.
-                        </AlertDescription>
-                    </Alert>
+                    <AttendanceSelfie  handleTakePhoto={handleTakePhoto}/>
+                    // <Alert>
+                    //     <Camera className="h-4 w-4" />
+                    //     <AlertDescription className="text-sm">
+                    //         Camera is active... Taking photo for attendance verification.
+                    //     </AlertDescription>
+                    // </Alert>
                 )}
             </CardContent>
         </Card>

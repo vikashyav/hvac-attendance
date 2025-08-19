@@ -51,6 +51,7 @@
     "date-fns": "latest",
     "dotenv": "^17.0.1",
     "embla-carousel-react": "8.5.1",
+    "face-api.js": "^0.22.2",
     "formik": "^2.4.6",
     "input-otp": "1.4.1",
     "lodash": "^4.17.21",
