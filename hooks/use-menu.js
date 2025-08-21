@@ -48,6 +48,12 @@ export default function useMenuItems() {
         //   icon: BarChart3,
         // },
         {
+            name: "Leave-request",
+            href: "/employee/leave-request",
+            icon: Calendar,
+            access: ["employee", "admin"]
+        },
+        {
             name: "Profile",
             href: "/employee/profile",
             icon: User,

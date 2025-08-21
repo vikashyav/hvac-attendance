@@ -154,5 +154,6 @@ employee:[
             status: "break",
         },
     ]
-   }
+   },
+   leaveType:["SICK", "CASUAL", "ANNUAL", "UNPAID", "OTHER"]
 }
