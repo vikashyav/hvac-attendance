@@ -70,8 +70,9 @@ import EmployeeForm from "./add-form";
 import withHOC from "@/utils/with-hoc";
 import { useEmployeesPageContext, EmployeesPageProvider } from "./use-leaveRequest";
 import { useRouter } from 'next/navigation'
+import { Textarea } from "@/components/ui/textarea"
 
-interface Employee {
+interface request {
   id: string
   name: string
   email: string
@@ -109,15 +110,6 @@ function EmployeesPage() {
   const { toast } = useToast()
   const router = useRouter();
 
-  // const [view, setView] = useState<"grid" | "table">("table")
-  // const [searchTerm, setSearchTerm] = useState("")
-  // const [selectedDepartment, setSelectedDepartment] = useState("all")
-  // const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false)
-  // const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  // const [leaveRequestData, setLeaveRequestData] = useState<Employee | null>(null)
-
-  // const [employees, setEmployees] = useState<Employee[]>(fakeData.employee)
-
   const {
     view, setView,
     searchTerm, setSearchTerm,
@@ -127,37 +119,37 @@ function EmployeesPage() {
     leaveRequestData, setLeaveRequestData,
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching, user
-    // handleAttendanceReport
+    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching, user,
+    leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin, handleLeaveRequestUpdateByAdmin
   } = useEmployeesPageContext();
 
-  const handleAttendanceReport = (employee) => {
+  const handleAttendanceReport = (request) => {
     //   router.push({
     //   pathname: '/employee/attendance',
-    //   query: { employee_id: employee?.id },
+    //   query: { employee_id: request?.id },
     // })
-    router.push(`/employee/attendance?employee_id=${employee?.id}`)
+    router.push(`/employee/attendance?employee_id=${request?.id}`)
   }
 
-  const dropdownMenuItems = (employee) => {
+  const dropdownMenuItems = (request) => {
     return <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-      <DropdownMenuItem onClick={() => handleAttendanceReport(employee)}>
+      <DropdownMenuItem onClick={() => handleAttendanceReport(request)}>
         <Eye className="mr-2 h-4 w-4" />
         View Attendance Reports
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => handleViewDetails(employee)}>
+      <DropdownMenuItem onClick={() => handleViewDetails(request)}>
         <Eye className="mr-2 h-4 w-4" />
         View Details
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => openEditDialog(employee)} disabled={employee.status !== "PENDING"}>
+      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING"}>
         <Edit className="mr-2 h-4 w-4" />
         Edit Request
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={request.status !== "PENDING"}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </DropdownMenuItem>
@@ -172,7 +164,7 @@ function EmployeesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
+            <AlertDialogAction onClick={() => handleDeleteEmployee(request.id)}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -181,6 +173,15 @@ function EmployeesPage() {
     </DropdownMenuContent>
   }
 
+  const handleAdminUpdate = (employee)=>(e) => {
+    const { name, value } = e.target;
+    const payload = {
+      [request.id]:{
+        [name]:value
+      }
+    };
+    setLeaveRequestUpdateByAdmin({...leaveRequestUpdateByAdmin, ...payload})
+  }
   const totalEmployee = employeeData?.paging?.total;
   const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
   const inActiveEmp = (totalEmployee - activeEmp) || 0;
@@ -230,12 +231,12 @@ function EmployeesPage() {
           </Select>
         </div>
         <div className="flex gap-2">
-            <Button variant={view === "grid" ? "default" : "outline"} size="sm" onClick={() => setView("grid")}>
-              <Grid3X3 className="h-4 w-4" />
-            </Button> 
-            <Button variant={view === "table" ? "default" : "outline"} size="sm" onClick={() => setView("table")}>
-              <List className="h-4 w-4" />
-            </Button>
+          <Button variant={view === "grid" ? "default" : "outline"} size="sm" onClick={() => setView("grid")}>
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button variant={view === "table" ? "default" : "outline"} size="sm" onClick={() => setView("table")}>
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -261,38 +262,38 @@ function EmployeesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
+                    {filteredEmployees.map((request) => (
+                      <TableRow key={request.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                               <span className="text-sm font-medium text-primary">
-                                {employee?.fullName
+                                {request?.fullName
                                   ?.split(" ")
                                   ?.map((n) => n[0])
                                   ?.join("")}
                               </span>
                             </div>
                             <div>
-                              <div className="font-medium">{employee.fullName}</div>
-                              <div className="text-sm text-muted-foreground">{employee.email}</div>
+                              <div className="font-medium">{request.fullName}</div>
+                              <div className="text-sm text-muted-foreground">{request.email}</div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{employee.startDate}</span>
+                          <span className="text-sm font-medium">{request.startDate}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">{employee.endDate}</span>
+                          <span className="text-sm font-medium">{request.endDate}</span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={employee.isActive ? "default" : "secondary"}>
-                            {employee.status}
+                          <Badge variant={request.isActive ? "success" : "secondary"}>
+                            {request.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            {employee.days}
+                            {request.days}
 
                           </div>
                         </TableCell>
@@ -304,7 +305,7 @@ function EmployeesPage() {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            {dropdownMenuItems(employee)}
+                            {dropdownMenuItems(request)}
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
@@ -318,57 +319,67 @@ function EmployeesPage() {
 
         <TabsContent value="grid" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
-              <Card key={employee.id} className="hover:shadow-md transition-shadow">
+            {filteredEmployees.map((request) => (
+              <Card key={request.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     {isAdmin ? <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-primary">
-                          {employee.fullName
+                          {request.fullName
                             .split(" ")
                             .map((n) => n[0])
                             .join("")}
                         </span>
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{employee.fullName}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{employee.id}</p>
+                        <CardTitle className="text-lg">{request.fullName}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{request.id}</p>
                       </div>
-                    </div>:<div></div>}
-                    <Badge variant={employee.status === "active" ? "default" : "secondary"}>{employee.status}</Badge>
+                    </div> : <div></div>}
+                    <Badge variant={request.status === "APPROVED" ? "success" : "secondary"}>{request.status}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="space-y-2">
                     <div className="flex items-center text-sm">
                       <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{employee.email}</span>
+                      <span className="truncate">{request.email}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       <span className="text-muted-foreground">Leave Type:</span>
-                      <span>{employee.phone}</span>
+                      <span>{request.leaveType}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>Days: {`${employee.days} from ${employee.startDate} to ${employee.endDate}`}</span>
+                      <span> {`${request.days} Days from ${request.startDate} to ${request.endDate}`}</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       {/* <span className="text-muted-foreground">Reason:</span> */}
-                      <span className="font-medium whitespace-pre-wrap">{employee?.reason || "-"}</span>
+                      <span className="font-medium whitespace-pre-wrap">{request?.reason || "-"}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
+                  {isAdmin && <div>
+                    <Label htmlFor="reason" className="text-sm font-medium">
+                      Remarks
+                    </Label>
+                    <Textarea
+                      name="remarks"
+                      placeholder="Enter your reamrks/message here"
+                      value={leaveRequestUpdateByAdmin?.[request.id]?.["remarks"] || request.remarks}
+                      onChange={handleAdminUpdate(request)}
+                    />
+                                      <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1 bg-transparent"
-                      onClick={() => handleViewDetails(employee)}
-                    // onClick={() => openEditDialog(employee)}
+                      onClick={() => handleLeaveRequestUpdateByAdmin(employee, "APPROVED")}
+                      disabled={["APPROVED", "REJECTED"].includes(request.status)}
                     >
                       <CheckCircle className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
                       Approve
@@ -377,7 +388,8 @@ function EmployeesPage() {
                       variant="outline"
                       size="sm"
                       className="flex-1 bg-transparent"
-                      onClick={() => openEditDialog(employee)}
+                      onClick={() => handleLeaveRequestUpdateByAdmin(employee, "REJECTED")}
+                      disabled={["APPROVED", "REJECTED"].includes(request.status)}
                     >
                       <X className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
                       Reject
@@ -388,9 +400,10 @@ function EmployeesPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      {dropdownMenuItems(employee)}
+                      {dropdownMenuItems(request)}
                     </DropdownMenu>
                   </div>
+                  </div>}
                 </CardContent>
               </Card>
             ))}

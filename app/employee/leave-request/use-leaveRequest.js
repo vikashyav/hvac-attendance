@@ -5,9 +5,9 @@ import fakeData from "@/constants/fake-data";
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import {createLeaveRequest, getLeaveRequest, updateLeaveRequest } from "@/lib/api/leave-api";
+import { createLeaveRequest, getLeaveRequest, updateLeaveRequest, updateLeaveStatus } from "@/lib/api/leave-api";
 import generateContext from "@/utils/generate-context";
-import {getIntialValues} from "./form-helper";
+import { getIntialValues } from "./form-helper";
 import { useRouter } from 'next/router'
 import { useUserFromStorage } from "@/hooks/user.context";
 
@@ -16,15 +16,16 @@ export function useEmployees() {
   // const router = useRouter()
   const { toast } = useToast()
   const notificationModal = useNotificationModalContext();
-    const { user, } = useUserFromStorage();
+  const { user, } = useUserFromStorage();
   const isAdmin = user?.role === "admin"
 
-  const [view, setView] = useState(isAdmin ? "grid" : "table")
+  const [view, setView] = useState("grid")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [leaveRequestData, setLeaveRequestData] = useState(getIntialValues({}))
+  const [leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin] = useState({});
 
   const [employees, setEmployees] = useState([]) //::Todo fake data for demo fakeData.employee
 
@@ -33,10 +34,10 @@ export function useEmployees() {
 
   const locations = fakeData.locations
   const { data: employeeData, isFetching, refetch } = useQuery({
-    queryKey:["useEmployees"],
+    queryKey: ["useEmployees"],
     queryFn: getLeaveRequest
   })
-  const filteredEmployees = (employeeData?.data || employees).filter((employee) => {
+  const filteredEmployees = (employeeData?.data || []).filter((employee) => {
     const matchesSearch =
       employee?.fullName?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,26 +50,26 @@ export function useEmployees() {
     mutationFn: createLeaveRequest,
   })
 
-  const udateMutation= useMutation({
+  const udateMutation = useMutation({
     mutationFn: updateLeaveRequest,
+  })
+  const udateLeaveStatusMutation = useMutation({
+    mutationFn: updateLeaveStatus,
   })
   const handleAddEmployee = (values, { setSubmitting, resetForm }) => {
 
     notificationModal.progress({
       heading: `Please await...!!`,
     });
-    const apiCall= values?.id ? udateMutation.mutate : mutation.mutate
+    const apiCall = values?.id ? udateMutation.mutate : mutation.mutate
     apiCall(values, {
       onSuccess: (res) => {
-        // console.log(res)
         refetch();
         notificationModal.success({ heading: "Request Submitted", body: `Your leave request has been submitted for approval.` });
 
       },
       onError: (err) => {
-        // alert('Something went wrong')
         notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-        // console.error(err)
         setIsLoading(false)
       },
     })
@@ -121,13 +122,31 @@ export function useEmployees() {
   }
 
   const openEditDialog = (employee) => {
-  console.log({employee});
-
     setLeaveRequestData(getIntialValues({ ...employee }))
     setIsEditDialogOpen(true)
     setIsAddDrawerOpen(true);
   }
 
+  const handleLeaveRequestUpdateByAdmin = (payload, status) => {
+    notificationModal.progress({
+      heading: `Please await...!!`,
+    })
+    const payload_ = {
+      id: payload.id,
+      remarks: leaveRequestUpdateByAdmin?.[payload.id]?.["remarks"] || payload.remarks,
+      status: status
+    };
+    return udateLeaveStatusMutation.mutate(payload_, {
+      onSuccess: (res) => {
+        refetch();
+        notificationModal.success({ heading: "Success", body: `${payload.fullName} leave request has been ${status}` });
+      },
+      onError: (err) => {
+        notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
+        setIsLoading(false)
+      },
+    })
+  }
 
 
   return {
@@ -141,7 +160,7 @@ export function useEmployees() {
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
     handleToggleStatus, handleViewDetails, openEditDialog,
     employeeData: employeeData?.data, isFetching,
-    user
+    user, leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin, handleLeaveRequestUpdateByAdmin
     // handleAttendanceReport
   }
 }

@@ -55,6 +55,7 @@ import fakeData from "@/constants/fake-data";
 import { useEmployeesPageContext } from "./use-leaveRequest";
 import { FormField, FormItem } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getIntialValues } from "./form-helper";
 
 const validationSchema = Yup.object({
   leaveType: Yup.string().required("Department is required"),
@@ -70,7 +71,7 @@ function EmployeeForm({
   setIsAddDrawerOpen,
   handleAddEmployee,
 }) {
-  const { leaveRequestData } = useEmployeesPageContext();
+  const { leaveRequestData, setLeaveRequestData } = useEmployeesPageContext();
   const departments = fakeData.leaveType;
   const positions = fakeData.positions;
 
@@ -80,7 +81,9 @@ function EmployeeForm({
   return (
     <Sheet open={isAddDrawerOpen} onOpenChange={setIsAddDrawerOpen}>
       <SheetTrigger asChild>
-        <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
+        <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+        onClick={()=>setLeaveRequestData(getIntialValues({}))}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Leave Request
         </Button>
@@ -307,18 +310,18 @@ function EmployeeForm({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (values?.id && values.status!=="PENDING")}
                     className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Adding Employee...
+                        Adding ...
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        {values?.id ? "Update Employee" : "Add Employee"}
+                        {values?.id ? "Update " : "Add "}
                       </>
                     )}
                   </Button>
