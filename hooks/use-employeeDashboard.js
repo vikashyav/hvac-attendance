@@ -62,10 +62,11 @@ export function useEmployeesDashboard() {
 
     // Simulate getting location
     useEffect(() => {
-        const getLocation = () => {
+
+        const getLocation = async() => {
             setLocationLoading(true)
             // Simulate GPS loading
-            //  useEffect(() => {
+
             if (!navigator.geolocation) {
                 setCurrentLocation((prev) => ({ ...prev, error: "Geolocation not supported" }));
                 return;

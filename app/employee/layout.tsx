@@ -9,30 +9,38 @@ import { useUserFromStorage } from "@/hooks/user.context"
 import storageService from "@/lib/services/storage.service";
 import { clearTokenDataFromStorage, getTokenDataFromStorage } from "../../hooks/token.context";
 import constants from "@/constants"
+import * as faceapi from "face-api.js/dist/face-api.js";
 
 export default function EmployeeLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-    const { user, removeUser, handleLogout } = useUserFromStorage();
-  
+  const { user, removeUser, handleLogout } = useUserFromStorage();
+
   const router = useRouter()
   const [userInfo, setuserInfo] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
- useEffect(() => {
+  const loadModels = async () => {
+    await faceapi.nets.tinyFaceDetector.loadFromUri("/models/tiny_face_detector/");
+    // await faceapi.nets.faceLandmark68Net.loadFromUri("/models/face_landmark_68/");
+    // await faceapi.nets.faceRecognitionNet.loadFromUri("/models/face_recognition/");
+    // await faceapi.nets.ssdMobilenetv1.loadFromUri('/models/ssd_mobilenetv1');
+  }
+
+  useEffect(() => {
     const role = user.role; //localStorage.getItem("userRole")
     const email = user;//localStorage.getItem("userInfo")
     // const isAuthenticated = user //localStorage.getItem("isAuthenticated")
-      const accessToken = getTokenDataFromStorage(constants.TOKEN_TYPE.ACCESS);
+    const accessToken = getTokenDataFromStorage(constants.TOKEN_TYPE.ACCESS);
 
     if (!accessToken) {
       router.push("/login")
       return
     }
     console.log(user);
-    
+    loadModels();
     setuserInfo(user || "admin@hvacpro.com")
     setIsLoading(false)
   }, [router])
@@ -63,7 +71,7 @@ export default function EmployeeLayout({
           <h1 className="text-lg  font-semibold text-[#00728c]">
             {/* Thermopharm */}
             <img className="h-10" src="/c-logo.jpeg" />
-            </h1>
+          </h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         <main className="flex-1 p-4 sm:p-6">{children}</main>

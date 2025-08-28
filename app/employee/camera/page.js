@@ -19,9 +19,11 @@ export default function AttendanceSelfie(props) {
         // let stream;
         // startCamera();
         async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri("/models/tiny_face_detector/");
-            await faceapi.nets.faceLandmark68Net.loadFromUri("/models/face_landmark_68/");
-            await faceapi.nets.faceRecognitionNet.loadFromUri("/models/face_recognition/");
+            // await faceapi.nets.tinyFaceDetector.loadFromUri("/models/tiny_face_detector/");
+            // await faceapi.nets.faceLandmark68Net.loadFromUri("/models/face_landmark_68/");
+            // await faceapi.nets.faceRecognitionNet.loadFromUri("/models/face_recognition/");
+            // await loadFaceAPIModels(); // load + cache on startup
+
             console.log("✅ Models loaded");
             setModelsLoaded(true);
             setStatusMsg("Models loaded, starting camera...");
@@ -29,6 +31,7 @@ export default function AttendanceSelfie(props) {
         }
 
         loadModels();
+        // loadFaceAPIModels(); // load + cache on startup
         return () => {
             stopCamera(); // Use the new stopCamera function for cleanup
         };
@@ -42,9 +45,9 @@ export default function AttendanceSelfie(props) {
                 videoRef.current.srcObject = stream;
                 videoRef.current.onloadedmetadata = () => {
                     videoRef.current.play();
-                    setStatusMsg("Please await while detecting your face");
+                    setStatusMsg("Please await while starting camera...");
                     // detectFace(); // start detection loop
-                    setTimeout(detectFace, 1500)
+                    setTimeout(detectFace, 100)
                 };
                 // intervalId = setInterval(detectFace, 1500);
                 // setIntervalTimeId(intervalId);
@@ -94,36 +97,7 @@ export default function AttendanceSelfie(props) {
         // ✅ Pause video (extra safe)
         video.pause();
         setCaptured(true);
-        return () => clearInterval(intervalTimeId);
-    };
-
-
-    const checkIn = async () => {
-        setLoading(true);
-        const canvas = canvasRef.current;
-
-        if (!canvas) {
-            alert("No selfie captured!");
-            setLoading(false);
-            return;
-        }
-
-        const imageData = canvas.toDataURL("image/png");
-
-        const res = await fetch("https://project.thermopharm.in/file-upload-api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                category: "attendance-log",
-                // employeeId: "EMP123", // TODO: replace with logged-in employeeId
-                file: imageData,
-                timestamp: new Date().toISOString(),
-            }),
-        });
-
-        const result = await res.json();
-        alert(result.message || "Check-in completed!");
-        setLoading(false);
+        // return () => clearInterval(intervalTimeId);
     };
 
     const retakeSelfie = async () => {
@@ -142,12 +116,12 @@ export default function AttendanceSelfie(props) {
         if (!videoRef.current) return;
         if (captured) return;
         try {
-            setStatusMsg("Please await while detecting your face...");
+            setStatusMsg("Please await while detecting your face...", );
             console.log("deet", 1);
             const detections = await faceapi
                 .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
+            // .withFaceLandmarks()
+            // .withFaceDescriptor();
             console.log("deet", detections);
 
             if (detections) {
@@ -178,10 +152,11 @@ export default function AttendanceSelfie(props) {
                     setStatusMsg(`No face found ❌, retrying..${prev + 1},  Please Smile and blink your eyes`);
                     return prev + 1
                 });
-                setTimeout(detectFace, 1500); // retry after 1.5 sec
+                setTimeout(detectFace, 100); // retry after 100 millisec
             }
         } catch (error) {
             console.log("eeeeeeeee", error);
+            setTimeout(detectFace, 100); // retry after 100 millisec
         }
     };
 
@@ -191,11 +166,13 @@ export default function AttendanceSelfie(props) {
         // 1️⃣ Detect face from webcam
         const detection = await faceapi
             .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        // .withFaceLandmarks()
-        // .withFaceDescriptor();
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        console.log(1);
 
         if (!detection) {
             setStatusMsg("❌ No face detected!");
+            console.log(2);
             // return;
         }
 
@@ -205,7 +182,12 @@ export default function AttendanceSelfie(props) {
         //     .detectSingleFace(refImg)//new faceapi.TinyFaceDetectorOptions()
         //     .withFaceLandmarks()
         //     .withFaceDescriptor();
-        let refDetection = await faceapi.detectAllFaces(refImg).withFaceLandmarks().withFaceDescriptors()
+        // let refDetection = await faceapi.detectSingleFace(refImg).withFaceLandmarks().withFaceDescriptors()
+        const refDetection = await faceapi.detectSingleFace(refImg)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        console.log(3);
+
         console.log("refimg", refImg, "refdet", refDetection)
         if (!refDetection) {
             setStatusMsg("❌ Reference face not found!");
@@ -214,14 +196,14 @@ export default function AttendanceSelfie(props) {
 
         // 3️⃣ Compare
         const faceMatcher = new faceapi.FaceMatcher(refDetection);
-        const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+        const bestMatch = faceMatcher.findBestMatch(detection?.descriptor);
 
         if (bestMatch.label === "unknown" || bestMatch.distance > 0.5) {
             alert("❌ Face not verified!");
-            setIsVerified(false);
+            // setIsVerified(false);
         } else {
             alert("✅ Face verified, you can check-in!");
-            setIsVerified(true);
+            // setIsVerified(true);
         }
     };
 
