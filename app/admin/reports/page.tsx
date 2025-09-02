@@ -231,7 +231,7 @@ export default function ReportsPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Format</label>
-                  <Select defaultValue="pdf" onValueChange={(e)=>{setReportFormat(e)}}>
+                  <Select defaultValue="excel" onValueChange={(e)=>{setReportFormat(e)}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

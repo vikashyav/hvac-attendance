@@ -16,7 +16,7 @@ export function useReports() {
     })
     const [reportType, setReportType] = useState("attendance")
     const [selectedSite, setSelectedSite] = useState("all")
-    const [reportFormat, setReportFormat]=useState("pdf");
+    const [reportFormat, setReportFormat]=useState("excel");
     const [reportPreviewUrl, setReportPreviewUrl]=useState("");
     const downloadReportsQuery = useMutation({
         mutationFn: downloadReports
