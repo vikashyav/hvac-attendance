@@ -65,12 +65,12 @@ export default function useMenuItems() {
         //     icon: MapPin,
         //     access: ["admin"]
         // },
-        // {
-        //     name: "Reports",
-        //     href: "/admin/reports",
-        //     icon: FileText,
-        //     access: ["admin"]
-        // },
+        {
+            name: "Reports",
+            href: "/admin/reports",
+            icon: FileText,
+            access: ["admin"]
+        },
         // {
         //     name: "Calendar",
         //     href: "/admin/calendar",

@@ -11,16 +11,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Download, FileText, CalendarIcon, Users, Clock, MapPin, AlertCircle } from "lucide-react"
 import { AttendanceChart } from "@/components/attendance-chart"
 import { PerformanceChart } from "@/components/performance-chart"
-import { format } from "date-fns"
-
+import { format } from "date-fns";
+import { useReports } from "./use-reports";
+import { useSearchParams, useRouter } from 'next/navigation';
+import moment from "moment"
+import DocumentViewer from "./document-viewer";
 export default function ReportsPage() {
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(2024, 0, 1),
-    to: new Date(),
-  })
-  const [reportType, setReportType] = useState("attendance")
-  const [selectedSite, setSelectedSite] = useState("all")
-
+  const router = useRouter();
+  const { dateRange, setDateRange, reportType, setReportType, selectedSite, setSelectedSite, handleGenerateReport,
+    setReportFormat, reportPreviewUrl, reportFormat
+   } = useReports();
   const reportTemplates = [
     {
       id: 1,
@@ -105,28 +105,25 @@ export default function ReportsPage() {
       downloads: 25,
     },
   ]
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-        <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
+     
       <div className="flex items-center justify-between">
 
         <div>
-                
+
           <h1 className="text-3xl font-bold">Reports & Analytics</h1>
           <p className="text-muted-foreground">Generate and manage attendance and performance reports</p>
         </div>
-        <Button>
+        {/* <Button>
           <Download className="h-4 w-4 mr-2" />
           Generate Report
-        </Button>
+        </Button> */}
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quickStats.map((stat, index) => {
           const Icon = stat.icon
           return (
@@ -148,7 +145,7 @@ export default function ReportsPage() {
 
       {/* Reports Tabs */}
       <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList>
+        <TabsList className="hidden">
           <TabsTrigger value="generate">Generate Reports</TabsTrigger>
           <TabsTrigger value="templates">Report Templates</TabsTrigger>
           <TabsTrigger value="analytics">Analytics Dashboard</TabsTrigger>
@@ -171,10 +168,10 @@ export default function ReportsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="attendance">Attendance Report</SelectItem>
-                      <SelectItem value="performance">Performance Report</SelectItem>
-                      <SelectItem value="site">Site Activity Report</SelectItem>
-                      <SelectItem value="payroll">Payroll Report</SelectItem>
-                      <SelectItem value="compliance">Compliance Report</SelectItem>
+                      {/* <SelectItem value="performance">Performance Report</SelectItem> */}
+                      {/* <SelectItem value="site">Site Activity Report</SelectItem> */}
+                      {/* <SelectItem value="payroll">Payroll Report</SelectItem> */}
+                      {/* <SelectItem value="compliance">Compliance Report</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -187,10 +184,10 @@ export default function ReportsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Sites</SelectItem>
-                      <SelectItem value="downtown">Downtown Office Complex</SelectItem>
-                      <SelectItem value="mall">Shopping Mall Project</SelectItem>
-                      <SelectItem value="residential">Residential Complex</SelectItem>
-                      <SelectItem value="industrial">Industrial Warehouse</SelectItem>
+                      {/* <SelectItem value="downtown">Downtown Office Complex</SelectItem> */}
+                      {/* <SelectItem value="mall">Shopping Mall Project</SelectItem> */}
+                      {/* <SelectItem value="residential">Residential Complex</SelectItem> */}
+                      {/* <SelectItem value="industrial">Industrial Warehouse</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -210,20 +207,35 @@ export default function ReportsPage() {
                       <Calendar
                         mode="range"
                         selected={{ from: dateRange.from, to: dateRange.to }}
-                        onSelect={(range) => range && setDateRange(range)}
+                        onSelect={(range) => {
+                          range && setDateRange(range)
+                          console.log(range);
+                          range?.from && range.to &&
+                          router.push(`?from=${moment(range.from).format("YYYY-MM-DD")}&to=${moment(range.to).format("YYYY-MM-DD")}`)
+                        }
+                        }
                         numberOfMonths={2}
+                        disabled={{ after: new Date() }}
+
                       />
+                      <div className="flex justify-center">
+                        <Button variant="outline" onClick={() => {
+                          setDateRange({ from: "", to: "" })
+                          router.push("?")
+                          }}>Reset</Button>
+
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Format</label>
-                  <Select defaultValue="pdf">
+                  <Select defaultValue="pdf" onValueChange={(e)=>{setReportFormat(e)}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent >
                       <SelectItem value="pdf">PDF</SelectItem>
                       <SelectItem value="excel">Excel</SelectItem>
                       <SelectItem value="csv">CSV</SelectItem>
@@ -231,7 +243,7 @@ export default function ReportsPage() {
                   </Select>
                 </div>
 
-                <Button className="w-full">
+                <Button onClick={handleGenerateReport} className="w-full">
                   <Download className="h-4 w-4 mr-2" />
                   Generate Report
                 </Button>
@@ -245,18 +257,11 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 {reportType === "attendance" && (
-                  <div className="space-y-4">
-                    <AttendanceChart />
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="font-medium">Total Employees</p>
-                        <p className="text-2xl font-bold">24</p>
-                      </div>
-                      <div>
-                        <p className="font-medium">Average Attendance</p>
-                        <p className="text-2xl font-bold text-green-600">93.6%</p>
-                      </div>
-                    </div>
+                  <div className="flex">
+                    {/* <AttendanceChart /> */}
+                    {/* <iframe src={reportPreviewUrl} /> */}
+                    <DocumentViewer url={reportPreviewUrl} isExcel={reportFormat !== "pdf"} />
+                  
                   </div>
                 )}
                 {reportType === "performance" && (
