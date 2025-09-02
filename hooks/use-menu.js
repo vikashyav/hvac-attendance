@@ -69,7 +69,7 @@ export default function useMenuItems() {
             name: "Reports",
             href: "/admin/reports",
             icon: FileText,
-            access: ["admin"]
+            access: ["admin", "Project manager"]
         },
         // {
         //     name: "Calendar",
@@ -83,7 +83,7 @@ export default function useMenuItems() {
         //     icon: Settings,
         //     access: ["admin"]
         // },
-    ].filter((item) => item.access.includes(user.role))
+    ].filter((item) => item.access.includes(user.role) || item.access.includes(user?.employee?.position))
 
     return menuItems
 }

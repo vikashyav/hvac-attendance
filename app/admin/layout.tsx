@@ -24,10 +24,10 @@ export default function AdminLayout({
     const email = user.email;//localStorage.getItem("userEmail")
     const isAuthenticated = user //localStorage.getItem("isAuthenticated")
 
-    if (!isAuthenticated || role !== "admin") {
-      router.push("/login")
-      return
-    }
+    // if (!isAuthenticated || role !== "admin") {
+    //   router.push("/login")
+    //   return
+    // }
 
     setUserEmail(email || "admin@hvacpro.com")
     setIsLoading(false)
