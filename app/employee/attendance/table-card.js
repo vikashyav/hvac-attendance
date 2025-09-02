@@ -17,6 +17,7 @@ export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
                     collapsible
                     className="w-full"
                     defaultValue={Object.keys(attendanceHistoryGroupByDate)[0]}
+                    key={index}
                 >
                     <AccordionItem value={key}>
                         <AccordionTrigger>
