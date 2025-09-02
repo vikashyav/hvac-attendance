@@ -214,7 +214,7 @@ export default function ReportsPage() {
                           router.push(`?from=${moment(range.from).format("YYYY-MM-DD")}&to=${moment(range.to).format("YYYY-MM-DD")}`)
                         }
                         }
-                        numberOfMonths={2}
+                        // numberOfMonths={2}
                         disabled={{ after: new Date() }}
 
                       />

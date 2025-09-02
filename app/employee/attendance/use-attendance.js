@@ -25,16 +25,20 @@ export function useAttendances(props) {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [attendanceHistory, setAttendanceHistory]= useState([]);
   const [calendarSelectedData, setCalendarSelectedData]= useState({});
+  const todayDate= moment();
   const [dateRange, setDateRange] = useState({
-    from: moment().startOf('month').toDate(),
-    to: moment().endOf('day' || 'month').toDate(),
+    from: moment(searchParams.get("from") || todayDate).startOf('month').toDate(),
+    to: moment(searchParams.get("to") || todayDate).endOf('day' || 'month').toDate(),
   })
   const [queryParmas, setQueryParmas]= useState({})
+  console.log(searchParams.get("to") || todayDate);
   
   // console.log("searchParams",searchParams.get("employee_id"), pathname);
   
   const { data: attendanceData, isSuccess, refetch, isFetching } = useQuery({
           queryKey: {employee_id: queryParmas?.employee_id || props?.searchParams?.employee_id,
+            from: searchParams.get("from") || moment(dateRange.from).format("YYYY-MM-DD"),
+            to: searchParams.get("to") || moment(dateRange.to).format("YYYY-MM-DD")
             //  from: dateRange.from, to: dateRange.to 
             },//{ startOfDay, endOfDay }, // Include params in queryKey
           queryFn: getAttendance,
@@ -106,7 +110,8 @@ useEffect(()=>{
     calendarSelectedData,
     user, dateRange, setDateRange,
     attendanceData: attendanceData?.data,
-    isFetching
+    isFetching,
+    queryParmas
   }
 }
 

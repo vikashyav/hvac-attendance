@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Clock, MapPin, CheckCircle, TrendingUp, CalendarIcon } from "lucide-react"
 import withHOC from "@/utils/with-hoc"
 import { AttendancesPageProvider, useAttendancesPageContext } from "./use-attendance";
@@ -16,6 +15,7 @@ import { format } from "date-fns"
 import { useSearchParams, useRouter } from 'next/navigation';
 import moment from "moment"
 import { cn } from "@/lib/utils"
+import {AdminTableCard, EmpTableCard} from "./table-card";
 function AttendancePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,15 +27,24 @@ function AttendancePage() {
     handleCalenderSelectDate,
     calendarSelectedData, user, dateRange, setDateRange,
     attendanceData,
-    isFetching
+    isFetching, queryParmas
   } = useAttendancesPageContext();
-  const isAdmin = user?.role === "admin"
+  const isAdmin = user?.role === "admin";
+  const isEmp = user?.role === "employee";
 
   const updateSearchParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     router.push(`?${params.toString()}`);
   };
+
+  const attendanceHistoryGroupByDate = attendanceHistory.reduce((groups, atten) => {
+    const date = atten.date;
+    groups[date] = groups[date] || []; // Initialize array if key doesn't exist
+    groups[date].push(atten);
+    return groups;
+  }, {});
+  console.log(Object.keys(attendanceHistoryGroupByDate)[0]);
 
   return (
     <div className="p-6 space-y-6">
@@ -45,7 +54,7 @@ function AttendancePage() {
           <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
           <p className="text-gray-600">Monitor your attendance history and performance metrics</p>
         </div>
-        <div hidden className="space-y-2">
+        <div className="space-y-2">
           <label className="text-sm font-medium">Date Range</label>
           <Popover >
             <PopoverTrigger asChild>
@@ -62,7 +71,10 @@ function AttendancePage() {
                 selected={{ from: dateRange.from, to: dateRange.to }}
                 onSelect={(range) => {
                   range && setDateRange(range)
-                  router.push(`?from=${moment(dateRange.from).format("YYYY-MM-DD")}&to=${moment(dateRange.to).format("YYYY-MM-DD")}`)
+                  if (range?.from && range.to) {
+                    router.push(`?from=${moment(range.from).format("YYYY-MM-DD")}&to=${moment(range.to).format("YYYY-MM-DD")}`)
+
+                  }
                   // updateSearchParam("key")
                 }}
                 // numberOfMonths={2}
@@ -173,69 +185,11 @@ function AttendancePage() {
               <CardDescription>Your attendance history for the past week</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    {isAdmin && <TableHead>Name</TableHead>}
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Total Hours</TableHead>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Check In/Out photo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Overtime</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceHistory.map((record, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
-                      {isAdmin && <TableCell>{record?.fullName || "-"}</TableCell>}
-                      <TableCell>{record.checkInTime}</TableCell>
-                      <TableCell>{record.checkOutTime || "-"}</TableCell>
-                      <TableCell>{record.workHours}</TableCell>
-                      <TableCell>
-                        <span>{record?.checkInLocation?.address}</span>
-                        <span>{` ${record?.checkInLocation?.latitude}, ${record?.checkInLocation?.longitude}`}</span>
-
-                      </TableCell>
-                      <TableCell>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <img data-popover-target="popover-default" src={record?.checkOutPhoto || record?.checkInPhoto} className="w-8 h-8 rounded-full" />
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto" align="start">
-                            <div className="w-full flex" >
-                            {record?.checkInPhoto &&
-                              <img data-popover-target="popover-default" src={record?.checkInPhoto} className="w-1/4 h-1/4" />
-                            }
-                            {
-                              record?.checkOutPhoto &&
-                              <img data-popover-target="popover-default" src={record?.checkOutPhoto} className="w-1/4 h-1/4" />
-                            }
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            record.status == "present"
-                              ? "default"
-                              : record.status === "Late"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {record.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{record.overtimeHours}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {
+                (isEmp || queryParmas?.employee_id) ?  <EmpTableCard isAdmin={isAdmin} attendanceHistory={attendanceHistory} isEmp={isEmp}/> :
+                <AdminTableCard isAdmin={isAdmin} attendanceHistoryGroupByDate={attendanceHistoryGroupByDate} />
+               
+              }
             </CardContent>
           </Card>
         </TabsContent>

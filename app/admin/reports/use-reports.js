@@ -33,7 +33,7 @@ export function useReports() {
         apiCall.mutate({
             queryKey: {
                 from: searchParams.get("from") || moment(dateRange.from).format("YYYY-MM-DD"),
-                to: searchParams.get("to") || moment(dateRange.from).format("YYYY-MM-DD")
+                to: searchParams.get("to") || moment(dateRange.to).format("YYYY-MM-DD")
             },
         }, {
             onSuccess: async (response) => {
