@@ -63,7 +63,7 @@ export default function useMenuItems() {
             name: "Projects /(Sites)",
             href: "/admin/projects-sites",
             icon: MapPin,
-            access: ["admin"]
+            access: ["admin", "Project manager"]
         },
         {
             name: "Reports",

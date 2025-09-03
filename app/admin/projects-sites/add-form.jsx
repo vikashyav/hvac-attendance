@@ -95,7 +95,7 @@ function ProjectsSitesForm({
       </SheetTrigger>
       {/* max-w-3xl lg:w-1/2 md:w-1/2 sm:w-[600px]*/}
 
-      <SheetContent className="w-[600px] overflow-y-auto">
+      <SheetContent className="max-w-3xl lg:w-1/2 md:w-3/4 xs:w-[100vw] overflow-y-auto">
         <SheetHeader className="space-y-3 pb-6">
           <SheetTitle className="text-2xl font-semibold flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
