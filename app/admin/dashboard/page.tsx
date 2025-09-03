@@ -9,6 +9,7 @@ import { Users, Clock, MapPin, TrendingUp, CheckCircle, Calendar, BarChart3 } fr
 import { AdminDashboardPageProvider, useAdminDashboardPageContext } from "./use-adminDashboard"
 import withHOC from "@/utils/with-hoc"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import Map from '../../../components/map-popover'
 
 function AdminDashboardPage() {
   const {
@@ -89,16 +90,20 @@ function AdminDashboardPage() {
                   <div className="flex gap-2">
                     {/* <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" /> */}
                     <Popover>
-                    <PopoverTrigger asChild>
-                    <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                    <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-1/4 h-1/4" />
-                      
-                    </PopoverContent>
-                  </Popover>
+                      <PopoverTrigger asChild>
+                        <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-1/4 h-1/4" />
+
+                      </PopoverContent>
+                    </Popover>
                     <p className="text-xs text-muted-foreground">
-                      {activity.action} at {activity.location}
+                      {activity.action} at {"  "}
+                      <Map latitude={activity?.checkOutLocation?.latitude || activity?.checkInLocation?.latitude}
+                        label={activity?.checkOutLocation?.address || activity?.checkInLocation?.address}
+                        longitude={activity?.checkOutLocation?.longitude || activity?.checkInLocation?.longitude} />
+                      {/* {activity.location} */}
                     </p>
                   </div>
 

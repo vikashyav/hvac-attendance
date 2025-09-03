@@ -79,7 +79,9 @@ export function useAdminDashboard() {
         return {
             // ...item_,
             employee: item?.employee?.user?.fullName,
-            time, action, status, location, checkOutPhoto, checkInPhoto
+            time, action, status, location, checkOutPhoto, checkInPhoto,
+            checkInLocation: item_.checkInLocation,
+            checkOutLocation: item_.checkOutLocation,
         }
     }) || []
 

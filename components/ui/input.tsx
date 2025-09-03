@@ -1,6 +1,8 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useField, useFormikContext } from "formik";
+import FormError from "./form-error";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
@@ -18,5 +20,19 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   }
 )
 Input.displayName = "Input"
+
+export function FormikInput(props) {
+  const { name, classNames = {}, setRef = () => {} } = props;
+  const [field, meta] = useField(name);
+  const { submitCount, validateOnChange, touched } = useFormikContext();
+  const isError = (validateOnChange && touched[name]) || (submitCount > 0 && !!meta.error);
+  const helperText = (validateOnChange && touched[name]) ? meta.error : (submitCount > 0 && meta.error) || "";
+  return (
+    <>
+      <Input ref={setRef} error={isError} {...field} {...props} />
+      <FormError show={isError} message={helperText} className={classNames.error} />
+    </>
+  );
+}
 
 export { Input }

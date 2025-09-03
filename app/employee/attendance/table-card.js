@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge"
 import moment from "moment"
 import { MapPin } from 'lucide-react'
-import Map from './map-popover'
+import Map from '../../../components/map-popover'
 
 export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
     return <>

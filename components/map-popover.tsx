@@ -16,7 +16,7 @@ export default function Map({ latitude, longitude, label = "Selected Location" }
     <Popover>
       <PopoverTrigger asChild>
         {/* <Button > */}
-        <samp className="cursor-pointer text-blue-600 text-sm underline">{label}{"   "}{latitude},{longitude}
+        <samp className="cursor-pointer text-blue-600 text-sm underline">{label}{"   "}
           {/* <a
             // href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
             // target="_blank"

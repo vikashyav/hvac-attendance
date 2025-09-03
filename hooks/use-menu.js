@@ -40,7 +40,7 @@ export default function useMenuItems() {
         //     name: "Schedule",
         //     href: "/employee/schedule",
         //     icon: Calendar,
-        //     access: ["employee"]
+        //     access: ["employee", "admin"]
         // },
         // {
         //   name: "Performance",
@@ -59,12 +59,12 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-        // {
-        //     name: "Job Sites",
-        //     href: "/admin/sites",
-        //     icon: MapPin,
-        //     access: ["admin"]
-        // },
+        {
+            name: "Projects /(Sites)",
+            href: "/admin/projects-sites",
+            icon: MapPin,
+            access: ["admin"]
+        },
         {
             name: "Reports",
             href: "/admin/reports",

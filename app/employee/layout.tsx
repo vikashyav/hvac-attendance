@@ -39,7 +39,6 @@ export default function EmployeeLayout({
       router.push("/login")
       return
     }
-    console.log(user);
     loadModels();
     setuserInfo(user || "admin@hvacpro.com")
     setIsLoading(false)

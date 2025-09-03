@@ -52,7 +52,6 @@ export function AdminSidebar({ className, onLogout }: AdminSidebarProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const navigation= useMenuItems()
-console.log(navigation);
 
   const handleLogout = () => {
     // router.push("/login")
