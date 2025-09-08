@@ -13,13 +13,13 @@ const config: Config = {
 	theme: {
 		screens: {
 			'xs': {'max': '640px' },
-			'sm': '640px', // Overriding default 'sm'
-			'md': '768px',
-			'lg': '1024px',
+			'sm': '640px',//{min:'640px', max:'768px'}, // Overriding default 'sm'
+			'md':'768px', //{min:'768px', max:'1024px'},
+			'lg':'1024px', //{min:'1024px', max: '1280px'},
 			'xl': '1280px',
 			'2xl': '1536px',
 			'custom-large': '1400px', // Another custom breakpoint
-			//   'tablet': {'min': '640px', 'max': '1023px'}, // Styles apply between 640px and 1023px
+			  'tablet': {'min': '641px', 'max': '1023px'}, // Styles apply between 640px and 1023px
 			//   'desktop': '1024px', // Styles apply from 1024px upwards
 		},
 		extend: {
