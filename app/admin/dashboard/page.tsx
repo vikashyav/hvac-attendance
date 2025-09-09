@@ -10,7 +10,7 @@ import { AdminDashboardPageProvider, useAdminDashboardPageContext } from "./use-
 import withHOC from "@/utils/with-hoc"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import Map from '../../../components/map-popover'
-
+import MapContainers from "@/components/map-pointer"
 function AdminDashboardPage() {
   const {
     stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching, handleGenerateReport
@@ -70,6 +70,15 @@ function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <AttendanceChart attendanceOverview={attendanceOverview} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Attendance Overview on Map</CardTitle>
+            <CardDescription> employee's Latest location</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MapContainers codinateData={recentActivity}/>
           </CardContent>
         </Card>
         {/* Recent Activity */}
