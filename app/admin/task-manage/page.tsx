@@ -38,9 +38,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import TaskList from "./task-list";
 
-// , 
-// export default
+const statusColors = {
+  scheduled: "bg-blue-500 text-white",
+  in_progress: "bg-orange-500 text-white",
+  completed: "bg-green-500 text-white",
+  cancelled: "bg-red-500 text-white",
+  on_hold: "bg-yellow-500 text-black",
+};
+
 function TaskSchedulePage() {
   const router = useRouter();
   const { selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData,
@@ -330,8 +339,8 @@ function TaskSchedulePage() {
               <CardDescription>Complete list of scheduled events and tasks</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {/* space-y-4 */}
+              <TaskList TaskSchedulesData={TaskSchedulesData?.data} openEditDialog={openEditDialog} router={router} />
+              {/* <div className="space-y-2">
                 {TaskSchedulesData?.data?.map((event) => (
                   <div key={event.id} className="p-2 border rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-1">
@@ -339,17 +348,21 @@ function TaskSchedulePage() {
                         <div className="flex items-center space-x-2">
                           <h3 className="font-medium">
                             <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
-                            #{event.id.split("-")[4]} :{" "}
+                            <Link href={`task-manage/${event.id}`}>
+                              #{event.id.split("-")[4]} :
+                            </Link>
+
+                            {" "}
                             {event.title}
                           </h3>
-                         
-                          <samp className="text-muted-foreground">
-                           Priority:{event.priority}
-                          </samp>
                           <AlertCircle className={`h-4 w-4 ${getPriorityColor(event.priority)}`} />
+                          <samp className="text-muted-foreground">
+                            Priority:{event.priority}
+                          </samp>
 
+                          <Badge className={`text-xs ${statusColors[event?.status?.toLowerCase()]}`}>{event.status}</Badge>
+                         
                         </div>
-                        {/* <div className="truncate">{cleanHTML(event.taskDescription)} </div> */}
 
                       </div>
 
@@ -378,7 +391,6 @@ function TaskSchedulePage() {
                     </div>
 
                     <div className="grid grid-flow-col  gap-4 text-sm">
-                      {/* grid-cols-2 md:grid-cols-5 */}
                       <div className="flex items-center text-muted-foreground">
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         {new Date(event.startDate).toLocaleDateString()}
@@ -394,7 +406,6 @@ function TaskSchedulePage() {
                         <div >
                           {event?.ProjectsSite?.name}
                           <samp>
-                            {/* {event?.ProjectsSite?.address} */}
                           </samp>
                         </div>
 
@@ -408,7 +419,7 @@ function TaskSchedulePage() {
                         SubTasks:  {event?.subTasks.length}
                       </div>}
                       <div className="flex items-center text-muted-foreground">
-                       created by:{event?.createBy?.fullName}
+                        created by:{event?.createBy?.fullName}
                       </div>
                     </div>
 
@@ -423,10 +434,11 @@ function TaskSchedulePage() {
                           ))}
                         </div>
                       </div>
-                    )} */}
                   </div>
                 ))}
-              </div>
+              </div> */}
+
+              {/* end */}
             </CardContent>
           </Card>
         </TabsContent>

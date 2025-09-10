@@ -40,6 +40,8 @@ import {
 import { validationSchema } from "./form-helper";
 const FormikRichTextEditor = dynamic(() => import("@/components/ui/rich-text-editor"));
 import FileAttachment from "@/components/file-attachment";
+// import TaskForm from "./[task_id]/page";
+import AddForm from "./add-form";
 
 function TaskSchedulesForm({
 
@@ -54,7 +56,7 @@ function TaskSchedulesForm({
     } = useTaskSchedulePageContext();
 
     return (
-        <Sheet open={isAddDrawerOpen} onOpenChange={handleCloseDrawer} onCloseChange={""}>
+        <Sheet open={isAddDrawerOpen} onOpenChange={handleCloseDrawer} >
             <SheetTrigger asChild>
                 <Button
                     onClick={() => openEditDialog()}
@@ -72,14 +74,23 @@ function TaskSchedulesForm({
                         <div className="p-2 bg-blue-100 rounded-lg">
                             <User className="h-5 w-5 text-blue-600" />
                         </div>
-                        Create New Schedule/Task
+                        Schedule/Task
                     </SheetTitle>
                     <SheetDescription className="text-base">
                         Enter the Schedule/Task details below
                     </SheetDescription>
                 </SheetHeader>
-
-                <Formik
+                {/* <TaskForm /> */}
+                <AddForm
+                    selectedTaskSchedules={selectedTaskSchedules}
+                    validationSchema={validationSchema}
+                    projectsSitesData={projectsSitesData}
+                    employeeList={employeeList}
+                    attachedFiles={attachedFiles}
+                    setAttachedFiles={setAttachedFiles}
+                    searchParams={searchParams}
+                    handleAddTaskSchedules={handleAddTaskSchedules} />
+                {/* <Formik
                     initialValues={selectedTaskSchedules}
                     validationSchema={validationSchema}
                     onSubmit={handleAddTaskSchedules}
@@ -99,12 +110,10 @@ function TaskSchedulesForm({
                         // }
                         return (
                             <Form className="grid grid-cols-1 gap-4 space-y-8">
-                                {/* Personal Information Section */}
                                 <ScrollArea>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className=" space-y-2">
                                             <Label htmlFor="title"> Title</Label>
-                                            {/* <Input id="title" placeholder="Enter event title" /> */}
                                             <FormikInput
                                                 id="title"
                                                 name="title"
@@ -235,17 +244,7 @@ function TaskSchedulesForm({
                                     <div className="grid grid-cols-3 gap-4"></div>
                                     <div className="grid grid-cols-2 gap-4 py-4">
 
-                                        {/* <div className="space-y-2">
-                      <Label htmlFor="supervisor">Supervisor</Label>
-                      <FormikCombobox
-                        name="supervisor"
-                        htmlFor="supervisor"
-                        placeholder="Select supervisor"
-                        lableString="fullName"
-                        valueString="id"
-                        options={[]}
-                      />
-                    </div> */}
+                              
 
                                     </div>
                                     <div className="flex justify-end space-x-2">
@@ -283,7 +282,7 @@ function TaskSchedulesForm({
                             </Form>
                         );
                     }}
-                </Formik>
+                </Formik> */}
             </SheetContent>
         </Sheet>
     );

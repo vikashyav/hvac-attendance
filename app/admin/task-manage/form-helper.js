@@ -8,6 +8,9 @@ const initialValuesEmp = {
     type: "",
     startDate: "",
     startTime: "",
+    priority:"",
+    status:"",
+    estimatedHours:"",
 }
 
 export function getIntialValues(values = {}) {
@@ -18,7 +21,8 @@ export function getIntialValues(values = {}) {
         }
     })
     return {
-        ...values,
+        id: values?.id||"", 
+        // ...values,
         ...formValue
     }
 }

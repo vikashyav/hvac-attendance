@@ -1,31 +1,32 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import fakeData from "@/constants/fake-data";
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { TaskSchedulesRegistration, TaskSchedulesUpdate, getTaskSchedulesList } from "@/lib/api/task-schedules-api";
+import { TaskSchedulesRegistration, TaskSchedulesUpdate, getTaskSchedulesDetailById, getTaskSchedulesList } from "@/lib/api/task-schedules-api";
 import generateContext from "@/utils/generate-context";
 import { getIntialValues } from "./form-helper";
 // import { useRouter } from 'next/router'
 import { ToastAction } from "@/components/ui/toast";
 import { getProjectsSitesList } from "@/lib/api/projects-sites-api";
 import { getEmployeeList } from "@/lib/api/employee";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
 
-
-export function useTaskSchedule() {
-    const notificationModal = useNotificationModalContext();
-    const router = useRouter();
-    const searchParams = useSearchParams()//.getAll();
+export function useTaskSchedule(props) {
+  const notificationModal = useNotificationModalContext();
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams()//.getAll();
+  console.log(params);
 
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState("month")
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedTaskSchedules, setselectedTaskSchedules] = useState(getIntialValues({}))
-    const [attachedFiles, setAttachedFiles] = useState([]);
+  const [attachedFiles, setAttachedFiles] = useState([]);
   const events = [
     {
       id: 1,
@@ -119,24 +120,41 @@ export function useTaskSchedule() {
     },
   ]
 
-    const addMutation = useMutation({
-      mutationFn: TaskSchedulesRegistration,
-    })
+  const { data: TaskSchedulesDetail, isFetchingTaskSchedulesDetail, refetchTaskSchedulesDetail } = useQuery({
+    queryKey: { id: params.task_id },
+    queryFn: getTaskSchedulesDetailById,
+    // queryKey: ['product', productId], 
+    // The query function receives the query context, from which you can extract the query key
+    // queryFn: ({ queryKey }) => fetchProductById(queryKey[1]), 
+    // Other options like enabled, staleTime, etc. can be added here
+    enabled: !!params.task_id, // Only fetch if task_id exists
+  })
+  const addMutation = useMutation({
+    mutationFn: TaskSchedulesRegistration,
+  })
   const udateMutation = useMutation({
     mutationFn: TaskSchedulesUpdate,
   })
   const { data: TaskSchedulesData, isFetching, refetch } = useQuery({
     // queryKey: ["useTaskSchedules"],
-    queryFn: getTaskSchedulesList
+    queryFn: getTaskSchedulesList,
+    enabled: params.task_id ? false : true, // Only fetch if task_id exists
   })
   const { data: projectsSitesData, isFetchingProjectList, refetchProjectList } = useQuery({
     queryKey: ["useProjectsSites"],
-    queryFn: getProjectsSitesList
+    queryFn: getProjectsSitesList,
   });
   const { data: employeeList, isFetchingEmployeeData, refetchEmployeeData } = useQuery({
     queryKey: { is_emp_stats: 0 },
     queryFn: getEmployeeList
   })
+  useEffect(() => {
+    if (TaskSchedulesDetail?.data) {
+      const initial = getIntialValues(TaskSchedulesDetail?.data)
+      setselectedTaskSchedules(initial)
+    }
+  }, [TaskSchedulesDetail?.data])
+
   const openEditDialog = (projectsSites) => {
     const initial = getIntialValues({ ...projectsSites })
     setselectedTaskSchedules(initial)
@@ -144,7 +162,7 @@ export function useTaskSchedule() {
     setIsAddDrawerOpen(true);
   }
 
-  const handleCloseDrawer =(isOpen)=>{
+  const handleCloseDrawer = (isOpen) => {
     setIsAddDrawerOpen(isOpen)
     if (!isOpen) {
       router.push("?")
@@ -155,13 +173,14 @@ export function useTaskSchedule() {
     notificationModal.progress({
       heading: `Adding ${values.title} , Please await!!`,
     });
-    values.parentId= searchParams.get("parentId")
-    const apiCall = values?.id ? udateMutation.mutate : addMutation.mutate
+    values.parentId = searchParams.get("parentId")
+    const apiCall = values?.id ? udateMutation.mutate : addMutation.mutate;
+    // const { ...payload}=values;
     apiCall(values, {
       onSuccess: (res) => {
         // console.log(res)
         refetch();
-        notificationModal.success({ heading: "Success", body: `${values?.firstName} has been added to your team.` });
+        notificationModal.success({ heading: "Success", body:`#${values?.id}_ ${values?.title} has been updated.` });
 
       },
       onError: (err) => {
@@ -172,17 +191,42 @@ export function useTaskSchedule() {
       },
     })
   }
-  return {
-    selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData, selectedTaskSchedules, openEditDialog,
-    handleAddTaskSchedules, 
-    isAddDrawerOpen,
-    setIsAddDrawerOpen,
-    projectsSitesData,
-    employeeList: employeeList?.data?.data,
-    attachedFiles, setAttachedFiles,
-    handleCloseDrawer,
-    searchParams
-  }
+
+  // return useMemo(() => {
+  //   return {
+  //     selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData, selectedTaskSchedules, openEditDialog,
+  //     handleAddTaskSchedules,
+  //     isAddDrawerOpen,
+  //     setIsAddDrawerOpen,
+  //     projectsSitesData,
+  //     employeeList: employeeList?.data?.data,
+  //     attachedFiles, setAttachedFiles,
+  //     handleCloseDrawer,
+  //     searchParams
+  //   }
+  // }, [
+  //   selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData, selectedTaskSchedules, openEditDialog,
+  //   handleAddTaskSchedules,
+  //   isAddDrawerOpen,
+  //   setIsAddDrawerOpen,
+  //   projectsSitesData,
+  //   employeeList?.data?.data,
+  //   attachedFiles, setAttachedFiles,
+  //   handleCloseDrawer,
+  //   searchParams
+  // ])
+   return {
+      selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData, selectedTaskSchedules, openEditDialog,
+      handleAddTaskSchedules,
+      isAddDrawerOpen,
+      setIsAddDrawerOpen,
+      projectsSitesData,
+      employeeList: employeeList?.data?.data,
+      attachedFiles, setAttachedFiles,
+      handleCloseDrawer,
+      searchParams,
+      TaskSchedulesDetail
+    }
 }
 
 export const [TaskSchedulePageProvider, useTaskSchedulePageContext] = generateContext(useTaskSchedule);
