@@ -10,10 +10,15 @@ import { AdminDashboardPageProvider, useAdminDashboardPageContext } from "./use-
 import withHOC from "@/utils/with-hoc"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import Map from '../../../components/map-popover'
-import MapContainers from "@/components/map-pointer"
+// import MapLocations from "@/components/map-pointer"
+// import MapContainer from "./map-container";
+import dynamic from 'next/dynamic';
+const MapContainer = dynamic(() => import("./map-container"));
+
 function AdminDashboardPage() {
   const {
-    stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching, handleGenerateReport
+    stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching, handleGenerateReport,
+    dashboardStats
   } = useAdminDashboardPageContext();
 
   return (
@@ -78,7 +83,13 @@ function AdminDashboardPage() {
             <CardDescription> employee's Latest location</CardDescription>
           </CardHeader>
           <CardContent>
-            <MapContainers codinateData={recentActivity}/>
+            {isFetching && 
+            <div className="h-[400px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full"></div>
+            }
+            {
+              recentActivity.length >0 && <MapContainer codinateData={recentActivity} />
+            }
+            
           </CardContent>
         </Card>
         {/* Recent Activity */}

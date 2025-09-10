@@ -77,7 +77,7 @@ export function useAdminDashboard() {
         const checkOutPhoto = item_?.checkOutPhoto;
         const checkInPhoto = item_?.checkInPhoto;
         return {
-            // ...item_,
+            ...item_,
             employee: item?.employee?.user?.fullName,
             time, action, status, location, checkOutPhoto, checkInPhoto,
             checkInLocation: item_.checkInLocation,
@@ -140,7 +140,7 @@ export function useAdminDashboard() {
 
     return {
         stats, recentActivity, upcomingSchedules, attendanceOverview: dashboardStats?.data?.last7DaysAttendanceOverview,
-        isFetching, handleGenerateReport
+        isFetching, handleGenerateReport, dashboardStats
     }
 }
 

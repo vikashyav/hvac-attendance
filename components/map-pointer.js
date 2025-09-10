@@ -6,21 +6,6 @@ import { useEffect } from "react";
 import 'leaflet/dist/leaflet.css';
 import { Badge } from "@/components/ui/badge"
 
-// Custom icon
-// const checkInIcon = new L.Icon({
-//   iconUrl: "/checkin-icon.png", // put your custom icon inside /public
-//   iconSize: [32, 32],
-//   iconAnchor: [16, 32],
-//   popupAnchor: [0, -30],
-// });
-
-// Example check-ins data
-const checkIns = [
-    { id: 1, lat: 28.6139, lng: 77.209, employee: "Vikas", time: "09:00 AM" },
-    { id: 2, lat: 28.7041, lng: 77.1025, employee: "Rohit", time: "09:15 AM" },
-    { id: 3, lat: 28.5355, lng: 77.391, employee: "Ankit", time: "09:30 AM" },
-];
-
 // ✅ Helper component to auto-fit bounds
 function FitBounds({ data }) {
     const map = useMap();

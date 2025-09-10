@@ -2,8 +2,12 @@
 
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import React from 'react'
-import { FormikRichTextEditor } from "@/components/ui/rich-text-editor";
-import TaskEditor from "@/components/ckeditor";
+// import { FormikRichTextEditor } from "@/components/ui/rich-text-editor";
+// import TaskEditor from "@/components/ckeditor";
+import dynamic from 'next/dynamic';
+const TaskEditor = dynamic(() => import("@/components/ckeditor"));
+const { FormikRichTextEditor } = dynamic(() => import("@/components/ui/rich-text-editor"));
+
 function TaskManage() {
   return (
     <div>

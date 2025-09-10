@@ -13,7 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import TaskEditor from "@/components/ckeditor";
+// import TaskEditor from "@/components/ckeditor";
+import dynamic from 'next/dynamic';
+const TaskEditor = dynamic(() => import("@/components/ckeditor"));
 import FileAttachment from "@/components/file-attachment";
 
 export default function AddForm() {
