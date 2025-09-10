@@ -30,6 +30,12 @@ export default function useMenuItems() {
             access: ["employee"]
         },
         {
+            name: "Task Manage",
+            href: "/admin/task-manage",
+            icon: Calendar,
+            access: ["admin", "employee"]
+        },
+        {
             name: "Attendance",
             href: "/employee/attendance",
             icon: Clock,
@@ -70,12 +76,6 @@ export default function useMenuItems() {
             href: "/admin/reports",
             icon: FileText,
             access: ["admin", "Project manager"]
-        },
-        {
-            name: "Task Manage",
-            href: "/admin/task-manage",
-            icon: Calendar,
-            access: ["admin", "employee"]
         },
         // {
         //     name: "Settings",
