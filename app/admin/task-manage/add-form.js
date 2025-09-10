@@ -53,11 +53,8 @@ export default function AddForm() {
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="meeting">Meeting</SelectItem>
-                                <SelectItem value="training">Training</SelectItem>
-                                <SelectItem value="presentation">Presentation</SelectItem>
-                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                <SelectItem value="orientation">Orientation</SelectItem>
+                                <SelectItem value="schedule_visit">Schedule/Visit</SelectItem>
+                                <SelectItem value="task">Task</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

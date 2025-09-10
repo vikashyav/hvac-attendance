@@ -1,5 +1,5 @@
 "use client"
-
+import DOMPurify from "dompurify"; // सुरक्षा खातिर
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,117 +11,52 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Clock, MapPin, Users, CalendarIcon, Edit, Trash2, AlertCircle } from "lucide-react"
+import { Plus, Clock, MapPin, Users, CalendarIcon, Edit, Trash2, AlertCircle, Eye, MoreHorizontal, CheckCircle2, MoreVerticalIcon } from "lucide-react"
 import AddForm from "./add-form";
+import { TaskSchedulePageProvider, useTaskSchedulePageContext } from "./use-task-schedule";
+import withHOC from "@/utils/with-hoc";
+import TaskSchedulesForm from "./add-task";
+// import { Combobox } from "react-widgets/cjs";
+// import { ComboBox } from "react-widgets";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [viewMode, setViewMode] = useState("month")
-
-  const events = [
-    {
-      id: 1,
-      title: "Team Meeting - Downtown Site",
-      date: "2024-01-15",
-      time: "9:00 AM",
-      duration: "1 hour",
-      type: "meeting",
-      location: "Downtown Office Complex",
-      attendees: ["Mike Johnson", "Sarah Wilson", "John Smith"],
-      description: "Weekly progress review and planning session",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "Safety Training Session",
-      date: "2024-01-16",
-      time: "2:00 PM",
-      duration: "3 hours",
-      type: "training",
-      location: "Training Center",
-      attendees: ["All Field Staff"],
-      description: "Mandatory safety training for all field technicians",
-      priority: "high",
-    },
-    {
-      id: 3,
-      title: "Client Presentation - Mall Project",
-      date: "2024-01-17",
-      time: "10:30 AM",
-      duration: "2 hours",
-      type: "presentation",
-      location: "Client Office",
-      attendees: ["Lisa Garcia", "Tom Brown"],
-      description: "Project progress presentation to client stakeholders",
-      priority: "medium",
-    },
-    {
-      id: 4,
-      title: "Equipment Maintenance",
-      date: "2024-01-18",
-      time: "8:00 AM",
-      duration: "4 hours",
-      type: "maintenance",
-      location: "Equipment Yard",
-      attendees: ["Maintenance Team"],
-      description: "Scheduled maintenance for HVAC equipment and vehicles",
-      priority: "medium",
-    },
-    {
-      id: 5,
-      title: "New Employee Orientation",
-      date: "2024-01-19",
-      time: "9:00 AM",
-      duration: "6 hours",
-      type: "orientation",
-      location: "Main Office",
-      attendees: ["HR Team", "New Hires"],
-      description: "Comprehensive orientation program for new employees",
-      priority: "low",
-    },
-  ]
-
-  const shifts = [
-    {
-      id: 1,
-      employee: "John Smith",
-      site: "Downtown Office Complex",
-      date: "2024-01-15",
-      startTime: "8:00 AM",
-      endTime: "5:00 PM",
-      status: "scheduled",
-    },
-    {
-      id: 2,
-      employee: "Sarah Johnson",
-      site: "Mall Project",
-      date: "2024-01-15",
-      startTime: "8:30 AM",
-      endTime: "5:30 PM",
-      status: "scheduled",
-    },
-    {
-      id: 3,
-      employee: "Mike Wilson",
-      site: "Residential Complex",
-      date: "2024-01-15",
-      startTime: "9:00 AM",
-      endTime: "6:00 PM",
-      status: "scheduled",
-    },
-  ]
-
+// , 
+// export default
+function TaskSchedulePage() {
+  const router = useRouter();
+  const { selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData,
+    openEditDialog
+  } = useTaskSchedulePageContext()
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case "meeting":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "training":
         return "bg-green-100 text-green-800 border-green-200"
-      case "presentation":
+      case "task":
         return "bg-purple-100 text-purple-800 border-purple-200"
       case "maintenance":
         return "bg-orange-100 text-orange-800 border-orange-200"
-      case "orientation":
+      case "schedule_visit":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
@@ -130,9 +65,9 @@ export default function CalendarPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high":
+      case "urgent":
         return "text-red-600"
-      case "medium":
+      case "normal":
         return "text-yellow-600"
       case "low":
         return "text-green-600"
@@ -144,29 +79,74 @@ export default function CalendarPage() {
   const todaysEvents = events.filter(
     (event) => new Date(event.date).toDateString() === (selectedDate || new Date()).toDateString(),
   )
-
+  const cleanHTML = (content) => DOMPurify.sanitize(content);
+  const dropdownMenuItems = (request) => {
+    return <DropdownMenuContent align="end">
+      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+      <DropdownMenuItem onClick={() => {
+        router.push(`?parentId=${request.id}&ProjectsSiteId=${request?.ProjectsSiteId}`)
+        openEditDialog({ ProjectsSiteId: request?.ProjectsSiteId, parentId: request.id })
+      }}>
+        {/* <Eye className="mr-2 h-4 w-4" /> */}
+        <Plus className="mr-2 h-4 w-4" />
+        Add Sub Task
+      </DropdownMenuItem>
+      <DropdownMenuItem >
+        <Eye className="mr-2 h-4 w-4" />
+        View Details
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING"}>
+        <Edit className="mr-2 h-4 w-4" />
+        Edit Request
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={request.status !== "PENDING"}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the employee record and
+              remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DropdownMenuContent>
+  }
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-        <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
+    <div className="">
+      {/* Header p-6 space-y-6*/}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Calendar & Scheduling</h1>
           <p className="text-muted-foreground">Manage events, meetings, and employee schedules</p>
         </div>
         <div className="flex space-x-2">
-          <AddForm />
+          {/* <AddForm /> */}
+          <TaskSchedulesForm />
         </div>
       </div>
 
       {/* Calendar Tabs */}
-      <Tabs defaultValue="calendar" className="space-y-6">
+      <Tabs defaultValue="events" className="">
+        {/* space-y-6 */}
         <TabsList>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-          <TabsTrigger value="schedule">Employee Schedule</TabsTrigger>
-          <TabsTrigger value="events">Event List</TabsTrigger>
+          <TabsTrigger value="events">Schedule/Task List</TabsTrigger>
+          <TabsTrigger value="calendar" disabled>Calendar View</TabsTrigger>
+          <TabsTrigger value="schedule" disabled>Employee Schedule</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar" className="space-y-6">
@@ -342,55 +322,97 @@ export default function CalendarPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="events" className="space-y-6">
+        <TabsContent value="events" className="">
+          {/* space-y-6 */}
           <Card>
             <CardHeader>
-              <CardTitle>All Events</CardTitle>
-              <CardDescription>Complete list of scheduled events and meetings</CardDescription>
+              <CardTitle>All Schedule/Task List</CardTitle>
+              <CardDescription>Complete list of scheduled events and tasks</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {events.map((event) => (
-                  <div key={event.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="space-y-1">
+              <div className="space-y-2">
+                {/* space-y-4 */}
+                {TaskSchedulesData?.data?.map((event) => (
+                  <div key={event.id} className="p-2 border rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="space-y-1 cursor-pointer">
                         <div className="flex items-center space-x-2">
-                          <h3 className="font-medium">{event.title}</h3>
-                          <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
+                          <h3 className="font-medium">
+                            <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
+                            #{event.id.split("-")[4]} :{" "}
+                            {event.title}
+                          </h3>
+                         
+                          <samp className="text-muted-foreground">
+                           Priority:{event.priority}
+                          </samp>
                           <AlertCircle className={`h-4 w-4 ${getPriorityColor(event.priority)}`} />
+
                         </div>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                        {/* <div className="truncate">{cleanHTML(event.taskDescription)} </div> */}
+
                       </div>
+
                       <div className="flex space-x-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => openEditDialog(event)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          {dropdownMenuItems(event)}
+                        </DropdownMenu>
                       </div>
                     </div>
+                    <div className="mb-2 px-2 ">
+                      <samp className="text-sm">Projects/Sites:{event?.ProjectsSite?.name}</samp>
+                      <div className="text-sm">Discription:</div>
+                      <div
+                        className="p-2 prose prose-sm text-gray-700 line-clamp-2 bg-gray-100"
+                        dangerouslySetInnerHTML={{ __html: cleanHTML(event.taskDescription) }}
+                      />
+                    </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-flow-col  gap-4 text-sm">
+                      {/* grid-cols-2 md:grid-cols-5 */}
                       <div className="flex items-center text-muted-foreground">
                         <CalendarIcon className="h-4 w-4 mr-2" />
-                        {new Date(event.date).toLocaleDateString()}
+                        {new Date(event.startDate).toLocaleDateString()}
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <Clock className="h-4 w-4 mr-2" />
-                        {event.time} ({event.duration})
+                        {event.startTime} ({event.estimatedHours})hrs
                       </div>
-                      <div className="flex items-center text-muted-foreground">
+                      <div className="flex items-center text-muted-foreground cursor-pointer"
+                        title={event?.ProjectsSite?.address}
+                      >
                         <MapPin className="h-4 w-4 mr-2" />
-                        {event.location}
+                        <div >
+                          {event?.ProjectsSite?.name}
+                          <samp>
+                            {/* {event?.ProjectsSite?.address} */}
+                          </samp>
+                        </div>
+
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <Users className="h-4 w-4 mr-2" />
-                        {Array.isArray(event.attendees) ? event.attendees.length : 1} attendees
+                        {event?.assignToEmployee?.user?.fullName}
+                      </div>
+                      {event?.subTasks.length > 0 && <div className="flex items-center text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        SubTasks:  {event?.subTasks.length}
+                      </div>}
+                      <div className="flex items-center text-muted-foreground">
+                       created by:{event?.createBy?.fullName}
                       </div>
                     </div>
 
-                    {Array.isArray(event.attendees) && event.attendees.length > 0 && (
+                    {/* {Array.isArray(event.attendees) && event.attendees.length > 0 && (
                       <div className="mt-3 pt-3 border-t">
                         <p className="text-xs text-muted-foreground mb-2">Attendees:</p>
                         <div className="flex flex-wrap gap-1">
@@ -401,7 +423,7 @@ export default function CalendarPage() {
                           ))}
                         </div>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 ))}
               </div>
@@ -412,3 +434,5 @@ export default function CalendarPage() {
     </div>
   )
 }
+
+export default withHOC(TaskSchedulePageProvider, TaskSchedulePage);

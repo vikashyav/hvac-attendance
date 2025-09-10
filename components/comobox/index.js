@@ -20,16 +20,19 @@ import {
 } from "@/components/ui/popover"
 import FormError from "../ui/form-error"
 import { useField, useFormikContext } from "formik";
+// import { ComboBox } from "react-widgets";
+import Combobox from "react-widgets/Combobox";
 
-export default function Combobox({options=[],
-    lableString="",
-    valueString="",
-    placeholder="Select opt...",
-    onChange
+import "react-widgets/styles.css";
+export default function CustomCombobox({ options = [],
+  lableString = "",
+  valueString = "",
+  placeholder = "Select opt...",
+  onChange
 }) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
-    
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -78,9 +81,35 @@ export default function Combobox({options=[],
   )
 }
 
+export function ComoBoxMod({ options = [],
+  lableString = "",
+  valueString = "",
+  onChange,
+  // placeholder="Select opt...",
+  ...restProps
+}) {
+  
+  return (
+    <>
+      <Combobox
+        {...restProps}
+        data={options}
+        value={options?.find((item)=> item[valueString]=== restProps?.value)}
+        onChange={(value)=>{
+          onChange && onChange(value[valueString])
+        }}
+        valueKey={valueString}
+        textField={lableString}
+        // placeholder={placeholder}
+        className="w-full rounded-lg border shadow-sm"
+
+      />
+    </>
+  )
+}
 
 export function FormikCombobox(props) {
-//   const { handleChange, isError, helperText, field, classNames } = useFormikTypeAheadInput(props);
+  //   const { handleChange, isError, helperText, field, classNames } = useFormikTypeAheadInput(props);
   const { name, classNames = {}, onChange } = props;
   const [field, meta, { setValue }] = useField(name);
 
@@ -89,13 +118,14 @@ export function FormikCombobox(props) {
   const helperText = (submitCount > 0 && meta.error) || "";
 
   const handleChange = (value, meta) => {
+    
     setValue(value);
     onChange && onChange(value, meta);
   };
 
   return (
     <>
-      <Combobox {...props} {...field} onChange={handleChange} />
+      <ComoBoxMod {...props} {...field} onChange={handleChange} />
       <FormError show={isError} message={helperText} className={classNames.error} />
     </>
   );

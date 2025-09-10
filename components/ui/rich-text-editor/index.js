@@ -72,7 +72,7 @@ const RichTextEditor = forwardRef((props, ref) => {
   );
 });
 
-export function FormikRichTextEditor(props) {
+export default function FormikRichTextEditor(props) {
   const { name, classNames = {}, onChange, ...restProps } = props;
 
   const [field, meta, { setValue }] = useField(name);

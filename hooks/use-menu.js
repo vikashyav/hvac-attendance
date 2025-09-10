@@ -36,12 +36,12 @@ export default function useMenuItems() {
             access: ["employee", "admin"]
 
         },
-        {
-            name: "Schedule",
-            href: "/employee/schedule",
-            icon: Calendar,
-            access: ["employee", "admin"]
-        },
+        // {
+        //     name: "Schedule",
+        //     href: "/employee/schedule",
+        //     icon: Calendar,
+        //     access: ["employee", "admin"]
+        // },
         // {
         //   name: "Performance",
         //   href: "/employee/performance",
@@ -72,10 +72,10 @@ export default function useMenuItems() {
             access: ["admin", "Project manager"]
         },
         {
-            name: "Calendar",
-            href: "/admin/calendar",
+            name: "Task Manage",
+            href: "/admin/task-manage",
             icon: Calendar,
-            access: ["admin"]
+            access: ["admin", "employee"]
         },
         // {
         //     name: "Settings",

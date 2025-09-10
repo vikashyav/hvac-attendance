@@ -30,7 +30,7 @@ export function useEmployees() {
 
   const locations = fakeData.locations
   const { data: employeeData, isFetching, refetch } = useQuery({
-    queryKey:["useEmployees"],
+    queryKey:{is_emp_stats:1},
     queryFn: getEmployeeList
   })
   const filteredEmployees = (employeeData?.data?.data || employees).filter((employee) => {

@@ -64,7 +64,7 @@ export default function FileAttachment({ files, onFilesChange, className }: File
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center gap-2 text-sm font-medium">
         <Upload className="h-4 w-4" />
-        Files ({files.length})
+        Files Attachment ({files.length})
       </div>
       
       {/* Drop zone */}
