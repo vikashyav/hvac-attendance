@@ -88,7 +88,9 @@ export function UserProvider(props) {
     removeUser();
     document.cookie = 'access_token=; path=/; max-age=0';
     document.cookie = 'userInfo=; path=/; max-age=0';
-    await unsubscribeNotification().catch(() => {
+    await unsubscribeNotification().finally(() => {
+      window.location.reload(); // to trigger middleware check
+    }).catch(() => {
       alert("something went wrong!!, unable to unscribe push notification")
       window.location.reload(); // to trigger middleware check
     });

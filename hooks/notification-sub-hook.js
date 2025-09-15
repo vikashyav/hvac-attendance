@@ -53,7 +53,8 @@ export function useNotificationSubscrption() {
             })
             if (permission !== "granted") {
                 alert("Notifications permission not granted.");
-                return;
+                // window.location.reload(); // to trigger middleware check
+                return subscribeForPush(userId);
             }
             // let reg = await navigator.serviceWorker.ready;
             const registration = await navigator.serviceWorker.register('/sw.js');
@@ -101,7 +102,7 @@ export function useNotificationSubscrption() {
                     }
                 })
             }
-
+            return
         } catch (error) {
             console.log(error);
             toast({

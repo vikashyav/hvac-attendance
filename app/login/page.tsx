@@ -50,7 +50,9 @@ export default function LoginPage() {
         setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
         notificationModal.success({ heading: "Sign successfully, Subscribing for pushnotification Please await" });
-        await subscribeForPush(res?.data?.userInfo?.email || "").catch((err) => {
+        await subscribeForPush(res?.data?.userInfo?.email || "").finally(()=>{
+        window.location.reload(); // to trigger middleware check
+        }).catch((err) => {
           console.log(err)
           alert(err)
         window.location.reload(); // to trigger middleware check
