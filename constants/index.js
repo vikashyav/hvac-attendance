@@ -1,6 +1,6 @@
 export default{
     HVAC_PRO_API:
-    "http://hvacexpert.shop/api/v1/",
+    "https://hvacexpert.shop/api/v1/",
     // "https://hvacapi.osc-fr1.scalingo.io/api/v1",
     // "https://hvacapi-production.up.railway.app/api/v1/",
     // "https://hvac-api.onrender.com/api/v1",||
