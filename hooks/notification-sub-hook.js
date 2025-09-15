@@ -135,10 +135,10 @@ export function useNotificationSubscrption() {
     const unsubscribeNotification = async () => {
         try {
             // Wait for service worker to be ready
-            const registration = await navigator.serviceWorker.ready;
+            const registration = await navigator?.serviceWorker?.ready;
 
             // Check if there's an existing subscription
-            const existingSubscription = await registration.pushManager.getSubscription();
+            const existingSubscription = await registration?.pushManager?.getSubscription();
 
             // If yes, unsubscribe from it
             if (existingSubscription) {
