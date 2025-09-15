@@ -161,6 +161,7 @@ export function useNotificationSubscrption() {
                     }
                 })
             }
+            return
         } catch (error) {
             toast({
                 title: "Error",
