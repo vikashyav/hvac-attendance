@@ -34,71 +34,79 @@ export function useNotificationSubscrption() {
     }
 
     const subscribeForPush = async (userId) => {
-        // alert("1")
-        toast({
-            title: "1",
-            description: "Subscribed For Notification update",
-        })
-        // try {
-        if (Notification.permission === "denied") {
-            alert("Notifications are blocked. Please enable them in browser settings.");
-            return;
-        }
+        try {
+            // alert("1")
+            toast({
+                title: "1",
+                description: "Subscribed For Notification update",
+            })
+            if (Notification.permission === "denied") {
+                alert("Notifications are blocked. Please enable them in browser settings.");
+                return;
+            }
 
-        const permission = await Notification.requestPermission();
-        // alert("2")
-        toast({
-            title: "2",
-            description: "Subscribed For Notification update",
-        })
-        if (permission !== "granted") {
-            alert("Notifications permission not granted.");
-            return;
-        }
-        // let reg = await navigator.serviceWorker.ready;
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        toast({
-            title: "2.5",
-            description: "Subscribed For Notification update",
-        })
-        // await navigator.serviceWorker.register('/sw.js')
-        const reg = await navigator.serviceWorker.ready;
-        // alert("3")
-        toast({
-            title: "3",
-            description: "Subscribed For Notification update",
-        })
+            const permission = await Notification.requestPermission();
+            // alert("2")
+            toast({
+                title: "2",
+                description: "Subscribed For Notification update",
+            })
+            if (permission !== "granted") {
+                alert("Notifications permission not granted.");
+                return;
+            }
+            // let reg = await navigator.serviceWorker.ready;
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            toast({
+                title: "2.5",
+                description: "Subscribed For Notification update",
+            })
+            // await navigator.serviceWorker.register('/sw.js')
+            const reg = await navigator.serviceWorker.ready;
+            // alert("3")
+            toast({
+                title: "3",
+                description: "Subscribed For Notification update",
+            })
 
-        const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
-        });
-        toast({
-            title: "4",
-            description: "Subscribed For Notification update",
-        })
-        if (sub) {
-            return saveSubscrptionMutation.mutateAsync({ userId, subscription: sub }, {
-                onSuccess: (res) => {
-                    toast({
-                        title: "Success",
-                        description: "Subscribed For Notification update",
-                    })
-                    console.log("✅ Push subscribed:", sub);
-                    setIsSubscribed(true);
-                    window.location.reload(); // to trigger middleware check
-                },
-                onError: () => {
-                    toast({
-                        title: "Error",
-                        description: "failed Subscribed For Notification update, Please contact support team",
-                        variant: "destructive",
-                    })
-                    alert("something went wrong")
-                    setTimeout(() => {
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: "BAc-mxt5YMzEkGC5aF1dUQ5n0pL_y51IzdO5jXOoaGSjSXcd5OhWBd05sRb28njnF2xORneihyZoHB7cm4BS_VQ"
+            });
+            toast({
+                title: "4",
+                description: "Subscribed For Notification update",
+            })
+            if (sub) {
+                return saveSubscrptionMutation.mutateAsync({ userId, subscription: sub }, {
+                    onSuccess: (res) => {
+                        toast({
+                            title: "Success",
+                            description: "Subscribed For Notification update",
+                        })
+                        console.log("✅ Push subscribed:", sub);
+                        setIsSubscribed(true);
                         window.location.reload(); // to trigger middleware check
-                    }, 500);
-                }
+                    },
+                    onError: () => {
+                        toast({
+                            title: "Error",
+                            description: "failed Subscribed For Notification update, Please contact support team",
+                            variant: "destructive",
+                        })
+                        alert("something went wrong")
+                        setTimeout(() => {
+                            window.location.reload(); // to trigger middleware check
+                        }, 500);
+                    }
+                })
+            }
+
+        } catch (error) {
+            console.log(error);
+            toast({
+                title: "Error",
+                description: `Something went wrong while subscribing for push notification, Please Contact to system support team`,
             })
         }
     }

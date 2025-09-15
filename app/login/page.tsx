@@ -49,7 +49,7 @@ export default function LoginPage() {
         // document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
         setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
-        notificationModal.success({ heading: "Sign successfully.." });
+        notificationModal.success({ heading: "Sign successfully, Subscribing for pushnotification Please await" });
         await subscribeForPush(res?.data?.userInfo?.email || "").catch((err) => {
           console.log(err)
           alert(err)
