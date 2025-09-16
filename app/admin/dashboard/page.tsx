@@ -90,7 +90,7 @@ function AdminDashboardPage() {
               <div className="h-[400px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full"></div>
             }
             {
-              // recentActivity.length > 0 && <MapContainer codinateData={recentActivity} />
+              recentActivity.length > 0 && <MapContainer codinateData={recentActivity} />
             }
 
           </CardContent>
