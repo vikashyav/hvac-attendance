@@ -15,7 +15,10 @@ import { format } from "date-fns"
 import { useSearchParams, useRouter } from 'next/navigation';
 import moment from "moment"
 import { cn } from "@/lib/utils"
-import {AdminTableCard, EmpTableCard} from "./table-card";
+import { AdminTableCard, EmpTableCard } from "./table-card";
+import dynamic from 'next/dynamic';
+const MapContainer = dynamic(() => import("@/app/admin/dashboard/map-container"));
+
 function AttendancePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,7 +47,7 @@ function AttendancePage() {
     groups[date].push(atten);
     return groups;
   }, {});
-  console.log(Object.keys(attendanceHistoryGroupByDate)[0]);
+  // console.log(attendanceHistoryGroupByDate[moment(selectedDate).format("YYYY-MM-DD")], selectedDate);
 
   return (
     <div className="p-6 space-y-6">
@@ -174,7 +177,7 @@ function AttendancePage() {
       <Tabs defaultValue="history" className="space-y-6">
         <TabsList>
           <TabsTrigger value="history">Attendance History</TabsTrigger>
-          <TabsTrigger value="calendar" className={cn(isAdmin && "hidden")}>Calendar View</TabsTrigger>
+          <TabsTrigger value="calendar" >{isAdmin ? "Map" : "Calendar"} View</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -186,9 +189,9 @@ function AttendancePage() {
             </CardHeader>
             <CardContent>
               {
-                (isEmp || queryParmas?.employee_id) ?  <EmpTableCard isAdmin={isAdmin} attendanceHistory={attendanceHistory} isEmp={isEmp}/> :
-                <AdminTableCard isAdmin={isAdmin} attendanceHistoryGroupByDate={attendanceHistoryGroupByDate} />
-               
+                (isEmp || queryParmas?.employee_id) ? <EmpTableCard isAdmin={isAdmin} attendanceHistory={attendanceHistory} isEmp={isEmp} /> :
+                  <AdminTableCard isAdmin={isAdmin} attendanceHistoryGroupByDate={attendanceHistoryGroupByDate} />
+
               }
             </CardContent>
           </Card>
@@ -207,72 +210,84 @@ function AttendancePage() {
                   selected={selectedDate}
                   onSelect={handleCalenderSelectDate}
                   className="rounded-md border"
-                  disabled={{ after: new Date() }}
+                  disabled={{ after: dateRange.to, before:dateRange.from }} //dateRange.from, to: dateRange.to
                 />
               </CardContent>
             </Card>
 
             <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Attendance for {selectedDate?.toLocaleDateString() || "Select a date"}</CardTitle>
-                <CardDescription>Detailed attendance information for the selected date</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedDate && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-600">Check In Time</p>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-green-600" />
-                          <span className="text-lg font-semibold">{calendarSelectedData?.checkInTime || "-"}</span>
+              {isAdmin ?
+                <>
+                <CardHeader>
+                    <CardDescription>Present: {attendanceHistoryGroupByDate?.[moment(selectedDate).format("YYYY-MM-DD")]?.length} </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <MapContainer codinateData={attendanceHistoryGroupByDate?.[moment(selectedDate).format("YYYY-MM-DD")]} />
+                  </CardContent>
+                </> :
+                <>
+                  <CardHeader>
+                    <CardTitle>Attendance for {selectedDate?.toLocaleDateString() || "Select a date"}</CardTitle>
+                    <CardDescription>Detailed attendance information for the selected date</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedDate && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-600">Check In Time</p>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-green-600" />
+                              <span className="text-lg font-semibold">{calendarSelectedData?.checkInTime || "-"}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-600">Check Out Time</p>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-red-600" />
+                              <span className="text-lg font-semibold">{calendarSelectedData?.checkOutTime || "-"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-600">Work Location</p>
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="h-4 w-4 text-blue-600" />
+                            <span>{calendarSelectedData?.checkInLocation?.address}</span>
+                            <span>{`${calendarSelectedData?.checkInLocation?.latitude || "-"}, ${calendarSelectedData?.checkInLocation?.longitude || "-"}`}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-600">Total Hours Worked</p>
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-4 w-4 text-purple-600" />
+                            <span className="text-lg font-semibold">{calendarSelectedData?.workHours}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t">
+                          <Badge variant={
+                            calendarSelectedData?.status === "late"
+                              ? "destructive"
+                              : (calendarSelectedData?.status === "on-time" || calendarSelectedData?.status === "present")
+                                ? "default"
+                                : calendarSelectedData?.status === "completed"
+                                  ? "secondary"
+                                  : "outline"
+                          } className="mb-2">
+                            {calendarSelectedData?.status || "Not Checked In"}
+                          </Badge>
+                          <p className="text-sm text-gray-600">
+                            Great job! You arrived on time and completed your full shift.
+                          </p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-600">Check Out Time</p>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-red-600" />
-                          <span className="text-lg font-semibold">{calendarSelectedData?.checkOutTime || "-"}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-600">Work Location</p>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <span>{calendarSelectedData?.checkInLocation?.address}</span>
-                        <span>{`${calendarSelectedData?.checkInLocation?.latitude || "-"}, ${calendarSelectedData?.checkInLocation?.longitude || "-"}`}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-600">Total Hours Worked</p>
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="h-4 w-4 text-purple-600" />
-                        <span className="text-lg font-semibold">{calendarSelectedData?.workHours}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t">
-                      <Badge variant={
-                        calendarSelectedData?.status === "late"
-                          ? "destructive"
-                          : (calendarSelectedData?.status === "on-time" || calendarSelectedData?.status === "present")
-                            ? "default"
-                            : calendarSelectedData?.status === "completed"
-                              ? "secondary"
-                              : "outline"
-                      } className="mb-2">
-                        {calendarSelectedData?.status || "Not Checked In"}
-                      </Badge>
-                      <p className="text-sm text-gray-600">
-                        Great job! You arrived on time and completed your full shift.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
+                    )}
+                  </CardContent>
+                </>
+              }
             </Card>
           </div>
         </TabsContent>

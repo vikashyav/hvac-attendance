@@ -64,7 +64,7 @@ function createGroupIcon(group) {
             html: `
         <div style="display:flex;flex-direction:column;align-items:center;">
           <img src="${p.checkInPhoto}" style="width:40px;height:40px;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.3)" />
-          <span style="font-size:12px;background:white;padding:2px 6px;border-radius:12px;margin-top:2px;">${p?.employee}</span>
+          <span style="font-size:12px;background:white;padding:2px 6px;border-radius:12px;margin-top:2px;">${p?.fullName ||p?.employee}</span>
         </div>
       `,
             className: "",
@@ -87,10 +87,10 @@ function createGroupIcon(group) {
 
 
 export default function MapContainer({ codinateData }) {
-    const groupedData = useMemo(() => groupByRadius(codinateData, 1), []);
+    const groupedData = useMemo(() => groupByRadius(codinateData, 1), [codinateData]);
     // [c?.checkOutLocation?.latitude || c?.checkInLocation?.latitude, c?.checkOutLocation?.longitude || c?.checkInLocation?.longitude]
     // console.log("codinateData", codinateData, "groupedData", groupedData);
-    const codinateData_= codinateData.map((cod)=>{
+    const codinateData_= codinateData?.map((cod)=>{
         return {
             lat: cod?.checkOutLocation?.latitude || cod?.checkInLocation?.latitude,
             lng: cod?.checkOutLocation?.longitude || cod?.checkInLocation?.longitude
@@ -117,7 +117,7 @@ export default function MapContainer({ codinateData }) {
                                 />
                                 <div className='gap-1'>
 
-                                    <span className="font-semibold px-1">{p?.employee}</span>
+                                    <span className="font-semibold px-1">{p?.fullName || p?.employee}</span>
                                     <Badge
                                         variant={
                                             p.status === "late"
@@ -130,12 +130,12 @@ export default function MapContainer({ codinateData }) {
                                         }
                                         className="text-xs"
                                     >
-                                        {p.status}
+                                        {p?.status}
                                     </Badge>
                                     <samp className="text-xs text-gray-600 px-1">
-                                        {p.time}
+                                        {p?.time}
                                     </samp>
-                                    <div className="text-xs">{p.checkInLocation.address}</div>
+                                    <div className="text-xs">{p?.checkInLocation.address}</div>
                                 </div>
                             </div>
                         ))}

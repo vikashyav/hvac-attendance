@@ -34,10 +34,13 @@ function AdminDashboardPage() {
             <p className="text-muted-foreground">Welcome back! Here's what's happening with your team today.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full sm:w-auto bg-transparent">
-              <Calendar className="mr-2 h-4 w-4" />
-              View Calendar
-            </Button>
+            <Link href={`/admin/task-manage`}>
+              <Button variant="outline" className="w-full sm:w-auto bg-transparent">
+                <Calendar className="mr-2 h-4 w-4" />
+                View Calendar
+              </Button>
+            </Link>
+
             <Button onClick={handleGenerateReport} className="w-full sm:w-auto">
               <BarChart3 className="mr-2 h-4 w-4" />
               Generate Report
