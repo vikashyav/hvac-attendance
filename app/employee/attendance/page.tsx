@@ -210,7 +210,7 @@ function AttendancePage() {
                   selected={selectedDate}
                   onSelect={handleCalenderSelectDate}
                   className="rounded-md border"
-                  disabled={{ after: dateRange.to, before:dateRange.from }} //dateRange.from, to: dateRange.to
+                  disabled={{ after: dateRange.to, before: dateRange.from }} //dateRange.from, to: dateRange.to
                 />
               </CardContent>
             </Card>
@@ -218,12 +218,7 @@ function AttendancePage() {
             <Card className="lg:col-span-2">
               {isAdmin ?
                 <>
-                <CardHeader>
-                    <CardDescription>Present: {attendanceHistoryGroupByDate?.[moment(selectedDate).format("YYYY-MM-DD")]?.length} </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MapContainer codinateData={attendanceHistoryGroupByDate?.[moment(selectedDate).format("YYYY-MM-DD")]} />
-                  </CardContent>
+                  <MapContainer codinateData={attendanceHistoryGroupByDate?.[moment(selectedDate).format("YYYY-MM-DD")]} />
                 </> :
                 <>
                   <CardHeader>
