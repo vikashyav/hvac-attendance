@@ -4,13 +4,13 @@ const initialValuesEmp = {
     "title": "Testing subtask",
     "taskDescription": "Testing taskDescription for subtask",
     "assignTo": "",
-    ProjectsSiteId:"",
+    ProjectsSiteId: "",
     type: "",
     startDate: "",
     startTime: "",
-    priority:"",
-    status:"",
-    estimatedHours:"",
+    priority: "",
+    status: "",
+    estimatedHours: "",
 }
 
 export function getIntialValues(values = {}) {
@@ -20,8 +20,10 @@ export function getIntialValues(values = {}) {
             formValue[key] = values[key] || ""
         }
     })
+    if (values?.id) {
+        formValue.id = values?.id
+    }
     return {
-        id: values?.id||"", 
         // ...values,
         ...formValue
     }

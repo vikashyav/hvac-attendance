@@ -13,6 +13,9 @@ import Map from '../../../components/map-popover'
 // import MapLocations from "@/components/map-pointer"
 // import MapContainer from "./map-container";
 import dynamic from 'next/dynamic';
+import Link from "next/link"
+import constants from "@/constants"
+import { formatDate } from "@/utils/helper"
 const MapContainer = dynamic(() => import("./map-container"));
 
 function AdminDashboardPage() {
@@ -83,13 +86,13 @@ function AdminDashboardPage() {
             <CardDescription> employee's Latest location</CardDescription>
           </CardHeader>
           <CardContent>
-            {isFetching && 
-            <div className="h-[400px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full"></div>
+            {isFetching &&
+              <div className="h-[400px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full"></div>
             }
             {
-              recentActivity.length >0 && <MapContainer codinateData={recentActivity} />
+              // recentActivity.length > 0 && <MapContainer codinateData={recentActivity} />
             }
-            
+
           </CardContent>
         </Card>
         {/* Recent Activity */}
@@ -101,7 +104,7 @@ function AdminDashboardPage() {
             </CardTitle>
             <CardDescription>Latest employee check-ins and activities</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 max-h-96 overflow-y-scroll">
             {recentActivity.map((activity, index) => (
               <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex-1 min-w-0">
@@ -159,16 +162,12 @@ function AdminDashboardPage() {
             <PerformanceChart />
           </CardContent>
         </Card> */}
-      </div>
-
-      {/* Activity and Schedule Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Upcoming Schedules */}
         <Card>
-          <Badge variant="destructive" className="w-full whitespace-nowrap">
+          {/* <Badge variant="destructive" className="w-full whitespace-nowrap">
             Work Under Progress - we are working on this module
-          </Badge>
+          </Badge> */}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
@@ -176,51 +175,62 @@ function AdminDashboardPage() {
             </CardTitle>
             <CardDescription>Scheduled work assignments for the next few days</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {upcomingSchedules.map((schedule, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{schedule.site}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {schedule.employees} employees • {schedule.time}
-                  </p>
+          <CardContent className="space-y-4 max-h-96 overflow-y-scroll">
+            {dashboardStats?.todaySchedule?.map((schedule, index) => (
+              <Link href={`/admin/task-manage/${schedule.id}`}>
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{schedule?.title} | <b>Project/Site</b>: {schedule?.ProjectsSite.name} </p>
+                    <p className="text-xs text-muted-foreground"></p>
+                    <p className="text-xs text-muted-foreground">
+                      <b>Assign to</b> : {schedule?.assignToEmployee?.user?.fullName} • {schedule.estimatedHours}hrs <b>Created By:</b>{schedule?.createBy?.fullName}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className={`ml-4 whitespace-nowrap ${constants.statusColors?.[schedule?.status?.toLowerCase()]}`}>
+                    {formatDate(schedule.startDate)}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="ml-4 whitespace-nowrap">
-                  {schedule.date}
-                </Badge>
-              </div>
+              </Link>
             ))}
           </CardContent>
         </Card>
       </div>
 
+      {/* Activity and Schedule Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+
+      </div>
+
       {/* Quick Actions */}
       <Card>
-        <Badge variant="destructive" className="w-full whitespace-nowrap">
+        {/* <Badge variant="destructive" className="w-full whitespace-nowrap">
           Work Under Progress - we are working on this module
-        </Badge>
+        </Badge> */}
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
           <CardDescription>Common administrative tasks and shortcuts</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+            {/* <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent"> */}
+            <Link href={`/admin/employees`} className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent border" >
               <Users className="h-6 w-6" />
               <span className="text-sm">Add Employee</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+            </Link>
+            {/* </Button> */}
+            <Link href={`/admin/projects-sites`} className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent border">
               <MapPin className="h-6 w-6" />
               <span className="text-sm">New Job Site</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+            </Link>
+            <Link href={`/admin/task-manage`} className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent border" >
               <Calendar className="h-6 w-6" />
               <span className="text-sm">Schedule Work</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+            </Link>
+            <Link href={`/admin/reports`} className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent border">
               <BarChart3 className="h-6 w-6" />
               <span className="text-sm">View Reports</span>
-            </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

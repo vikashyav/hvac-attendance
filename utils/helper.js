@@ -1,3 +1,4 @@
+import moment from "moment";
 export function formatTimeDifference(startTime, endTime) {
   const diffMs = Math.abs(new Date(endTime) - new Date(startTime));
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
@@ -25,4 +26,15 @@ export function formatWorkingHours(hoursDecimal) {
   if (hours) return hText;
   if (minutes) return mText;
   return "0 minutes";
+}
+
+export function formatDate(date) {
+  return moment(date).calendar(null, {
+    sameDay: "[Today]",      // If the date is today
+    nextDay: "[Tomorrow]",   // If the date is tomorrow
+    nextWeek: "dddd",        // If the date is within the next week
+    lastDay: "[Yesterday]",  // If the date was yesterday
+    lastWeek: "[Last] dddd", // If the date is within the last week
+    sameElse: "DD/MM/YYYY"   // Everything else
+  });
 }

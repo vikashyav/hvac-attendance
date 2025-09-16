@@ -140,7 +140,7 @@ export function useAdminDashboard() {
 
     return {
         stats, recentActivity, upcomingSchedules, attendanceOverview: dashboardStats?.data?.last7DaysAttendanceOverview,
-        isFetching, handleGenerateReport, dashboardStats
+        isFetching, handleGenerateReport, dashboardStats: dashboardStats?.data
     }
 }
 
