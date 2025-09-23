@@ -225,7 +225,8 @@ export function useTaskSchedule(props) {
       attachedFiles, setAttachedFiles,
       handleCloseDrawer,
       searchParams,
-      TaskSchedulesDetail
+      TaskSchedulesDetail,
+      router
     }
 }
 
