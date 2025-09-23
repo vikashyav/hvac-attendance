@@ -53,18 +53,24 @@ export default function TaskList(props) {
     }
   }
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "urgent":
-        return "text-red-600"
-      case "normal":
-        return "text-yellow-600"
-      case "low":
-        return "text-green-600"
-      default:
-        return "text-gray-600"
-    }
-  }
+  // const getPriorityColor = (priority) => {
+  //   switch (priority) {
+  //     case "urgent":
+  //       return "text-red-600"
+  //     case "normal":
+  //       return "text-yellow-600"
+  //     case "low":
+  //       return "bg-green-100 text-green-800 border-green-200"
+  //     default:
+  //       return "text-gray-600"
+  //   }
+  // }
+  const priorityColors = {
+    low: "bg-green-100 text-green-800 border-green-200",
+    normal: "bg-blue-100 text-blue-800 border-blue-200",
+    high: "bg-orange-100 text-orange-800 border-orange-200",
+    urgent: "bg-red-100 text-red-800 border-red-200",
+  };
 
   const dropdownMenuItems = (request) => {
     return <DropdownMenuContent align="end">
@@ -135,9 +141,9 @@ export default function TaskList(props) {
                     {event.title}
                   </h3>
 
-                  <AlertCircle className={`h-4 w-4 ${getPriorityColor(event.priority)}`} />
-                  <samp className="text-muted-foreground">
-                    Priority: {event.priority}
+                  <samp title={event.priority} className="text-muted-foreground">
+                    <AlertCircle className={`h-4 w-4 ${priorityColors[event.priority]}`} />
+
                   </samp>
                   <Badge
                     className={`text-xs ${statusColors[event?.status?.toLowerCase()]}`}
