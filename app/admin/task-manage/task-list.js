@@ -124,8 +124,6 @@ export default function TaskList(props) {
               </div>}
             </div>
 
-            {/* testing */}
-
             <div className="flex flex-wrap justify-between mb-1">
               {/* Left section: Title + badges */}
               <div className="flex-1 min-w-[200px] space-y-1 cursor-pointer">
@@ -192,8 +190,6 @@ export default function TaskList(props) {
               </div>
             </div>
 
-
-            {/* testing end */}
             <div className="mb-2 px-2 ">
               <samp className="text-sm">Projects/Sites:{event?.ProjectsSite?.name}</samp>
               <div className="text-sm">Discription:</div>
