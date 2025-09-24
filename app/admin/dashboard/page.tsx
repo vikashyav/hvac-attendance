@@ -111,7 +111,7 @@ function AdminDashboardPage() {
             <CardDescription>Latest employee check-ins and activities</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
-            {isFetching && Array.from({ length: 5 }).map((_, i) => <ActivityRowSkeleton key={i} />)}
+            {isFetching && Array.from({ length: 7 }).map((_, i) => <ActivityRowSkeleton key={i} />)}
             {recentActivity.map((activity, index) => (
               <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <Popover>
@@ -128,15 +128,15 @@ function AdminDashboardPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{activity.employee}</p>
+                <div className="pl-1 flex-1 min-w-0">
+                  <p className="pl-1 text-sm font-medium truncate">{activity.employee}</p>
 
                   <div className="flex gap-2">
                     {/* <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" /> */}
 
                     <div className={cn(" flex items-center space-x-2 text-xs", activity?.checkOutLocation?.latitude ? "text-orange-400" : "text-green-400")}>
 
-                      <span className="shrink-0">{activity.action} at {"  "}</span>
+                      <span className="shrink-0"></span>
                       <Map latitude={activity?.checkOutLocation?.latitude || activity?.checkInLocation?.latitude}
                         label={activity?.checkOutLocation?.address || activity?.checkInLocation?.address}
                         longitude={activity?.checkOutLocation?.longitude || activity?.checkInLocation?.longitude} />
@@ -158,7 +158,7 @@ function AdminDashboardPage() {
                     }
                     className="text-xs"
                   >
-                    {activity.status}
+                    {activity?.checkOutLocation?.latitude ? "Check Out" : activity.status}
                   </Badge>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
                 </div>
@@ -190,7 +190,7 @@ function AdminDashboardPage() {
             <CardDescription>Scheduled work assignments for the next few days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
-            {isFetching && Array.from({ length: 5 }).map((_, i) => (
+            {isFetching && Array.from({ length: 7 }).map((_, i) => (
               <TaskScheduleRowSkeleton key={i} />
             ))}
             {dashboardStats?.todaySchedule?.map((schedule, index) => (

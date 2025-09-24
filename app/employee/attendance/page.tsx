@@ -50,12 +50,12 @@ function AttendancePage() {
   console.log(attendanceHistoryGroupByDate[moment(selectedDate).format("YYYY-MM-DD")], selectedDate);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-0 space-y-6">
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
-          <p className="text-gray-600">Monitor your attendance history and performance metrics</p>
+          <h1 className="text-2xl font-bold text-gray-900">Attendance Tracking</h1>
+          <p className="text-sm text-gray-600">Monitor your attendance history and performance metrics</p>
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Date Range</label>
