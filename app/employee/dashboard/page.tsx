@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation'
 import DOMPurify from "dompurify"; // सुरक्षा खातिर
 import Link from "next/link";
+import moment from "moment";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -57,7 +58,9 @@ export default function EmployeeDashboard() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Welcome back, {user.firstName}</h1>
         <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-          Here's your daily overview for {new Date().toLocaleDateString()}
+          Here's your daily overview for  {moment().format("DD ddd, MMM-YY")}
+          {/* {new Date().toLocaleDateString()} */}
+         
         </p>
       </div>
 

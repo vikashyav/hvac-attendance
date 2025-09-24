@@ -76,7 +76,8 @@ export function EmpTableCard({ attendanceHistory, isAdmin, isEmp, isFetching }) 
                     <TableHead>Total Hours</TableHead>
                     <TableHead className='flex'>
                         <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
-                        Site (Click to Open in Google Maps)</TableHead>
+                        Site (Click to Open in Google Maps)
+                    </TableHead>
                     <TableHead>Check In/Out photo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Overtime</TableHead>
@@ -101,22 +102,26 @@ export function EmpTableCard({ attendanceHistory, isAdmin, isEmp, isFetching }) 
                         <TableCell>{record.checkOutTime || "-"}</TableCell>
                         <TableCell>{record.workHours}</TableCell>
                         <TableCell>
-                            <span className='text-green-400 pr-2'>
-                                Check In:{"  "}
-                            </span>
-                            <samp>
-                                <Map latitude={record?.checkInLocation?.latitude}
-                                    label={record?.checkInLocation?.address}
-                                    longitude={record?.checkInLocation?.longitude} />
-                            </samp>
-                            <br />
-                            <span className='text-orange-400 pr-2'>
-                                Check Out:
+                            <div className=" flex items-center space-x-2 text-green-400 ">
+                                <span className="shrink-0">Check In:</span>
+                                <span className="">
+                                    <Map
+                                        latitude={record?.checkInLocation?.latitude}
+                                        longitude={record?.checkInLocation?.longitude}
+                                        label={record?.checkInLocation?.address}
+                                    />
+                                </span>
+                            </div>
+                            {/* truncate */}
+                            {record?.checkOutLocation?.latitude && <div className=" flex items-center space-x-2 text-orange-400 ">
+                                <span className="shrink-0">Check Out:</span>
+                                <span className="">
+                                    <Map latitude={record?.checkOutLocation?.latitude}
+                                        label={record?.checkOutLocation?.address}
+                                        longitude={record?.checkOutLocation?.longitude} />
+                                </span>
+                            </div>}
 
-                            </span>
-                            <Map latitude={record?.checkOutLocation?.latitude}
-                                label={record?.checkOutLocation?.address}
-                                longitude={record?.checkOutLocation?.longitude} />
                             {/* {record?.checkOutLocation?.address} */}
                             {/* <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" /> */}
                             {/* {` ${record?.checkOutLocation?.latitude}, ${record?.checkOutLocation?.longitude}`} */}

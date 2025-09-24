@@ -16,7 +16,10 @@ import dynamic from 'next/dynamic';
 import Link from "next/link"
 import constants from "@/constants"
 import { formatDate } from "@/utils/helper"
-const MapContainer = dynamic(() => import("./map-container"));
+import { cn } from "@/lib/utils"
+// const MapContainer = dynamic(() => import("./map-container"));
+import MapContainer from "./map-container"
+import { ActivityRowSkeleton, TaskScheduleRowSkeleton } from "./skeleton"
 
 function AdminDashboardPage() {
   const {
@@ -100,37 +103,45 @@ function AdminDashboardPage() {
         </Card>
         {/* Recent Activity */}
         <Card>
-          <CardHeader>
+          <CardHeader >
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               Recent Activity
             </CardTitle>
             <CardDescription>Latest employee check-ins and activities</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 max-h-96 overflow-y-scroll">
+          <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
+            {isFetching && Array.from({ length: 5 }).map((_, i) => <ActivityRowSkeleton key={i} />)}
             {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="w-full flex" >
+                      <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-1/4 h-1/4" />
+                      {
+                        activity?.checkOutPhoto &&
+                        <img data-popover-target="popover-default" src={activity?.checkOutPhoto} className="w-1/4 h-1/4" />
+                      }
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{activity.employee}</p>
 
                   <div className="flex gap-2">
                     {/* <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" /> */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-8 h-8 rounded-full" />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <img data-popover-target="popover-default" src={activity?.checkOutPhoto || activity?.checkInPhoto} className="w-1/4 h-1/4" />
 
-                      </PopoverContent>
-                    </Popover>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.action} at {"  "}
+                    <div className={cn(" flex items-center space-x-2 text-xs", activity?.checkOutLocation?.latitude ? "text-orange-400" : "text-green-400")}>
+
+                      <span className="shrink-0">{activity.action} at {"  "}</span>
                       <Map latitude={activity?.checkOutLocation?.latitude || activity?.checkInLocation?.latitude}
                         label={activity?.checkOutLocation?.address || activity?.checkInLocation?.address}
                         longitude={activity?.checkOutLocation?.longitude || activity?.checkInLocation?.longitude} />
                       {/* {activity.location} */}
-                    </p>
+                    </div>
                   </div>
 
                 </div>
@@ -178,21 +189,22 @@ function AdminDashboardPage() {
             </CardTitle>
             <CardDescription>Scheduled work assignments for the next few days</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 max-h-96 overflow-y-scroll">
+          <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
+            {isFetching && Array.from({ length: 5 }).map((_, i) => (
+              <TaskScheduleRowSkeleton key={i} />
+            ))}
             {dashboardStats?.todaySchedule?.map((schedule, index) => (
-              <Link href={`/admin/task-manage/${schedule.id}`}>
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{schedule?.title} | <b>Project/Site</b>: {schedule?.ProjectsSite.name} </p>
-                    <p className="text-xs text-muted-foreground"></p>
-                    <p className="text-xs text-muted-foreground">
-                      <b>Assign to</b> : {schedule?.assignToEmployee?.user?.fullName} • {schedule.estimatedHours}hrs <b>Created By:</b>{schedule?.createBy?.fullName}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className={`ml-4 whitespace-nowrap ${constants.statusColors?.[schedule?.status?.toLowerCase()]}`}>
-                    {formatDate(schedule.startDate)}
-                  </Badge>
+              <Link href={`/admin/task-manage/${schedule.id}`} className="flex items-center justify-between  p-2 rounded-lg bg-muted/50">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{schedule?.title} | <b>Project/Site</b>: {schedule?.ProjectsSite.name} </p>
+                  <p className="text-xs text-muted-foreground"></p>
+                  <p className="text-xs text-muted-foreground">
+                    <b>Assign to</b> : {schedule?.assignToEmployee?.user?.fullName} • {schedule.estimatedHours}hrs <b>Created By:</b>{schedule?.createBy?.fullName}
+                  </p>
                 </div>
+                <Badge variant="outline" className={`ml-4 whitespace-nowrap ${constants.statusColors?.[schedule?.status?.toLowerCase()]}`}>
+                  {formatDate(schedule.startDate)}
+                </Badge>
               </Link>
             ))}
           </CardContent>

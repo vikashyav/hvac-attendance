@@ -9,14 +9,14 @@ interface MapProps {
   label?: string;
 }
 
-export default function Map({ latitude, longitude, label = "Selected Location" }: MapProps) {
+export default function Map({ latitude, longitude, label = "Selected Location", }: MapProps) {
   const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         {/* <Button > */}
-        <samp className="cursor-pointer text-blue-600 text-sm underline">{label}{"   "}
+        <samp title={label} className="cursor-pointer text-blue-600 text-sm underline line-clamp-1"> {label || "-"}
           {/* <a
             // href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
             // target="_blank"

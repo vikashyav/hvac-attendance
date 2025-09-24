@@ -47,7 +47,7 @@ function AttendancePage() {
     groups[date].push(atten);
     return groups;
   }, {});
-  // console.log(attendanceHistoryGroupByDate[moment(selectedDate).format("YYYY-MM-DD")], selectedDate);
+  console.log(attendanceHistoryGroupByDate[moment(selectedDate).format("YYYY-MM-DD")], selectedDate);
 
   return (
     <div className="p-6 space-y-6">
