@@ -226,7 +226,8 @@ export function useTaskSchedule(props) {
       handleCloseDrawer,
       searchParams,
       TaskSchedulesDetail,
-      router
+      router,
+      isFetchingTaskList: isFetching
     }
 }
 

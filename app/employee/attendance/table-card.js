@@ -7,8 +7,29 @@ import moment from "moment"
 import { MapPin } from 'lucide-react'
 import Map from '../../../components/map-popover'
 
-export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
+export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin, isFetching }) {
     return <>
+        {isFetching &&
+            <>
+                <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full"
+                    defaultValue={"today"}
+                >
+                    <AccordionItem value={"today"}>
+                        <AccordionTrigger>
+                            <div className="flex space-x-8">
+                                <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                                <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="flex flex-col gap-4 text-balance">
+                            <EmpTableCard attendanceHistory={[]} isAdmin={isAdmin} isFetching={isFetching} />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </>}
         {Object.keys(attendanceHistoryGroupByDate).map((key, index) => {
             // const  attendanceHistoryGroupByDate[key]
             return (
@@ -23,7 +44,7 @@ export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
                         <AccordionTrigger>
                             <div className="flex space-x-8">
                                 <div>
-                                    {moment(key).format("DD dddd, MMMM-YYYY")}
+                                    {moment(key).format("DD ddd, MMM-YYYY")}
 
                                 </div>
                                 {isAdmin && <div className='text-green-600'>
@@ -34,7 +55,7 @@ export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
                             {/* {new Date(key).toLocaleDateString()} */}
                         </AccordionTrigger>
                         <AccordionContent className="flex flex-col gap-4 text-balance">
-                            <EmpTableCard attendanceHistory={attendanceHistoryGroupByDate[key]} isAdmin={isAdmin}/>
+                            <EmpTableCard attendanceHistory={attendanceHistoryGroupByDate[key] || []} isAdmin={isAdmin} />
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>)
@@ -43,7 +64,7 @@ export function AdminTableCard({ attendanceHistoryGroupByDate, isAdmin }) {
     </>
 }
 
-export function EmpTableCard({ attendanceHistory, isAdmin, isEmp }) {
+export function EmpTableCard({ attendanceHistory, isAdmin, isEmp, isFetching }) {
     return (
         <Table>
             <TableHeader>
@@ -62,6 +83,12 @@ export function EmpTableCard({ attendanceHistory, isAdmin, isEmp }) {
                 </TableRow>
             </TableHeader>
             <TableBody>
+                {isFetching &&
+                    <>
+                        <AttendanceRowSkeleton isAdmin={isAdmin} isEmp={isEmp} />
+                        <AttendanceRowSkeleton isAdmin={isAdmin} isEmp={isEmp} />
+                        <AttendanceRowSkeleton isAdmin={isAdmin} isEmp={isEmp} />
+                    </>}
 
                 {attendanceHistory.map((record, index) => (
                     <TableRow key={index}>
@@ -131,4 +158,46 @@ export function EmpTableCard({ attendanceHistory, isAdmin, isEmp }) {
                 ))}
             </TableBody>
         </Table>)
+}
+
+
+export function AttendanceRowSkeleton({ isEmp, isAdmin }) {
+    return (
+        <TableRow className="animate-pulse">
+            {isEmp && (
+                <TableCell className="font-medium">
+                    <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                </TableCell>
+            )}
+            {isAdmin && (
+                <TableCell>
+                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                </TableCell>
+            )}
+            <TableCell>
+                <div className="h-4 w-20 bg-gray-200 rounded"></div>
+            </TableCell>
+            <TableCell>
+                <div className="h-4 w-20 bg-gray-200 rounded"></div>
+            </TableCell>
+            <TableCell>
+                <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            </TableCell>
+            <TableCell>
+                <div className="space-y-2">
+                    <div className="h-4 w-40 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-40 bg-gray-200 rounded"></div>
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+            </TableCell>
+            <TableCell>
+                <div className="h-5 w-20 bg-gray-200 rounded"></div>
+            </TableCell>
+            <TableCell>
+                <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            </TableCell>
+        </TableRow>
+    );
 }

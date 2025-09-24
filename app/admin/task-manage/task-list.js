@@ -123,7 +123,7 @@ export default function TaskList(props) {
       {TaskSchedulesData?.map((event) => (
         <Link href={`/admin/task-manage/${event.id}`}>
 
-          <div key={event.id} className=" p-2 border rounded-lg hover:shadow-md transition-shadow">
+          <div key={event.id} className="space-y-2 p-2 border rounded-lg hover:shadow-md transition-shadow">
             <div>
               {event?.parentTask && <div className='text-sm text-muted-foreground'>
                 Parent Task: #{event?.parentTask?.id.split("-")[4]}{" "}{event?.parentTask?.title}
@@ -244,4 +244,49 @@ export default function TaskList(props) {
       ))}
     </div>
   )
+}
+
+export function TaskCardSkeleton() {
+  return (
+    <div className="p-2 border rounded-lg shadow-sm animate-pulse space-y-3">
+      {/* Parent Task Placeholder */}
+      <div className="h-4 w-40 bg-gray-200 rounded"></div>
+
+      {/* Header Section */}
+      <div className="flex flex-wrap justify-between items-start">
+        {/* Left Section */}
+        <div className="flex-1 min-w-[200px] space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="h-5 w-12 bg-gray-200 rounded"></div>
+            <div className="h-5 w-32 bg-gray-200 rounded"></div>
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            <div className="h-5 w-14 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+
+        {/* Right Section (buttons) */}
+        <div className="flex space-x-2">
+          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+          <div className="h-8 w-16 bg-gray-200 rounded hidden xs:block"></div>
+          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+
+      {/* Project/Site & Description */}
+      <div className="space-y-2 px-2">
+        <div className="h-4 w-40 bg-gray-200 rounded"></div>
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        <div className="h-12 w-full bg-gray-200 rounded"></div>
+      </div>
+
+      {/* Footer grid */}
+      <div className="grid grid-flow-col auto-cols-fr gap-4 text-sm overflow-auto">
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        <div className="h-4 w-28 bg-gray-200 rounded"></div>
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        <div className="h-4 w-28 bg-gray-200 rounded"></div>
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  );
 }

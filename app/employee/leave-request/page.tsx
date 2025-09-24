@@ -71,7 +71,7 @@ import withHOC from "@/utils/with-hoc";
 import { useEmployeesPageContext, EmployeesPageProvider } from "./use-leaveRequest";
 import { useRouter } from 'next/navigation'
 import { Textarea } from "@/components/ui/textarea"
-
+import LeaveRequestCardSkeleton from "./card-skeleton"
 interface request {
   id: string
   name: string
@@ -173,14 +173,14 @@ function EmployeesPage() {
     </DropdownMenuContent>
   }
 
-  const handleAdminUpdate = (employee)=>(e) => {
+  const handleAdminUpdate = (employee) => (e) => {
     const { name, value } = e.target;
     const payload = {
-      [request.id]:{
-        [name]:value
+      [request.id]: {
+        [name]: value
       }
     };
-    setLeaveRequestUpdateByAdmin({...leaveRequestUpdateByAdmin, ...payload})
+    setLeaveRequestUpdateByAdmin({ ...leaveRequestUpdateByAdmin, ...payload })
   }
   const totalEmployee = employeeData?.paging?.total;
   const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
@@ -319,6 +319,9 @@ function EmployeesPage() {
 
         <TabsContent value="grid" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isFetching && <>
+              <LeaveRequestCardSkeleton /><LeaveRequestCardSkeleton /><LeaveRequestCardSkeleton />
+            </>}
             {filteredEmployees.map((request) => (
               <Card key={request.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
@@ -359,7 +362,7 @@ function EmployeesPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       {/* <span className="text-muted-foreground">Reason:</span> */}
-                      <span className="font-medium whitespace-pre-wrap">{request?.reason || "-"}</span>
+                      <span className="font-medium whitespace-pre-wrap line-clamp-2 hover:webkit-line-clamp-unset">{request?.reason || "-"}</span>
                     </div>
                   </div>
 
@@ -373,36 +376,36 @@ function EmployeesPage() {
                       value={leaveRequestUpdateByAdmin?.[request.id]?.["remarks"] || request.remarks}
                       onChange={handleAdminUpdate(request)}
                     />
-                                      <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => handleLeaveRequestUpdateByAdmin(employee, "APPROVED")}
-                      disabled={["APPROVED", "REJECTED"].includes(request.status)}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => handleLeaveRequestUpdateByAdmin(employee, "REJECTED")}
-                      disabled={["APPROVED", "REJECTED"].includes(request.status)}
-                    >
-                      <X className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
-                      Reject
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      {dropdownMenuItems(request)}
-                    </DropdownMenu>
-                  </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleLeaveRequestUpdateByAdmin(employee, "APPROVED")}
+                        disabled={["APPROVED", "REJECTED"].includes(request.status)}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleLeaveRequestUpdateByAdmin(employee, "REJECTED")}
+                        disabled={["APPROVED", "REJECTED"].includes(request.status)}
+                      >
+                        <X className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
+                        Reject
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        {dropdownMenuItems(request)}
+                      </DropdownMenu>
+                    </div>
                   </div>}
                 </CardContent>
               </Card>

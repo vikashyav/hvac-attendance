@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { ProjectsSitesPageProvider, useProjectsSitesPageContext } from "./use-projects-sites";
 import withHOC from "@/utils/with-hoc"
 import ProjectsSitesForm from "./add-form";
+import {SiteCardSkeleton} from "./card-sekeleton";
 // export default 
 function JobSitesPage() {
   const {
@@ -214,6 +215,12 @@ function JobSitesPage() {
 
         <TabsContent value="cards" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {isFetching &&
+            <>
+            <SiteCardSkeleton />
+            <SiteCardSkeleton />
+            </>
+            }
             {filteredProjectsSites.map((site) => (
               <Card key={site.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>

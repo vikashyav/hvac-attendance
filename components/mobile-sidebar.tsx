@@ -22,7 +22,7 @@ export function MobileSidebar({ children }: MobileSidebarProps) {
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-64">
+      <SheetContent side="left" className="p-0 w-64 z-[1000]">
         {children}
       </SheetContent>
     </Sheet>

@@ -15,7 +15,7 @@ import { format } from "date-fns"
 import { useSearchParams, useRouter } from 'next/navigation';
 import moment from "moment"
 import { cn } from "@/lib/utils"
-import { AdminTableCard, EmpTableCard } from "./table-card";
+import { AdminTableCard, AttendanceRowSkeleton, EmpTableCard } from "./table-card";
 import dynamic from 'next/dynamic';
 const MapContainer = dynamic(() => import("@/app/admin/dashboard/map-container"));
 
@@ -189,9 +189,13 @@ function AttendancePage() {
             </CardHeader>
             <CardContent>
               {
-                (isEmp || queryParmas?.employee_id) ? <EmpTableCard isAdmin={isAdmin} attendanceHistory={attendanceHistory} isEmp={isEmp} /> :
-                  <AdminTableCard isAdmin={isAdmin} attendanceHistoryGroupByDate={attendanceHistoryGroupByDate} />
-
+                (isEmp || queryParmas?.employee_id) ? <EmpTableCard isAdmin={isAdmin}
+                 attendanceHistory={attendanceHistory}
+                 isFetching={isFetching}
+                 isEmp={isEmp} /> :
+                  <AdminTableCard isAdmin={isAdmin}
+                  isFetching={isFetching}
+                  attendanceHistoryGroupByDate={attendanceHistoryGroupByDate} />
               }
             </CardContent>
           </Card>

@@ -67,7 +67,7 @@ import EmployeeForm from "./add-form";
 import withHOC from "@/utils/with-hoc";
 import { useEmployeesPageContext, EmployeesPageProvider } from "./use-employee";
 import { useRouter } from 'next/navigation'
-
+import {EmployeeRowSkeleton} from "./employee-row-sekeleton";
 interface Employee {
   id: string
   name: string
@@ -340,6 +340,14 @@ function EmployeesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {isFetching && 
+                    <>
+                    <EmployeeRowSkeleton />
+                    <EmployeeRowSkeleton />
+                    <EmployeeRowSkeleton />
+                    <EmployeeRowSkeleton />
+                    </>
+                    }
                     {filteredEmployees.map((employee) => (
                       <TableRow key={employee.id}>
                         <TableCell>

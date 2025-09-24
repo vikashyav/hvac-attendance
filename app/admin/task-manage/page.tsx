@@ -40,7 +40,7 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import TaskList from "./task-list";
+import TaskList, { TaskCardSkeleton } from "./task-list";
 
 const statusColors = {
   scheduled: "bg-blue-500 text-white",
@@ -53,7 +53,7 @@ const statusColors = {
 function TaskSchedulePage() {
   const router = useRouter();
   const { selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData,
-    openEditDialog
+    openEditDialog, isFetchingTaskList
   } = useTaskSchedulePageContext()
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -339,7 +339,15 @@ function TaskSchedulePage() {
               <CardDescription>Complete list of scheduled events and tasks</CardDescription>
             </CardHeader>
             <CardContent>
-              <TaskList TaskSchedulesData={TaskSchedulesData?.data} openEditDialog={openEditDialog} router={router} />
+              {
+                isFetchingTaskList ? <>
+                <TaskCardSkeleton />
+                <TaskCardSkeleton />
+                <TaskCardSkeleton />
+                <TaskCardSkeleton />
+                </>: <TaskList TaskSchedulesData={TaskSchedulesData?.data} openEditDialog={openEditDialog} router={router} />
+              }
+              
               {/* <div className="space-y-2">
                 {TaskSchedulesData?.data?.map((event) => (
                   <div key={event.id} className="p-2 border rounded-lg hover:shadow-md transition-shadow">
