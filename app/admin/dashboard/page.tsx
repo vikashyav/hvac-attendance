@@ -17,8 +17,8 @@ import Link from "next/link"
 import constants from "@/constants"
 import { formatDate } from "@/utils/helper"
 import { cn } from "@/lib/utils"
-// const MapContainer = dynamic(() => import("./map-container"));
-import MapContainer from "./map-container"
+const MapContainer = dynamic(() => import("./map-container"));
+// import MapContainer from "./map-container"
 import { ActivityRowSkeleton, TaskScheduleRowSkeleton } from "./skeleton"
 
 function AdminDashboardPage() {
