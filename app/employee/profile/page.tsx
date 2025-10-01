@@ -125,7 +125,7 @@ function ProfilePage(props) {
           <h1 className="text-3xl font-bold">My Profile {queryParmas?.acive_tab}</h1>
           <p className="text-muted-foreground">Manage your personal information and preferences</p>
         </div>
-        <Button onClick={() => setIsEditing(!isEditing)}>
+        <Button className="hidden" onClick={() => setIsEditing(!isEditing)}>
           {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
           {isEditing ? "Save Changes" : "Edit Profile"}
         </Button>
@@ -274,9 +274,9 @@ function ProfilePage(props) {
         </TabsContent>
 
         <TabsContent value="professional" className="space-y-6">
-          <Badge variant="destructive" className="w-full whitespace-nowrap">
+          {/* <Badge variant="destructive" className="w-full whitespace-nowrap">
             Work Under Progress - we are working on this module
-          </Badge>
+          </Badge> */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             <Card>
@@ -382,9 +382,9 @@ function ProfilePage(props) {
         </TabsContent>
 
         <TabsContent value="certifications" className="space-y-6">
-          <Badge variant="destructive" className="w-full whitespace-nowrap">
+          {/* <Badge variant="destructive" className="w-full whitespace-nowrap">
             Work Under Progress - we are working on this module
-          </Badge>
+          </Badge> */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -432,7 +432,7 @@ function ProfilePage(props) {
             You have sign in from default password, Please change it.
           </Badge>}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="hidden">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Bell className="h-5 w-5 mr-2" />

@@ -59,12 +59,7 @@ export default function useMenuItems() {
             icon: Calendar,
             access: ["employee", "admin"]
         },
-        {
-            name: "Profile",
-            href: "/employee/profile",
-            icon: User,
-            access: ["employee"],
-        },
+
         {
             name: "Projects /(Sites)",
             href: "/admin/projects-sites",
@@ -83,6 +78,12 @@ export default function useMenuItems() {
         //     icon: Settings,
         //     access: ["admin"]
         // },
+            {
+            name: "Profile",
+            href: "/employee/profile",
+            icon: User,
+            access: ["employee"],
+        },
     ].filter((item) => item.access.includes(user.role) || item.access.includes(user?.employee?.position))
 
     return menuItems
