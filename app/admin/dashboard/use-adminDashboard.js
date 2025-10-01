@@ -8,7 +8,7 @@ import { Users, MapPin, TrendingUp, CheckCircle, } from "lucide-react"
 import moment from "moment";
 import { formatWorkingHours } from "@/utils/helper";
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 // import {useNotificationSubscrption} from "@/hooks/notification-sub-hook"
 // import {subscribeForPush} from "@/utils/subscribeForPush";
 // import { getIntialValues } from "./form-helper";
@@ -18,7 +18,11 @@ import { useEffect } from "react";
 export function useAdminDashboard() {
     const notificationModal = useNotificationModalContext();
     // const {subscribeForPush}= useNotificationSubscrption();
-
+    const todayDate = moment();
+    const [dateRange, setDateRange] = useState({
+        from: moment(todayDate).startOf('month').toDate(),
+        to: moment(todayDate).endOf('day' || 'month').toDate(),
+    })
     const { data: dashboardStats, isFetching, isSuccess, refetch, } = useQuery({
         queryKey: ['useAdminDashboard'],
         queryFn: getAdminDashboardStats
@@ -110,7 +114,12 @@ export function useAdminDashboard() {
         notificationModal.progress({
             heading: `Please await downloading report...`,
         });
-        downloadReportsQuery.mutate({}, {
+        downloadReportsQuery.mutate({
+            queryKey: {
+                from: moment(dateRange.from).format("YYYY-MM-DD"),
+                to: moment(dateRange.to).format("YYYY-MM-DD")
+            },//{ startOfDay, endOfDay }, // Include params in queryKey
+        }, {
             onSuccess: async (response) => {
                 // console.log(response);
 
