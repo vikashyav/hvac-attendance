@@ -50,17 +50,17 @@ export default function InstallPrompt() {
     };
 
     // if (!showButton) 
-    return null;
+    // return null;
 
-    // return (
-    //     <div className=" bg-blue-600 bg-opacity-50 z-50 flex flex-col items-center justify-center px-4 py-2">
-    //         <p>Install our Attendance App for quick access.</p>
-    //         <button
-    //             onClick={handleInstallClick}
-    //             className="px-4 py-2 rounded bg-white text-blue-600 hover:bg-blue-700 text-sm"
-    //         >
-    //             Install App
-    //         </button>
-    //     </div>
-    // );
+    return (
+        <div className=" bg-blue-600 bg-opacity-50 z-50 flex flex-col items-center justify-center px-4 py-2">
+            <p className="text-red-500">⚠️ Payment pending! Please clear your dues to keep your Thermopharm Attendance App active.</p>
+            {/* <button
+                onClick={handleInstallClick}
+                className="px-4 py-2 rounded bg-white text-blue-600 hover:bg-blue-700 text-sm"
+            >
+                Install App
+            </button> */}
+        </div>
+    );
 }
