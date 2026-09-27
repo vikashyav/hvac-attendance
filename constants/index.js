@@ -6,6 +6,9 @@ export default {
     // "https://hvac-api.onrender.com/api/v1",||
     // "https://birth-cert-api.onrender.com/v1",
     // "http://localhost:5000/api/v1/",
+  HVAC_FALLBACK_API: "https://hvac-api.onrender.com/api/v1",
+  HVAC_API_FALLBACK_HOURS: 1, // Keep using fallback for this long after a primary failure.
+  HVAC_API_TIMEOUT_MS: 15000, // Maximum wait per attempt on either endpoint.
   CONTEXT_TYPE: {
     USER: "user",
     TOKEN: "token",

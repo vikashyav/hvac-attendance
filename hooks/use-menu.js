@@ -72,12 +72,12 @@ export default function useMenuItems() {
             icon: FileText,
             access: ["admin", "Project manager"]
         },
-        // {
-        //     name: "Settings",
-        //     href: "/admin/settings",
-        //     icon: Settings,
-        //     access: ["admin"]
-        // },
+        {
+            name: "Settings",
+            href: "/admin/settings",
+            icon: Settings,
+            access: ["admin"]
+        },
             {
             name: "Profile",
             href: "/employee/profile",
