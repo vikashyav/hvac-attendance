@@ -1,600 +1,123 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, type FormEvent } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Settings, User, Bell, Shield, Database, Globe, Clock, MapPin, Save, Upload, Download } from "lucide-react"
+import { Save, Loader2 } from "lucide-react"
+import { getSystemSettings, saveSystemSettings } from "@/lib/api/settings-api"
+
+type Policy = {
+  timezone: string; startTime: string; endTime: string; workDays: number[];
+  requiredHours: number; halfDayHours: number; graceMinutes: number; breakMinutes: number;
+  overtimeEnabled: boolean; overtimeAfterHours: number; allowNonWorkingDays: boolean;
+  allowEarlyCheckout: boolean; requirePhoto: boolean; locationEnabled: boolean;
+  geofencingEnabled: boolean; geofenceRadius: number;
+}
+type Settings = { company: { name: string; industry: string; email: string; phone: string; address: string }; attendance: Policy }
+type SettingsDocument = { companyId: string; settings: Settings; revision: number }
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const errorMessage = (error: unknown) => {
+  const e = error as { response?: { data?: { error?: string } }; message?: string }
+  return typeof e?.response?.data?.error === 'string' ? e.response.data.error : e?.message || 'Unable to save settings. Please try again.'
+}
 
 export default function SettingsPage() {
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    sms: false,
-    attendance: true,
-    reports: true,
-    alerts: true,
+  const client = useQueryClient()
+  const [companyId, setCompanyId] = useState<string | undefined>(undefined)
+  const [ready, setReady] = useState(false)
+  useEffect(() => { setCompanyId(new URLSearchParams(window.location.search).get('companyId') || undefined); setReady(true) }, [])
+  const [draft, setDraft] = useState<SettingsDocument | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const [message, setMessage] = useState('')
+  const query = useQuery({ queryKey: ['system-settings', companyId], queryFn: ({ signal }) => getSystemSettings({ signal, companyId }), enabled: ready, retry: false, refetchOnWindowFocus: false })
+  useEffect(() => {
+    if (query.data?.data?.data && !dirty) setDraft(structuredClone(query.data.data.data))
+  }, [query.data, dirty])
+  const mutation = useMutation({
+    mutationFn: saveSystemSettings,
+    onSuccess: async (response) => {
+      setDraft(structuredClone(response.data.data))
+      setDirty(false)
+      setMessage('Settings saved. Attendance and reports now use these rules.')
+      client.setQueryData(['system-settings', companyId], response)
+      await client.invalidateQueries({ predicate: query => query.queryKey[0] !== 'system-settings' })
+    },
   })
-
-  const [workingHours, setWorkingHours] = useState({
-    startTime: "08:00",
-    endTime: "17:00",
-    timezone: "America/New_York",
-    workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-  })
-
-  const users = [
-    {
-      id: 1,
-      name: "John Admin",
-      email: "admin@hvacpro.com",
-      role: "Super Admin",
-      status: "Active",
-      lastLogin: "2024-01-15 09:30 AM",
-    },
-    {
-      id: 2,
-      name: "Sarah Manager",
-      email: "sarah@hvacpro.com",
-      role: "Manager",
-      status: "Active",
-      lastLogin: "2024-01-15 08:45 AM",
-    },
-    {
-      id: 3,
-      name: "Mike Supervisor",
-      email: "mike@hvacpro.com",
-      role: "Supervisor",
-      status: "Active",
-      lastLogin: "2024-01-14 05:20 PM",
-    },
-  ]
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage system preferences and configurations</p>
-        </div>
-        <Button>
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
-        </Button>
-      </div>
-
-      {/* Settings Tabs */}
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2" />
-                  Company Information
-                </CardTitle>
-                <CardDescription>Basic company details and branding</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name</Label>
-                  <Input id="companyName" defaultValue="Thermopharm Solutions" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyEmail">Company Email</Label>
-                  <Input id="companyEmail" type="email" defaultValue="info@thermopharm.in" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyPhone">Company Phone</Label>
-                  <Input id="companyPhone" defaultValue="(555) 123-4567" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyAddress">Address</Label>
-                  <Textarea id="companyAddress" defaultValue="123 Business Street, City, State 12345" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="logo">Company Logo</Label>
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">HP</AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Logo
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Working Hours
-                </CardTitle>
-                <CardDescription>Configure default working hours and schedule</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={workingHours.startTime}
-                      onChange={(e) => setWorkingHours({ ...workingHours, startTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={workingHours.endTime}
-                      onChange={(e) => setWorkingHours({ ...workingHours, endTime: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select
-                    value={workingHours.timezone}
-                    onValueChange={(value) => setWorkingHours({ ...workingHours, timezone: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Working Days</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                      <div key={day} className="flex items-center space-x-2">
-                        <Switch
-                          id={day.toLowerCase()}
-                          checked={workingHours.workDays.includes(day.toLowerCase())}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setWorkingHours({
-                                ...workingHours,
-                                workDays: [...workingHours.workDays, day.toLowerCase()],
-                              })
-                            } else {
-                              setWorkingHours({
-                                ...workingHours,
-                                workDays: workingHours.workDays.filter((d) => d !== day.toLowerCase()),
-                              })
-                            }
-                          }}
-                        />
-                        <Label htmlFor={day.toLowerCase()} className="text-sm">
-                          {day}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2" />
-                Location Settings
-              </CardTitle>
-              <CardDescription>Configure location tracking and geofencing</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Location Tracking</Label>
-                  <p className="text-sm text-muted-foreground">Track employee locations for attendance</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Geofencing</Label>
-                  <p className="text-sm text-muted-foreground">Restrict check-ins to specific locations</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="geofenceRadius">Geofence Radius (meters)</Label>
-                <Input id="geofenceRadius" type="number" defaultValue="100" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                User Management
-              </CardTitle>
-              <CardDescription>Manage admin users and their permissions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Avatar>
-                        <AvatarFallback>
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">Last login: {user.lastLogin}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status}</Badge>
-                      <Badge variant="outline">{user.role}</Badge>
-                      <Button size="sm" variant="outline">
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Separator className="my-4" />
-              <Button>Add New User</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Bell className="h-5 w-5 mr-2" />
-                Notification Preferences
-              </CardTitle>
-              <CardDescription>Configure how and when you receive notifications</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                  </div>
-                  <Switch
-                    checked={notifications.email}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive browser push notifications</p>
-                  </div>
-                  <Switch
-                    checked={notifications.push}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>SMS Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
-                  </div>
-                  <Switch
-                    checked={notifications.sms}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, sms: checked })}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Notification Types</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Attendance Alerts</Label>
-                      <p className="text-sm text-muted-foreground">Late arrivals, absences, and check-in issues</p>
-                    </div>
-                    <Switch
-                      checked={notifications.attendance}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, attendance: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Report Generation</Label>
-                      <p className="text-sm text-muted-foreground">When reports are ready for download</p>
-                    </div>
-                    <Switch
-                      checked={notifications.reports}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, reports: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>System Alerts</Label>
-                      <p className="text-sm text-muted-foreground">System maintenance and important updates</p>
-                    </div>
-                    <Switch
-                      checked={notifications.alerts}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, alerts: checked })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Security Settings
-              </CardTitle>
-              <CardDescription>Configure security policies and authentication</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Two-Factor Authentication</Label>
-                    <p className="text-sm text-muted-foreground">Require 2FA for all admin users</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Session Timeout</Label>
-                    <p className="text-sm text-muted-foreground">Automatically log out inactive users</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
-                  <Input id="sessionTimeout" type="number" defaultValue="30" />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Password Policy</h4>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="minLength">Minimum Password Length</Label>
-                    <Input id="minLength" type="number" defaultValue="8" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Require Special Characters</Label>
-                      <p className="text-sm text-muted-foreground">Include symbols in passwords</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Require Numbers</Label>
-                      <p className="text-sm text-muted-foreground">Include numbers in passwords</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Globe className="h-5 w-5 mr-2" />
-                Third-Party Integrations
-              </CardTitle>
-              <CardDescription>Connect with external services and APIs</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium">Google Maps</h4>
-                      <p className="text-sm text-muted-foreground">Location services and mapping</p>
-                    </div>
-                    <Badge variant="default">Connected</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mapsApi">API Key</Label>
-                    <Input id="mapsApi" type="password" placeholder="••••••••••••••••" />
-                  </div>
-                  <Button size="sm" className="mt-2">
-                    Update
-                  </Button>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium">Slack</h4>
-                      <p className="text-sm text-muted-foreground">Team communication and alerts</p>
-                    </div>
-                    <Badge variant="outline">Not Connected</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="slackWebhook">Webhook URL</Label>
-                    <Input id="slackWebhook" placeholder="https://hooks.slack.com/..." />
-                  </div>
-                  <Button size="sm" className="mt-2">
-                    Connect
-                  </Button>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium">Email Service</h4>
-                      <p className="text-sm text-muted-foreground">SMTP configuration for emails</p>
-                    </div>
-                    <Badge variant="default">Connected</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpHost">SMTP Host</Label>
-                    <Input id="smtpHost" defaultValue="smtp.gmail.com" />
-                  </div>
-                  <Button size="sm" className="mt-2">
-                    Update
-                  </Button>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium">Payroll System</h4>
-                      <p className="text-sm text-muted-foreground">Sync attendance with payroll</p>
-                    </div>
-                    <Badge variant="outline">Not Connected</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="payrollApi">API Endpoint</Label>
-                    <Input id="payrollApi" placeholder="https://api.payroll.com/..." />
-                  </div>
-                  <Button size="sm" className="mt-2">
-                    Connect
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Database className="h-5 w-5 mr-2" />
-                Advanced Settings
-              </CardTitle>
-              <CardDescription>System maintenance and advanced configurations</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Debug Mode</Label>
-                    <p className="text-sm text-muted-foreground">Enable detailed logging for troubleshooting</p>
-                  </div>
-                  <Switch />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Maintenance Mode</Label>
-                    <p className="text-sm text-muted-foreground">Temporarily disable system access</p>
-                  </div>
-                  <Switch />
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label htmlFor="dataRetention">Data Retention (days)</Label>
-                  <Input id="dataRetention" type="number" defaultValue="365" />
-                  <p className="text-sm text-muted-foreground">How long to keep attendance records</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">System Maintenance</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button variant="outline">
-                    <Database className="h-4 w-4 mr-2" />
-                    Backup Database
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Data
-                  </Button>
-                  <Button variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Clear Cache
-                  </Button>
-                  <Button variant="outline">
-                    <Globe className="h-4 w-4 mr-2" />
-                    Test Integrations
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">System Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Version</p>
-                    <p className="font-medium">v2.1.0</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Last Update</p>
-                    <p className="font-medium">January 15, 2024</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Database Size</p>
-                    <p className="font-medium">2.3 GB</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Active Users</p>
-                    <p className="font-medium">24</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+  const changeCompany = (key: keyof Settings['company'], value: string) => {
+    if (!draft) return
+    setDraft({ ...draft, settings: { ...draft.settings, company: { ...draft.settings.company, [key]: value } } })
+    setDirty(true); setMessage(''); mutation.reset()
+  }
+  const changePolicy = <K extends keyof Policy>(key: K, value: Policy[K]) => {
+    if (!draft) return
+    const attendance = { ...draft.settings.attendance, [key]: value }
+    if (key === 'locationEnabled' && value === false) attendance.geofencingEnabled = false
+    setDraft({ ...draft, settings: { ...draft.settings, attendance } })
+    setDirty(true); setMessage(''); mutation.reset()
+  }
+  const submit = (event: FormEvent) => { event.preventDefault(); if (draft) mutation.mutate(draft) }
+  if (query.isPending) return <div className="p-6" role="status">Loading system settings…</div>
+  if (query.isError) return <div className="p-6 space-y-4"><p role="alert">{errorMessage(query.error)}</p><Button onClick={() => query.refetch()}>Retry</Button></div>
+  if (!draft) return <div className="p-6" role="alert">The server did not return system settings.</div>
+  const { company, attendance: p } = draft.settings
+  const toggle = (key: keyof Policy, label: string, description: string, disabled = false) => (
+    <div className="flex items-center justify-between gap-4" key={key}>
+      <div><Label htmlFor={key}>{label}</Label><p className="text-sm text-muted-foreground">{description}</p></div>
+      <Switch id={key} checked={Boolean(p[key])} disabled={disabled || mutation.isPending} onCheckedChange={value => changePolicy(key, value)} />
     </div>
+  )
+  const numeric = (key: keyof Policy, label: string, min: number, max: number, step = 1) => (
+    <div className="space-y-2" key={key}><Label htmlFor={key}>{label}</Label>
+      <Input id={key} type="number" required min={min} max={max} step={step} value={Number.isNaN(p[key]) ? '' : Number(p[key])} onChange={e => changePolicy(key, e.target.value === '' ? NaN : Number(e.target.value))} />
+    </div>
+  )
+  return (
+    <form onSubmit={submit} className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div><h1 className="text-3xl font-bold">System Settings</h1><p className="text-muted-foreground">Manage your company and attendance policies</p></div>
+        <Button type="submit" disabled={!dirty || mutation.isPending}>{mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save Changes</Button>
+      </div>
+      <p className="text-sm text-muted-foreground">These company-wide rules apply to check-in, check-out, and all report periods, including historical reports. Changing rules recalculates reports from recorded times; it does not change those times.</p>
+      {message && <p role="status" className="text-green-700">{message}</p>}
+      {mutation.isError && <div role="alert" className="space-y-2 text-destructive"><p>{errorMessage(mutation.error)}</p><Button type="button" variant="outline" onClick={() => { setDirty(false); mutation.reset(); query.refetch() }}>Discard changes and reload</Button></div>}
+      <fieldset disabled={mutation.isPending} className="space-y-6">
+        <Tabs defaultValue="company" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="company">Company</TabsTrigger><TabsTrigger value="schedule">Schedule</TabsTrigger><TabsTrigger value="attendance">Attendance</TabsTrigger></TabsList>
+          <TabsContent value="company"><Card><CardHeader><CardTitle>Company Information</CardTitle><CardDescription>Configure your organization for HVAC, IT, or any other industry.</CardDescription></CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {([['name', 'Company name'], ['industry', 'Industry'], ['email', 'Company email'], ['phone', 'Company phone']] as const).map(([key, label]) => (
+                <div key={key} className="space-y-2"><Label htmlFor={key}>{label}</Label><Input id={key} type={key === 'email' ? 'email' : 'text'} required={key === 'name' || key === 'industry'} maxLength={200} value={company?.[key]} onChange={e => changeCompany(key, e.target.value)} /></div>
+              ))}
+              <div className="space-y-2 md:col-span-2"><Label htmlFor="address">Address</Label><Textarea id="address" maxLength={1000} value={company?.address} onChange={e => changeCompany('address', e.target.value)} /></div>
+            </CardContent></Card></TabsContent>
+          <TabsContent value="schedule"><Card><CardHeader><CardTitle>Working Schedule</CardTitle><CardDescription>An end time earlier than the start time defines an overnight shift. Working days refer to the day the shift starts.</CardDescription></CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                {(['startTime', 'endTime'] as const).map(key => <div key={key} className="space-y-2"><Label htmlFor={key}>{key === 'startTime' ? 'Shift start' : 'Shift end'}</Label><Input id={key} type="time" required value={p?.[key]} onChange={e => changePolicy(key, e.target.value)} /></div>)}
+                <div className="space-y-2"><Label htmlFor="timezone">Time zone (IANA)</Label><Input id="timezone" required list="timezones" value={p?.timezone} onChange={e => changePolicy('timezone', e.target.value)} /><datalist id="timezones">{['Asia/Kolkata', 'UTC', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Europe/London', 'Asia/Dubai', 'Asia/Singapore', 'Australia/Sydney'].map(zone => <option key={zone} value={zone} />)}</datalist></div>
+              </div>
+              <div><Label>Working days</Label><div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">{days.map((day, index) => <div key={day} className="flex gap-2 items-center"><Switch id={day} checked={p?.workDays.includes(index)} onCheckedChange={checked => changePolicy('workDays', checked ? [...p.workDays, index] : p.workDays.filter(d => d !== index))} /><Label htmlFor={day}>{day}</Label></div>)}</div></div>
+              <div className="grid gap-4 md:grid-cols-3">{numeric('requiredHours', 'Full-day hours (after breaks)', 0.25, 24, 0.25)}{numeric('halfDayHours', 'Minimum half-day hours', 0.25, 24, 0.25)}{numeric('breakMinutes', 'Unpaid break per shift (minutes)', 0, 720)}{numeric('graceMinutes', 'Late arrival grace (minutes)', 0, 720)}</div>
+              {toggle('allowNonWorkingDays', 'Allow work on non-working days', 'Off-day hours are included in hours and overtime, but do not inflate scheduled-day attendance rates.')}
+              {toggle('allowEarlyCheckout', 'Allow early check-out', 'When disabled, employees must wait until the shift ends to check out.')}
+            </CardContent></Card></TabsContent>
+          <TabsContent value="attendance"><Card><CardHeader><CardTitle>Attendance Rules</CardTitle><CardDescription>Requirements are enforced by the server for both check-in and check-out.</CardDescription></CardHeader>
+            <CardContent className="space-y-6">
+              {toggle('overtimeEnabled', 'Calculate overtime', 'Count net hours beyond the overtime threshold.')}
+              {p.overtimeEnabled && numeric('overtimeAfterHours', 'Overtime begins after (hours)', 0.25, 24, 0.25)}
+              {toggle('requirePhoto', 'Require attendance photo', 'Require a fresh photo for each check-in and check-out.')}
+              {toggle('locationEnabled', 'Require GPS location', 'Collect location for attendance. Disable for teams that do not need location tracking.')}
+              {toggle('geofencingEnabled', 'Restrict attendance to project sites', 'Use the company radius around active project sites. Check-out uses the check-in site when one was recorded.', !p.locationEnabled)}
+              {p.geofencingEnabled && numeric('geofenceRadius', 'Allowed radius (meters)', 10, 100000)}
+            </CardContent></Card></TabsContent>
+        </Tabs>
+      </fieldset>
+    </form>
   )
 }

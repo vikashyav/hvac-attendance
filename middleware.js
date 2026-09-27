@@ -29,6 +29,7 @@ export default function middleware(request) {
   console.log(!token, "role 2");
 
   if ((pathname.startsWith("/login") || pathname === "/") && token) {
+    if (role === "superAdmin") return NextResponse.redirect(new URL("/admin/companies", request.url));
     if (role === "admin") {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url))
     }
@@ -51,6 +52,7 @@ export default function middleware(request) {
   //   return NextResponse.redirect(new URL('/login', request.url))
   // }
 
+  if (pathname.startsWith('/admin/companies') && role !== 'superAdmin') return NextResponse.redirect(new URL('/login', request.url));
   return NextResponse.next();
 }
 

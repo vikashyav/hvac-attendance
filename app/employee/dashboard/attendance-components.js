@@ -33,7 +33,7 @@ export default function AttendanceComponent() {
 
     const {
         isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
-        locationLoading, setLocationLoading, isFetching,
+        locationLoading, setLocationLoading, isFetching, attendancePolicy, policyError,
         showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut,
         todayCheckData,
         isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, isOffline
@@ -79,7 +79,7 @@ export default function AttendanceComponent() {
                     </p>
                     <div className="flex items-center space-x-2 text-xs text-green-600 dark:text-green-400">
                         <CheckCircle className="h-3 w-3" />
-                        <span>Location verified - Within work site boundary</span>
+                        <span>Attendance location recorded</span>
                     </div>
                 </div>
             ) : (
@@ -122,7 +122,7 @@ export default function AttendanceComponent() {
                     </p>
                     <div className="flex items-center space-x-2 text-xs text-green-600 dark:text-green-400">
                         <CheckCircle className="h-3 w-3" />
-                        <span>Location verified - Within work site boundary</span>
+                        <span>Attendance location recorded</span>
                     </div>
                 </div>
             )}
@@ -144,15 +144,16 @@ export default function AttendanceComponent() {
                         {isCheckedOut ? "Checked Out" : isCheckedIn ? "Checked In" : "Not Checked In"}
                     </Badge>
                 </div>
-                <CardDescription className="text-sm">Track your work hours with location verification</CardDescription>
+                <CardDescription className="text-sm">Track your attendance using your company policy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6">
+                {policyError && <p role="alert" className="text-destructive">Unable to load attendance settings. Reload to try again.</p>}
                 {/* Live Location Display */}
                 {/* <ThreeSections /> */}
 
                 <div className="flex flex-wrap flex-col lg:flex-row gap-4 md:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 sm:p-4 rounded-lg border divide-y lg:divide-y-0 lg:divide-x-2 divide-gray-300">
                     <div className="flex-1">
-                        <LiveLocationComp />
+                        {attendancePolicy?.locationEnabled ? <LiveLocationComp /> : <p className="text-sm">Location tracking is disabled by company policy.</p>}
                     </div>
                     {(!_.isEmpty(todayCheckData?.data?.checkInLocation) || isFetching )&&
                         <div className="flex-1 md:pt-2 lg:pl-2 lg:pt-0">
@@ -214,7 +215,7 @@ export default function AttendanceComponent() {
                             <div>
                                 <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">Photo Verification</p>
                                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                                    {photoTaken ? "Photo captured" : "Take a photo to verify"}
+                                    {photoTaken ? "Photo captured" : attendancePolicy?.requirePhoto ? "Photo required" : "Photo optional"}
                                 </p>
                             </div>
                             <div className="flex items-center">
@@ -228,7 +229,7 @@ export default function AttendanceComponent() {
 
                         {photoTaken && (
                             <div className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                                <p>✓ Photo verified and uploaded</p>
+                                <p>✓ Photo ready to submit</p>
                             </div>
                         )}
                     </div>
@@ -240,7 +241,7 @@ export default function AttendanceComponent() {
                         <Button
                             onClick={handleCheckIn}
                             className="flex-1 h-10 sm:h-12 text-sm sm:text-lg"
-                            disabled={locationLoading || !currentLocation}
+                            disabled={!attendancePolicy || (attendancePolicy.locationEnabled && (locationLoading || !currentLocation))}
                         >
                             <MapPin className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                             Check In
@@ -248,7 +249,7 @@ export default function AttendanceComponent() {
                     ) : (
                         <Button
                             onClick={handleCheckOut}
-                            disabled={isCheckedOut}
+                            disabled={isCheckedOut || !attendancePolicy}
                             variant="outline"
                             className="flex-1 h-10 sm:h-12 text-sm sm:text-lg bg-transparent"
                         >

@@ -39,7 +39,7 @@ export default function LoginPage() {
   const mutation = useMutation({
     mutationFn: auth.userLogin,
     onSuccess: async (res) => {
-      console.log(res)
+
       if (res) {
         const userInfo = res?.data?.userInfo;
         setTokenDataToStorage(constants.TOKEN_TYPE.ACCESS, res?.data?.token);
@@ -49,6 +49,7 @@ export default function LoginPage() {
         // document.cookie = `userInfo=${JSON.stringify(res?.data?.userInfo)}; path=/; max-age=${maxAge}; SameSite=Lax`;
         setCookies(constants.CONTEXT_TYPE.USER_INFO, res?.data?.userInfo);
         setUser(res?.data?.userInfo);
+        if (userInfo.role === 'superAdmin') { window.location.href = '/admin/companies'; return; }
         notificationModal.success({ heading: "Sign successfully, Subscribing for pushnotification Please await" });
         await subscribeForPush(res?.data?.userInfo?.email || "").finally(()=>{
         window.location.reload(); // to trigger middleware check

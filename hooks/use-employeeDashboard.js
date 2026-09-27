@@ -13,7 +13,11 @@ import { getEmployeeDashboardStats } from "@/lib/api/dashboard-api";
 
 
 
+import { getAttendancePolicy } from "@/lib/api/settings-api";
+
 export function useEmployeesDashboard() {
+    const { data: policyResponse, isError: policyError } = useQuery({ queryKey: ['attendance-policy'], queryFn: getAttendancePolicy, staleTime: 0 });
+    const policy = policyResponse?.data?.data;
     const { toast } = useToast()
     const [isOffline, setOffline] = useState()
     const [isCheckedIn, setIsCheckedIn] = useState(false)
@@ -57,79 +61,52 @@ export function useEmployeesDashboard() {
         if (isFetchedTodayCheckIn && !_.isEmpty(todayCheckData?.data)) {
             setCheckInTime(todayCheckData?.data?.checkInTime);
             setIsCheckedIn(true);
+        } else if (isFetchedTodayCheckIn) {
+            setCheckInTime(null);
+            setIsCheckedIn(false);
         }
-    }, [isFetchedTodayCheckIn])
+    }, [isFetchedTodayCheckIn, todayCheckData])
 
-    // Simulate getting location
     useEffect(() => {
+        const online = () => setOffline(false);
+        const offline = () => setOffline(true);
+        setOffline(!navigator.onLine);
+        window.addEventListener('online', online);
+        window.addEventListener('offline', offline);
+        return () => { window.removeEventListener('online', online); window.removeEventListener('offline', offline); };
+    }, []);
 
-        const getLocation = async() => {
-            setLocationLoading(true)
-            // Simulate GPS loading
-
-            if (!navigator.geolocation) {
-                setCurrentLocation((prev) => ({ ...prev, error: "Geolocation not supported" }));
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    setCurrentLocation({
-                        lat: lat,
-                        lng: lng,
-                        error: null,
-                    });
-                    const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-                        {
-                            headers: {
-                                "User-Agent": "my-next-app (your@email.com)",
-                            },
-                        }
-                    );
-                    const data = await res.json();
-                    setCurrentLocation({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        address: data.display_name,
-                        error: null,
-                    });
-                    setLocationLoading(false)
-                },
-                (err) => {
-                    setCurrentLocation((prev) => ({ ...prev, error: err.message }));
-                    setLocationLoading(false)
-                }
-            );
+    useEffect(() => {
+        if (!policy) return;
+        if (!policy.locationEnabled) { setLocationLoading(false); setCurrentLocation(null); return; }
+        let cancelled = false;
+        setLocationLoading(true);
+        if (!navigator.geolocation) {
+            setCurrentLocation({ error: 'Geolocation is not supported' });
+            setLocationLoading(false);
+            return;
         }
-        getLocation();
-
-        //    if (typeof window !== 'undefined'){
-        const handleCheckOnline = () => setOffline(false);
-        const handleCheckOffline = () => setOffline(true);
-        window.addEventListener("online", () => {
-            console.log("listened online");
-            setOffline(false);
-        });
-        window.addEventListener("offline", () => {
-            console.log("listened offline");
-            // setLocationLoading(false)
-            setOffline(true);
-        });
-        return () => {
-            // window.removeEventListener("online", handleCheckOnline);
-            // window.removeEventListener("ofline", handleCheckOffline);
-        }
-        // }
-    }, [])
+        navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+            const location = { lat: coords.latitude, lng: coords.longitude, error: null };
+            if (cancelled) return;
+            setCurrentLocation(location);
+            setLocationLoading(false);
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`);
+                const data = await response.json();
+                if (!cancelled) setCurrentLocation({ ...location, address: data.display_name });
+            } catch { /* Coordinates remain usable when address lookup is unavailable. */ }
+        }, error => {
+            if (!cancelled) { setCurrentLocation({ error: error.message }); setLocationLoading(false); }
+        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+        return () => { cancelled = true; };
+    }, [policy?.locationEnabled]);
 
     const handleCheckIn = () => {
-        if (!currentLocation || !currentLocation?.lat || !imgData) {
+        if (!policy || (policy.locationEnabled && (!Number.isFinite(currentLocation?.lat) || !Number.isFinite(currentLocation?.lng))) || (policy.requirePhoto && !imgData)) {
             toast({
-                title: "Check in selfie and gps coordinate is required",
-                description: "Tap the camera button (next to Check-In) to take a selfie.",
+                title: !policy ? "Attendance settings are unavailable" : "Attendance requirements are not met",
+                description: !policy ? "Please reload and try again." : "Provide the photo and location required by your company settings.",
                 variant: "destructive",
                 duration: 2000
             })
@@ -139,11 +116,11 @@ export function useEmployeesDashboard() {
             heading: `Checking with your current location, Please await!!`,
         });
         const checkInPayload = {
-            checkInLocation: {
+            checkInLocation: policy.locationEnabled ? {
                 latitude: currentLocation?.lat,
                 longitude: currentLocation?.lng,
                 address: currentLocation?.address
-            },
+            } : null,
             checkInTime: new Date(),
             photoData: imgData
         }
@@ -152,16 +129,18 @@ export function useEmployeesDashboard() {
                 // console.log(res?.data?.checkInTime);
 
                 setIsCheckedIn(true)
-                notificationModal.success({ heading: "Success", body: `Checked In with your live location.` });
+                notificationModal.success({ heading: "Success", body: `Check-in recorded.` });
                 setImgData("");
+                setPhotoTaken(false);
                 setShowCamera(false)
                 setCheckInTime(res?.data?.checkInTime);
                 refetch();
+                refetchdashboardStats();
 
             },
-            onError: () => {
+            onError: (err) => {
                 setIsCheckedIn(false)
-                notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
+                notificationModal.error({ heading: "failed Something went wrong!!!", body: err?.response?.data?.error || err.message });
 
             }
         })
@@ -169,10 +148,10 @@ export function useEmployeesDashboard() {
     }
 
     const handleCheckOut = () => {
-        if (!currentLocation || !currentLocation?.lat || !imgData) {
+        if (!policy || (policy.locationEnabled && (!Number.isFinite(currentLocation?.lat) || !Number.isFinite(currentLocation?.lng))) || (policy.requirePhoto && !imgData)) {
             toast({
-                title: "Check in selfie and gps coordinate is required",
-                description: "Tap the camera button (next to Check-In) to take a selfie.",
+                title: !policy ? "Attendance settings are unavailable" : "Attendance requirements are not met",
+                description: !policy ? "Please reload and try again." : "Provide the photo and location required by your company settings.",
                 variant: "destructive",
                 duration: 2000
             })
@@ -182,11 +161,11 @@ export function useEmployeesDashboard() {
             heading: `Checking Out with your current location, Please await!!`,
         });
         const checkOutPayload = {
-            checkOutLocation: {
+            checkOutLocation: policy.locationEnabled ? {
                 latitude: currentLocation?.lat,
                 longitude: currentLocation?.lng,
                 address: currentLocation?.address
-            },
+            } : null,
             checkOutTime: new Date(),
             checkInTime: todayCheckData?.data?.checkInTime,
             check_in_id: todayCheckData?.data?.id,
@@ -195,15 +174,17 @@ export function useEmployeesDashboard() {
         updateCheckOutByEmp.mutate(checkOutPayload, {
             onSuccess: (res) => {
                 refetch();
-                notificationModal.success({ heading: "Success", body: `Checked Out with your live location.` });
+                refetchdashboardStats();
+                notificationModal.success({ heading: "Success", body: `Check-out recorded.` });
                 setShowCamera(false)
+                setPhotoTaken(false);
                 setImgData("");
                 // setIsCheckedIn(false)
                 // setCheckInTime(null)
                 // setPhotoTaken(false)
             },
-            onError: () => {
-                notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
+            onError: (err) => {
+                notificationModal.error({ heading: "failed Something went wrong!!!", body: err?.response?.data?.error || err.message });
 
                 // setIsCheckedIn(false)
                 // setCheckInTime(null)
@@ -214,7 +195,6 @@ export function useEmployeesDashboard() {
     }
 
     const handleTakePhoto = (imgData, props = {}) => {
-        console.log("hit empddd", imgData);
         if (imgData && props?.isCaptured) {
             setImgData(imgData);
             setPhotoTaken(true)
@@ -246,7 +226,7 @@ export function useEmployeesDashboard() {
 
     return {
         isCheckedIn, setIsCheckedIn, checkInTime, setCheckInTime, currentLocation, setCurrentLocation,
-        locationLoading, setLocationLoading, isFetching,
+        locationLoading, setLocationLoading, isFetching, attendancePolicy: policy, policyError,
         showCamera, setShowCamera, photoTaken, setPhotoTaken, handleCheckIn, handleTakePhoto, handleCheckOut, todayCheckData,
         isCheckedOut, workDuration, checkInTimeLocalFormat, checkOutTimeLocalFormat, isOffline, dashboardStats
     }

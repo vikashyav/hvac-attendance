@@ -10,6 +10,7 @@ import {
 export default function useMenuItems() {
     const { user, getCookies } = useUserFromStorage();
     const menuItems = [
+        { name: "Companies & Admins", href: "/admin/companies", icon: Shield, access: ["superAdmin"] },
         {
             name: "Dashboard",
             href: "/admin/dashboard",
@@ -84,7 +85,7 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-    ].filter((item) => item.access.includes(user.role) || item.access.includes(user?.employee?.position))
+    ].filter((item) => (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
 
     return menuItems
 }
