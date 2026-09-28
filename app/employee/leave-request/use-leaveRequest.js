@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useCapabilities } from "@/hooks/use-capabilities";
 import fakeData from "@/constants/fake-data";
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
@@ -17,7 +18,8 @@ export function useEmployees() {
   const { toast } = useToast()
   const notificationModal = useNotificationModalContext();
   const { user, } = useUserFromStorage();
-  const isAdmin = user?.role === "admin"
+  const capabilities = useCapabilities();
+  const isAdmin = (capabilities.data?.data?.data?.permissions || []).includes("leave.approve");
 
   const [view, setView] = useState("grid")
   const [searchTerm, setSearchTerm] = useState("")
@@ -34,7 +36,8 @@ export function useEmployees() {
 
   const locations = fakeData.locations
   const { data: employeeData, isFetching, refetch } = useQuery({
-    queryKey: ["useEmployees"],
+    queryKey: ["leave-requests", user.id, user.companyId, isAdmin],
+    enabled: capabilities.isSuccess,
     queryFn: getLeaveRequest
   })
   const filteredEmployees = (employeeData?.data || []).filter((employee) => {
@@ -70,7 +73,6 @@ export function useEmployees() {
       },
       onError: (err) => {
         notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-        setIsLoading(false)
       },
     })
   }
@@ -143,7 +145,6 @@ export function useEmployees() {
       },
       onError: (err) => {
         notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-        setIsLoading(false)
       },
     })
   }
@@ -160,7 +161,7 @@ export function useEmployees() {
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
     handleToggleStatus, handleViewDetails, openEditDialog,
     employeeData: employeeData?.data, isFetching,
-    user, leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin, handleLeaveRequestUpdateByAdmin
+    user, isAdmin, leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin, handleLeaveRequestUpdateByAdmin
     // handleAttendanceReport
   }
 }

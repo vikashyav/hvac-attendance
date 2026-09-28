@@ -119,7 +119,7 @@ function EmployeesPage() {
     leaveRequestData, setLeaveRequestData,
     employees, setEmployees,
     departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching, user,
+    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching, user, isAdmin,
     leaveRequestUpdateByAdmin, setLeaveRequestUpdateByAdmin, handleLeaveRequestUpdateByAdmin
   } = useEmployeesPageContext();
 
@@ -142,7 +142,7 @@ function EmployeesPage() {
         <Eye className="mr-2 h-4 w-4" />
         View Details
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING"}>
+      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING" || request.userId !== user.id}>
         <Edit className="mr-2 h-4 w-4" />
         Edit Request
       </DropdownMenuItem>
@@ -173,7 +173,7 @@ function EmployeesPage() {
     </DropdownMenuContent>
   }
 
-  const handleAdminUpdate = (employee) => (e) => {
+  const handleAdminUpdate = (request) => (e) => {
     const { name, value } = e.target;
     const payload = {
       [request.id]: {
@@ -186,7 +186,7 @@ function EmployeesPage() {
   const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
   const inActiveEmp = (totalEmployee - activeEmp) || 0;
   const averagePerformance = employeeData?.stats?.averagePerformance || 0
-  const isAdmin = user?.role === "admin"
+
   const isEmployee = user?.role === "employee"
 
   return (
@@ -381,8 +381,8 @@ function EmployeesPage() {
                         variant="outline"
                         size="sm"
                         className="flex-1 bg-transparent"
-                        onClick={() => handleLeaveRequestUpdateByAdmin(employee, "APPROVED")}
-                        disabled={["APPROVED", "REJECTED"].includes(request.status)}
+                        onClick={() => handleLeaveRequestUpdateByAdmin(request, "APPROVED")}
+                        disabled={request.status !== "PENDING" || request.userId === user.id}
                       >
                         <CheckCircle className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
                         Approve
@@ -391,8 +391,8 @@ function EmployeesPage() {
                         variant="outline"
                         size="sm"
                         className="flex-1 bg-transparent"
-                        onClick={() => handleLeaveRequestUpdateByAdmin(employee, "REJECTED")}
-                        disabled={["APPROVED", "REJECTED"].includes(request.status)}
+                        onClick={() => handleLeaveRequestUpdateByAdmin(request, "REJECTED")}
+                        disabled={request.status !== "PENDING" || request.userId === user.id}
                       >
                         <X className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
                         Reject

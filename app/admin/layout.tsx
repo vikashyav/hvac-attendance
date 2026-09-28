@@ -66,11 +66,10 @@ export default function AdminLayout({
             </h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
-        <main className="py-6 px-4 sm:px-6 lg:px-8">{children}</main>
       </div>
 
-      {/* Desktop Main Content */}
-      <main className="hidden sm:block sm:pl-72 p-4 sm:p-6">{children}</main>
+      {/* Shared responsive page content */}
+      <main className="p-4 sm:p-6 sm:pl-72">{children}</main>
 
     </div>
   )

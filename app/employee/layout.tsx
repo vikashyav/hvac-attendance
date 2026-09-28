@@ -76,11 +76,11 @@ export default function EmployeeLayout({
           </h1>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+
       </div>
 
       {/* Desktop & Tablet Main Content - Offset by sidebar width */}
-      <main className="hidden sm:block sm:pl-72 p-4 sm:p-6">{children}</main>
+      <main className="p-4 sm:p-6 sm:pl-72">{children}</main>
     </div>
   )
 }

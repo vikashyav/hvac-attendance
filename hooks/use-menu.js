@@ -1,3 +1,4 @@
+import { useCapabilities } from './use-capabilities';
 import constants from "@/constants";
 import { useUserFromStorage } from "./user.context"
 import {
@@ -9,7 +10,10 @@ import {
 
 export default function useMenuItems() {
     const { user, getCookies } = useUserFromStorage();
+    const capabilities = useCapabilities();
+    const permissions = capabilities.data?.data?.data?.permissions || [];
     const menuItems = [
+        { name: 'Roles & permissions', href: '/admin/roles', icon: Shield, permission: 'access.view', access: [] },
         { name: "Companies & Admins", href: "/admin/companies", icon: Shield, access: ["superAdmin"] },
         {
             name: "Dashboard",
@@ -76,6 +80,7 @@ export default function useMenuItems() {
         {
             name: "Settings",
             href: "/admin/settings",
+            permission: "settings.view",
             icon: Settings,
             access: ["admin"]
         },
@@ -85,7 +90,7 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-    ].filter((item) => (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
+    ].filter((item) => item.permission ? permissions.includes(item.permission) : (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
 
     return menuItems
 }
