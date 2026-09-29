@@ -22,6 +22,7 @@ const MapContainer = dynamic(() => import("@/app/admin/dashboard/map-container")
 function AttendancePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const useCtx = useAttendancesPageContext as () => any;
   const {
     selectedDate, setSelectedDate,
     attendanceHistory,
@@ -30,24 +31,24 @@ function AttendancePage() {
     handleCalenderSelectDate,
     calendarSelectedData, user, dateRange, setDateRange,
     attendanceData,
-    isFetching, queryParmas
-  } = useAttendancesPageContext();
-  const isAdmin = user?.role === "admin";
+    isFetching, queryParmas,
+    capabilitiesLoading, capabilitiesError, capabilitiesRefetch
+  } = useCtx();
+  const isAdmin = user?.role === "admin" || user?.role === "superAdmin";
   const isEmp = user?.role === "employee";
 
   const updateSearchParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || "");
     params.set(key, value);
     router.push(`?${params.toString()}`);
   };
 
-  const attendanceHistoryGroupByDate = attendanceHistory.reduce((groups, atten) => {
+  const attendanceHistoryGroupByDate = (attendanceHistory || []).reduce((groups: any, atten: any) => {
     const date = atten.date;
     groups[date] = groups[date] || []; // Initialize array if key doesn't exist
     groups[date].push(atten);
     return groups;
   }, {});
-  console.log(attendanceHistoryGroupByDate[moment(selectedDate).format("YYYY-MM-DD")], selectedDate);
 
   return (
     <div className="p-0 space-y-6">
@@ -300,7 +301,7 @@ function AttendancePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {monthlyTrends.map((week, index) => (
+                  {(monthlyTrends || []).map((week: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{week.week}</p>
@@ -357,7 +358,7 @@ function AttendancePage() {
                     <h4 className="font-medium mb-2">Achievements This Month</h4>
                     {attendanceData?.perfectAttendance &&
                       <ul className="space-y-1 text-sm text-gray-600">
-                        <li>• Perfect attendance for {attendanceData?.perfectAttendance?.totalPerfectWeeks} weeks; that is {attendanceData?.perfectAttendance?.perfectWeeks?.map((item) => `${item},`)}</li>
+                        <li>• Perfect attendance for {attendanceData?.perfectAttendance?.totalPerfectWeeks} weeks; that is {attendanceData?.perfectAttendance?.perfectWeeks?.map((item: any) => `${item}, `)}</li>
                         <li>• Consistently early arrivals</li>
                         {/* <li>• Zero safety incidents</li> */}
                       </ul>}

@@ -115,6 +115,7 @@ function EmployeesPage() {
 
   // const [employees, setEmployees] = useState<Employee[]>(fakeData.employee)
 
+  const useCtx = useEmployeesPageContext as () => any;
   const {
     view, setView,
     searchTerm, setSearchTerm,
@@ -122,21 +123,16 @@ function EmployeesPage() {
     isAddDrawerOpen, setIsAddDrawerOpen,
     isEditDialogOpen, setIsEditDialogOpen,
     selectedEmployee, setSelectedEmployee,
-    employees, setEmployees,
-    departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog, employeeData, isFetching
-    // handleAttendanceReport
-  } = useEmployeesPageContext();
+    departments, positions, locations, filteredEmployees, handleAddEmployee,
+    handleViewDetails, openEditDialog, employeeData, isFetching,
+    canManage, canView, capabilitiesLoading, capabilitiesError, capabilitiesRefetch
+  } = useCtx();
 
-  const handleAttendanceReport = (employee) => {
-    //   router.push({
-    //   pathname: '/employee/attendance',
-    //   query: { employee_id: employee?.id },
-    // })
+  const handleAttendanceReport = (employee: any) => {
     router.push(`/employee/attendance?employee_id=${employee?.id}`)
   }
 
-  const dropdownMenuItems = (employee) => {
+  const dropdownMenuItems = (employee: any) => {
     return <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuItem onClick={() => handleAttendanceReport(employee)}>
@@ -147,64 +143,37 @@ function EmployeesPage() {
         <Eye className="mr-2 h-4 w-4" />
         View Details
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => openEditDialog(employee)}>
-        <Edit className="mr-2 h-4 w-4" />
-        Edit Employee
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
-        {employee.isActive ? (
-          <>
-            <UserX className="mr-2 h-4 w-4" />
-            Deactivate
-          </>
-        ) : (
-          <>
-            <UserCheck className="mr-2 h-4 w-4" />
-            Activate
-          </>
-        )}
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Employee
-          </DropdownMenuItem>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee record and
-              remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {canManage && (
+        <DropdownMenuItem onClick={() => openEditDialog(employee)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit Employee
+        </DropdownMenuItem>
+      )}
     </DropdownMenuContent>
   }
 
-  const totalEmployee = employeeData?.paging?.total;
-  const activeEmp = employeeData?.data?.filter((emp) => emp?.isActive)?.length;
+  const totalEmployee = employeeData?.paging?.total || 0;
+  const activeEmp = employeeData?.data?.filter((emp: any) => emp?.isActive)?.length || 0;
   const inActiveEmp = (totalEmployee - activeEmp) || 0;
   const averagePerformance = employeeData?.stats?.averagePerformance || 0
   return (
     <div className="space-y-6">
+      {capabilitiesError && (
+        <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/10 text-sm">
+          <span>Unable to load employee management permissions.</span>
+          <Button variant="outline" size="sm" onClick={() => capabilitiesRefetch()}>Retry</Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Employee Management</h1>
           <p className="text-muted-foreground">Manage your team members and their information</p>
         </div>
-        <EmployeeForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} handleAddEmployee={handleAddEmployee} />
+        {canManage && (
+          <EmployeeForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} handleAddEmployee={handleAddEmployee} />
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -299,7 +268,7 @@ function EmployeesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((dept) => (
+              {departments.map((dept: any) => (
                 <SelectItem key={dept} value={dept}>
                   {dept}
                 </SelectItem>
@@ -348,7 +317,7 @@ function EmployeesPage() {
                     <EmployeeRowSkeleton />
                     </>
                     }
-                    {filteredEmployees.map((employee) => (
+                    {filteredEmployees.map((employee: any) => (
                       <TableRow key={employee.id}>
                         <TableCell>
                           <div className="flex items-center space-x-3">
@@ -356,7 +325,7 @@ function EmployeesPage() {
                               <span className="text-sm font-medium text-primary">
                                 {employee?.fullName
                                   ?.split(" ")
-                                  ?.map((n) => n[0])
+                                  ?.map((n: any) => n[0])
                                   ?.join("")}
                               </span>
                             </div>
@@ -407,7 +376,7 @@ function EmployeesPage() {
 
         <TabsContent value="grid" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
+            {filteredEmployees.map((employee: any) => (
               <Card key={employee.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -415,9 +384,9 @@ function EmployeesPage() {
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-primary">
                           {employee.fullName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                            ?.split(" ")
+                            ?.map((n: any) => n[0])
+                            ?.join("")}
                         </span>
                       </div>
                       <div>
@@ -474,66 +443,28 @@ function EmployeesPage() {
                       size="sm"
                       className="flex-1 bg-transparent"
                       onClick={() => handleViewDetails(employee)}
-                    // onClick={() => openEditDialog(employee)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => openEditDialog(employee)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
+                    {canManage && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 bg-transparent"
+                        onClick={() => openEditDialog(employee)}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      {/* <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
-                          {employee.status === "active" ? (
-                            <>
-                              <UserX className="mr-2 h-4 w-4" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the employee record and
-                                remove all associated data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent> */}
-                                  {dropdownMenuItems(employee)}
+                      {dropdownMenuItems(employee)}
                     </DropdownMenu>
                   </div>
                 </CardContent>

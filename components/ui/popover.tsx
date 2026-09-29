@@ -5,7 +5,10 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 
 import { cn } from "@/lib/utils"
 
-const Popover = PopoverPrimitive.Root
+const Popover = PopoverPrimitive.Root as typeof PopoverPrimitive.Root & {
+  Trigger?: typeof PopoverTrigger;
+  Content?: typeof PopoverContent;
+}
 
 const PopoverTrigger = PopoverPrimitive.Trigger
 

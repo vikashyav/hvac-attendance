@@ -19,7 +19,8 @@ import DocumentViewer from "./document-viewer";
 export default function ReportsPage() {
   const router = useRouter();
   const { dateRange, setDateRange, reportType, setReportType, selectedSite, setSelectedSite, handleGenerateReport,
-    setReportFormat, reportPreviewUrl, reportFormat
+    setReportFormat, reportPreviewUrl, reportFormat,
+    canViewReports, capabilitiesLoading, capabilitiesError, capabilitiesRefetch
    } = useReports();
   const reportTemplates = [
     {
@@ -122,6 +123,18 @@ export default function ReportsPage() {
         </Button> */}
       </div>
 
+      {capabilitiesError && (
+        <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/10 text-sm">
+          <span>Unable to load report permissions.</span>
+          <Button variant="outline" size="sm" onClick={() => capabilitiesRefetch()}>Retry</Button>
+        </div>
+      )}
+      {!capabilitiesLoading && !canViewReports && (
+        <div className="p-4 border border-amber-500/30 rounded-lg bg-amber-500/10 text-sm text-amber-700 dark:text-amber-300">
+          Report generation is restricted. You need the <strong>report.view</strong> permission to generate or export reports.
+        </div>
+      )}
+
       {/* Quick Stats */}
       <div className="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quickStats.map((stat, index) => {
@@ -207,23 +220,18 @@ export default function ReportsPage() {
                       <Calendar
                         mode="range"
                         selected={{ from: dateRange.from, to: dateRange.to }}
-                        onSelect={(range) => {
-                          range && setDateRange(range)
-                          console.log(range);
+                        onSelect={(range: any) => {
+                          range && setDateRange(range as any)
                           range?.from && range.to &&
                           router.push(`?from=${moment(range.from).format("YYYY-MM-DD")}&to=${moment(range.to).format("YYYY-MM-DD")}`)
-                        }
-                        }
-                        // numberOfMonths={2}
+                        }}
                         disabled={{ after: new Date() }}
-
                       />
                       <div className="flex justify-center">
                         <Button variant="outline" onClick={() => {
-                          setDateRange({ from: "", to: "" })
+                          setDateRange({ from: undefined, to: undefined } as any)
                           router.push("?")
-                          }}>Reset</Button>
-
+                        }}>Reset</Button>
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -243,7 +251,7 @@ export default function ReportsPage() {
                   </Select>
                 </div>
 
-                <Button onClick={handleGenerateReport} className="w-full">
+                <Button onClick={handleGenerateReport} className="w-full" disabled={!canViewReports}>
                   <Download className="h-4 w-4 mr-2" />
                   Generate Report
                 </Button>
@@ -359,7 +367,7 @@ export default function ReportsPage() {
                 <CardDescription>Weekly attendance patterns</CardDescription>
               </CardHeader>
               <CardContent>
-                <AttendanceChart />
+                <AttendanceChart attendanceOverview={[]} />
               </CardContent>
             </Card>
 

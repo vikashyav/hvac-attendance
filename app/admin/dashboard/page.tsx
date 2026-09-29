@@ -22,10 +22,11 @@ const MapContainer = dynamic(() => import("./map-container"));
 import { ActivityRowSkeleton, TaskScheduleRowSkeleton } from "./skeleton"
 
 function AdminDashboardPage() {
+  const useCtx = useAdminDashboardPageContext as () => any;
   const {
     stats, recentActivity, upcomingSchedules, attendanceOverview, isFetching, handleGenerateReport,
     dashboardStats
-  } = useAdminDashboardPageContext();
+  } = useCtx();
 
   return (
     <div className="space-y-6">
@@ -54,7 +55,7 @@ function AdminDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((stat, index) => (
+        {(stats || []).map((stat: any, index: number) => (
           <Card key={index} className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -111,8 +112,8 @@ function AdminDashboardPage() {
             <CardDescription>Latest employee check-ins and activities</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
-            {isFetching && Array.from({ length: 7 }).map((_, i) => <ActivityRowSkeleton key={i} />)}
-            {recentActivity.map((activity, index) => (
+            {isFetching && Array.from({ length: 7 }).map((_: any, i: number) => <ActivityRowSkeleton key={i} index={i} />)}
+            {(recentActivity || []).map((activity: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -190,11 +191,11 @@ function AdminDashboardPage() {
             <CardDescription>Scheduled work assignments for the next few days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 max-h-96 overflow-y-scroll">
-            {isFetching && Array.from({ length: 7 }).map((_, i) => (
-              <TaskScheduleRowSkeleton key={i} />
+            {isFetching && Array.from({ length: 7 }).map((_: any, i: number) => (
+              <TaskScheduleRowSkeleton key={i} index={i} />
             ))}
-            {dashboardStats?.todaySchedule?.map((schedule, index) => (
-              <Link href={`/admin/task-manage/${schedule.id}`} className="flex items-center justify-between  p-2 rounded-lg bg-muted/50">
+            {dashboardStats?.todaySchedule?.map((schedule: any, index: number) => (
+              <Link key={schedule?.id || index} href={`/admin/task-manage/${schedule.id}`} className="flex items-center justify-between  p-2 rounded-lg bg-muted/50">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{schedule?.title} | <b>Project/Site</b>: {schedule?.ProjectsSite.name} </p>
                   <p className="text-xs text-muted-foreground"></p>
@@ -202,7 +203,7 @@ function AdminDashboardPage() {
                     <b>Assign to</b> : {schedule?.assignToEmployee?.user?.fullName} • {schedule.estimatedHours}hrs <b>Created By:</b>{schedule?.createBy?.fullName}
                   </p>
                 </div>
-                <Badge variant="outline" className={`ml-4 whitespace-nowrap ${constants.statusColors?.[schedule?.status?.toLowerCase()]}`}>
+                <Badge variant="outline" className={`ml-4 whitespace-nowrap ${(constants.statusColors as any)?.[schedule?.status?.toLowerCase()]}`}>
                   {formatDate(schedule.startDate)}
                 </Badge>
               </Link>

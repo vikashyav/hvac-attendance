@@ -26,6 +26,8 @@ export const metadata: Metadata = {
   },
 }
 
+const NotificationModalProviderComponent = NotificationModalProvider as unknown as React.ComponentType<{ children: React.ReactNode }>;
+
 export default function RootLayout({
   children,
 }: {
@@ -36,7 +38,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <NotificationModalProvider>
+          <NotificationModalProviderComponent>
             <AxiosInterceptorProvider>
               <ModalProvider>
                 <Toaster />
@@ -49,7 +51,7 @@ export default function RootLayout({
                 </QueryProvider>
               </ModalProvider>
             </AxiosInterceptorProvider>
-          </NotificationModalProvider>
+          </NotificationModalProviderComponent>
         </ThemeProvider>
       </body>
     </html>

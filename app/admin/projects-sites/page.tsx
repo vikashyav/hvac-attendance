@@ -25,11 +25,12 @@ import ProjectsSitesForm from "./add-form";
 import {SiteCardSkeleton} from "./card-sekeleton";
 // export default 
 function JobSitesPage() {
+  const useCtx = useProjectsSitesPageContext as () => any;
   const {
     searchQuery, setSearchQuery, statusFilter, setStatusFilter,
     isAddDrawerOpen, setIsAddDrawerOpen, filteredProjectsSites,
     openEditDialog, canManage, capabilities, projects, saveError, saveSuccess
-  } = useProjectsSitesPageContext();
+  } = useCtx();
 
   const jobSites = [
     {
@@ -222,7 +223,7 @@ function JobSitesPage() {
             <SiteCardSkeleton />
             </>
             }
-            {filteredProjectsSites.map((site) => (
+            {filteredProjectsSites.map((site: any) => (
               <Card key={site.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">

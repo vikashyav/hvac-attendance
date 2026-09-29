@@ -25,6 +25,7 @@ export default function useMenuItems() {
             name: "Employees",
             href: "/admin/employees",
             icon: Users,
+            additionalPermission: ["employee.view", "employee.manage"],
             access: ["admin"]
         },
         {
@@ -74,6 +75,7 @@ export default function useMenuItems() {
         {
             name: "Reports",
             href: "/admin/reports",
+            additionalPermission: "report.view",
             icon: FileText,
             access: ["admin", "Project manager"]
         },
@@ -90,7 +92,22 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-    ].filter((item) => item.permission ? permissions.includes(item.permission) : permissions.includes(item.additionalPermission) || (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
+    ];
 
-    return menuItems
+    const hasAdditionalPermission = (item) => {
+        if (!item.additionalPermission) return false;
+        if (Array.isArray(item.additionalPermission)) {
+            return item.additionalPermission.some(p => permissions.includes(p));
+        }
+        return permissions.includes(item.additionalPermission);
+    };
+
+    return menuItems.filter((item) =>
+        item.permission
+            ? permissions.includes(item.permission)
+            : hasAdditionalPermission(item)
+              || (user?.role === "superAdmin" && item.access?.includes("admin"))
+              || item.access?.includes(user?.role)
+              || item.access?.includes(user?.employee?.position)
+    );
 }

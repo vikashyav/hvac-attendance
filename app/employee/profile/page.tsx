@@ -28,9 +28,10 @@ import withHOC from "@/utils/with-hoc"
 // }
 
 // export default 
-function ProfilePage(props) {
+function ProfilePage(props: any) {
   const { user, removeUser } = useUserFromStorage();
-  const { handleChangePassword, queryParmas } = useUserProfilePageContext(props)
+  const useCtx = useUserProfilePageContext as (p?: any) => any;
+  const { handleChangePassword, queryParmas } = useCtx(props);
   // console.log(user, "user");
   const [activeTab, setActiveTab]=useState("");
   const [isEditing, setIsEditing] = useState(false)
@@ -159,7 +160,7 @@ function ProfilePage(props) {
                     <AvatarFallback className="text-2xl bg-blue-100 text-blue-600">
                       {employeeData.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: any) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -329,7 +330,7 @@ function ProfilePage(props) {
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="flex flex-wrap gap-2">
-                    {employeeData.skills.map((skill, index) => (
+                    {employeeData.skills.map((skill: any, index: number) => (
                       <Badge key={index} variant="secondary">
                         {skill}
                       </Badge>
@@ -395,7 +396,7 @@ function ProfilePage(props) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {employeeData.certifications.map((cert, index) => (
+                {employeeData.certifications.map((cert: any, index: number) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="flex items-start justify-between mb-3">
                       <div className="space-y-1">

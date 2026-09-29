@@ -52,9 +52,10 @@ const statusColors = {
 
 function TaskSchedulePage() {
   const router = useRouter();
+  const useTaskScheduleCtx = useTaskSchedulePageContext as () => any;
   const { selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData,
     openEditDialog, isFetchingTaskList, canManage, tasks
-  } = useTaskSchedulePageContext()
+  } = useTaskScheduleCtx();
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case "meeting":
@@ -85,10 +86,10 @@ function TaskSchedulePage() {
     }
   }
 
-  const todaysEvents = events.filter(
-    (event) => new Date(event.date).toDateString() === (selectedDate || new Date()).toDateString(),
+  const todaysEvents = (events || []).filter(
+    (event: any) => new Date(event.date).toDateString() === (selectedDate || new Date()).toDateString(),
   )
-  const cleanHTML = (content) => DOMPurify.sanitize(content);
+  const cleanHTML = (content: any) => DOMPurify.sanitize(content);
   return (
     <div className="">
       {/* Header p-6 space-y-6*/}
@@ -153,7 +154,7 @@ function TaskSchedulePage() {
                 <CardContent>
                   <div className="space-y-3">
                     {todaysEvents.length > 0 ? (
-                      todaysEvents.map((event) => (
+                      todaysEvents.map((event: any) => (
                         <div key={event.id} className="p-3 border rounded-lg">
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-sm">{event.title}</h4>
@@ -214,7 +215,7 @@ function TaskSchedulePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {shifts.map((shift) => (
+                  {(shifts || []).map((shift: any) => (
                     <div key={shift.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">{shift.employee}</p>

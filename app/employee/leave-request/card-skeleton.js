@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
-export default function LeaveRequestCardSkeleton({ isAdmin }) {
+export default function LeaveRequestCardSkeleton({ isAdmin = false }) {
   return (
     <Card className="hover:shadow-md transition-shadow animate-pulse">
       <CardHeader className="pb-3">

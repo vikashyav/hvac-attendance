@@ -9,12 +9,13 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Shield, Users, MapPin, Clock, BarChart3, Smartphone, CheckCircle, Star, ArrowRight } from "lucide-react"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
 import { useModal } from "@/components/comfirmation-modal"
-// import { useNotification } from "@/components/notification";
+import { useNotification } from "@/components/notification";
 export default function HomePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const notificationModal = useNotificationModalContext(); 
-  // const { showNotification } = useNotification();
+  const useNotifModal = useNotificationModalContext as () => any;
+  const notificationModal = useNotifModal(); 
+  const { showNotification } = (useNotification() || {}) as any;
 const { showModal } = useModal();
   const handleGetStarted = async () => {
     // setIsLoading(true)

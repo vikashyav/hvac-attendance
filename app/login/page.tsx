@@ -32,13 +32,14 @@ export default function LoginPage() {
     password: "",
     employeeId: "",
   })
-  const notificationModal = useNotificationModalContext();
+  const useNotifModal = useNotificationModalContext as () => any;
+  const notificationModal = useNotifModal();
   const { setUser, user, setCookies } = useUserFromStorage();
 
 
   const mutation = useMutation({
     mutationFn: auth.userLogin,
-    onSuccess: async (res) => {
+    onSuccess: async (res: any) => {
 
       if (res) {
         const userInfo = res?.data?.userInfo;

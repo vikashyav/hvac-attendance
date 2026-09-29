@@ -1,20 +1,26 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState } from "react"
 import fakeData from "@/constants/fake-data";
 import { useToast } from "@/hooks/use-toast"
 import { useNotificationModalContext } from "@/components/notification-modal/provider"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { employeeRegistration, employeeUpdate, getEmployeeList } from "@/lib/api/employee";
 import generateContext from "@/utils/generate-context";
-import {getIntialValues} from "./form-helper";
-import { useRouter } from 'next/router'
-
+import { getIntialValues } from "./form-helper";
+import { useUserFromStorage } from "@/hooks/user.context";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export function useEmployees() {
-  // const router = useRouter()
   const { toast } = useToast()
   const notificationModal = useNotificationModalContext();
+  const { user } = useUserFromStorage();
+  const capabilities = useCapabilities();
+  const queryClient = useQueryClient();
+
+  const permissions = capabilities.isSuccess ? capabilities.data?.data?.data?.permissions || [] : [];
+  const canManage = permissions.includes('employee.manage') || user?.role === 'superAdmin';
+  const canView = permissions.includes('employee.view') || canManage || user?.role === 'admin' || user?.role === 'superAdmin';
 
   const [view, setView] = useState("table")
   const [searchTerm, setSearchTerm] = useState("")
@@ -23,109 +29,83 @@ export function useEmployees() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(getIntialValues({}))
 
-  const [employees, setEmployees] = useState([]) //::Todo fake data for demo fakeData.employee
-
   const departments = fakeData.departments
   const positions = fakeData.positions
-
   const locations = fakeData.locations
-  const { data: employeeData, isFetching, refetch } = useQuery({
-    queryKey:{is_emp_stats:1},
-    queryFn: getEmployeeList
-  })
-  const filteredEmployees = (employeeData?.data?.data || employees).filter((employee) => {
+
+  const queryKey = ['employees', user?.id, user?.companyId, { is_emp_stats: 1 }];
+
+  const { data: employeeData, isFetching, isLoading, isError, refetch } = useQuery({
+    queryKey,
+    queryFn: getEmployeeList,
+    enabled: !!user && canView,
+  });
+
+  const filteredEmployees = (employeeData?.data?.data || []).filter((employee) => {
     const matchesSearch =
       employee?.fullName?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment
-    return matchesSearch && matchesDepartment
-  })
+      employee?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+      employee?.id?.toLowerCase()?.includes(searchTerm?.toLowerCase());
+    const matchesDepartment = selectedDepartment === "all" || employee?.department === selectedDepartment;
+    return matchesSearch && matchesDepartment;
+  });
 
   const mutation = useMutation({
     mutationFn: employeeRegistration,
-  })
+    onSuccess: (res, values) => {
+      queryClient.invalidateQueries({ queryKey: ['employees', user?.id, user?.companyId] });
+      refetch();
+      setIsAddDrawerOpen(false);
+      notificationModal.success({ heading: "Success", body: `${values?.firstName || 'Employee'} has been added to your team.` });
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to add employee';
+      notificationModal.error({ heading: "Adding Employee Failed", body: msg });
+    }
+  });
 
-  const udateMutation= useMutation({
+  const updateMutation = useMutation({
     mutationFn: employeeUpdate,
-  })
-  const handleAddEmployee = (values, { setSubmitting, resetForm }) => {
+    onSuccess: (res, values) => {
+      queryClient.invalidateQueries({ queryKey: ['employees', user?.id, user?.companyId] });
+      refetch();
+      setIsEditDialogOpen(false);
+      setIsAddDrawerOpen(false);
+      notificationModal.success({ heading: "Success", body: `Employee updated successfully.` });
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to update employee';
+      notificationModal.error({ heading: "Updating Employee Failed", body: msg });
+    }
+  });
 
+  const handleAddEmployee = (values, { setSubmitting, resetForm } = {}) => {
+    if (!canManage) {
+      notificationModal.error({ heading: "Permission Denied", body: "You do not have permission to manage employees." });
+      return;
+    }
     notificationModal.progress({
-      heading: `Adding ${values.name} to your team, Please await!!`,
+      heading: `Saving ${values?.firstName || 'employee'} details, please wait...`,
     });
-    const apiCall= values?.id ? udateMutation.mutate : mutation.mutate
-    apiCall(values, {
-      onSuccess: (res) => {
-        // console.log(res)
-        refetch();
-        notificationModal.success({ heading: "Success", body: `${values?.firstName} has been added to your team.` });
-
-      },
-      onError: (err) => {
-        // alert('Something went wrong')
-        notificationModal.error({ heading: "failed Something went wrong!!!", body: JSON.stringify(err) });
-        // console.error(err)
-        setIsLoading(false)
-      },
-    })
-  }
-
-  const handleEditEmployee = () => {
-    if (!selectedEmployee) return
-
-    setEmployees(employees.map((emp) => (emp.id === selectedEmployee.id ? selectedEmployee : emp)))
-    setIsEditDialogOpen(false)
-    setSelectedEmployee(null)
-
-    toast({
-      title: "Success",
-      description: "Employee updated successfully.",
-    })
-  }
-
-  const handleDeleteEmployee = (employeeId) => {
-    setEmployees(employees.filter((emp) => emp.id !== employeeId))
-    toast({
-      title: "Success",
-      description: "Employee deleted successfully.",
-    })
-  }
-
-  const handleToggleStatus = (employeeId) => {
-    setEmployees(
-      employees.map((emp) =>
-        emp.id === employeeId ? { ...emp, status: emp.status === "active" ? "inactive" : "active" } : emp,
-      ),
-    )
-
-    const employee = employees.find((emp) => emp.id === employeeId)
-    const newStatus = employee?.status === "active" ? "inactive" : "active"
-
-    toast({
-      title: "Success",
-      description: `Employee ${newStatus === "active" ? "activated" : "deactivated"} successfully.`,
-    })
-  }
+    const apiCall = values?.id ? updateMutation.mutate : mutation.mutate;
+    apiCall(values);
+  };
 
   const handleViewDetails = (employee) => {
-    toast({
-      title: "Employee Details",
-      description: `Viewing details for ${employee.name} (${employee.id})`,
-    })
-    openEditDialog(employee)
-    // setIsAddDrawerOpen(true);
-  }
+    setSelectedEmployee(getIntialValues({ ...employee }));
+    setIsEditDialogOpen(false);
+    setIsAddDrawerOpen(true);
+  };
 
   const openEditDialog = (employee) => {
-  console.log({employee});
-
-    setSelectedEmployee(getIntialValues({ ...employee }))
-    setIsEditDialogOpen(true)
+    if (!canManage) {
+      handleViewDetails(employee);
+      return;
+    }
+    setSelectedEmployee(getIntialValues({ ...employee }));
+    setIsEditDialogOpen(true);
     setIsAddDrawerOpen(true);
-  }
-
-
+  };
 
   return {
     view, setView,
@@ -134,12 +114,15 @@ export function useEmployees() {
     isAddDrawerOpen, setIsAddDrawerOpen,
     isEditDialogOpen, setIsEditDialogOpen,
     selectedEmployee, setSelectedEmployee,
-    employees, setEmployees,
-    departments, positions, locations, filteredEmployees, handleAddEmployee, handleEditEmployee, handleDeleteEmployee,
-    handleToggleStatus, handleViewDetails, openEditDialog,
-    employeeData: employeeData?.data, isFetching
-    // handleAttendanceReport
-  }
+    departments, positions, locations, filteredEmployees,
+    handleAddEmployee, handleViewDetails, openEditDialog,
+    employeeData: employeeData?.data,
+    isFetching, isLoading, isError, refetch,
+    canManage, canView,
+    capabilitiesLoading: capabilities.isLoading,
+    capabilitiesError: capabilities.isError,
+    capabilitiesRefetch: capabilities.refetch,
+  };
 }
 
 export const [EmployeesPageProvider, useEmployeesPageContext] = generateContext(useEmployees);

@@ -50,7 +50,7 @@ export default function EmployeeDashboard() {
     // alert("You have sign in by default password, Please change it..!!")
     return <></>
   }
-  const cleanHTML = (content) => DOMPurify.sanitize(content);
+  const cleanHTML = (content: any) => DOMPurify.sanitize(content);
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -110,7 +110,7 @@ export default function EmployeeDashboard() {
           <CardDescription className="text-sm">Your assignments and tasks for today</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
-          {dashboardStats?.data?.todaySchedule?.map((task) => (
+          {dashboardStats?.data?.todaySchedule?.map((task: any) => (
             <div className="w-full flex items-center justify-between p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="flex items-center space-x-2 sm:space-x-3">
                 {/* <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 flex-shrink-0" /> */}

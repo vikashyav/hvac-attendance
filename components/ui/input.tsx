@@ -21,15 +21,15 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
 )
 Input.displayName = "Input"
 
-export function FormikInput(props) {
+export function FormikInput(props: any) {
   const { name, classNames = {}, setRef = () => {} } = props;
   const [field, meta] = useField(name);
-  const { submitCount, validateOnChange, touched } = useFormikContext();
+  const { submitCount, validateOnChange, touched } = useFormikContext<any>();
   const isError = (validateOnChange && touched[name]) || (submitCount > 0 && !!meta.error);
   const helperText = (validateOnChange && touched[name]) ? meta.error : (submitCount > 0 && meta.error) || "";
   return (
     <>
-      <Input ref={setRef} error={isError} {...field} {...props} />
+      <Input ref={setRef} {...field} {...props} />
       <FormError show={isError} message={helperText} className={classNames.error} />
     </>
   );

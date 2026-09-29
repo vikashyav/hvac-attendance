@@ -167,6 +167,7 @@ try {
   assert.equal(await evaluate("document.querySelectorAll('nav a[href=\"/employee/leave-request\"]').length"), 1, 'Employee sidebar renders once');
   assert.equal(await evaluate("!!document.querySelector('nav a[href=\"/admin/projects-sites\"]')"), false, 'Ordinary employee has no project-management link');
   assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Approve')"), false);
+  assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Delete')"), false, 'No fake delete button in leave request view');
   projectRows = [{ id: 'project-fixture', name: 'Fixture Site', address: 'Fixture address', clientName: 'Fixture Client', status: 'active', startDate: '2026-10-01', endDate: '2026-10-30', latitude: '20', longitude: '70', clientContact: {} }];
   holdProjectPermissions = true;
   await navigate('project-manager', '', '/admin/projects-sites');
