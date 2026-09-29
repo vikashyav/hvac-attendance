@@ -1,8 +1,8 @@
 import { Phone } from "lucide-react";
 import * as Yup from "yup";
 const initialValuesEmp = {
-    "title": "Testing subtask",
-    "taskDescription": "Testing taskDescription for subtask",
+    "title": "",
+    "taskDescription": "",
     "assignTo": "",
     ProjectsSiteId: "",
     type: "",
@@ -24,7 +24,7 @@ export function getIntialValues(values = {}) {
         formValue.id = values?.id
     }
     return {
-        // ...values,
+        parentId: values.parentId || null,
         ...formValue
     }
 }

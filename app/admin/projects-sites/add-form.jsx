@@ -61,7 +61,7 @@ function ProjectsSitesForm({
   isAddDrawerOpen,
   setIsAddDrawerOpen,
 }) {
-  const { selectedProjectsSites, openEditDialog, handleAddProjectsSites } = useProjectsSitesPageContext();
+  const { selectedProjectsSites, openEditDialog, handleAddProjectsSites, canManage, saveError } = useProjectsSitesPageContext();
 
   const getAddress = async (event, values, setFieldValue) => {
     event.preventDefault();
@@ -83,6 +83,8 @@ function ProjectsSitesForm({
     setFieldValue("address", data.display_name);
   };
 
+  if (!canManage) return null;
+
   return (
     <Sheet open={isAddDrawerOpen} onOpenChange={setIsAddDrawerOpen}>
       <SheetTrigger asChild>
@@ -95,13 +97,13 @@ function ProjectsSitesForm({
       </SheetTrigger>
       {/* max-w-3xl lg:w-1/2 md:w-1/2 sm:w-[600px]*/}
 
-      <SheetContent className="w-1/2 xs:w-[100vw] overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader className="space-y-3 pb-6">
           <SheetTitle className="text-2xl font-semibold flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <User className="h-5 w-5 text-blue-600" />
             </div>
-            Add New Projects/Site
+            {selectedProjectsSites?.id ? "Edit Project/Site" : "Add New Projects/Site"}
           </SheetTitle>
           <SheetDescription className="text-base">
             Enter the job site details below
@@ -121,11 +123,11 @@ function ProjectsSitesForm({
             setFieldValue,
             resetForm,
           }) => {
-            console.log({values, errors});
+
 
             return (
               <Form className="grid grid-cols-1 gap-4 space-y-8">
-                {/* Personal Information Section */}
+                {saveError && <p role="alert">{saveError}</p>}
                 <ScrollArea>
                   <div className="space-y-2">
                     <Label htmlFor="name">Project/Site Name</Label>
@@ -133,7 +135,7 @@ function ProjectsSitesForm({
                       as={Input}
                       id="name"
                       name="name"
-                      placeholder="Enter first name"
+                      placeholder="Enter project name"
                       className={`transition-all ${
                         errors.name && touched.name
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -224,19 +226,6 @@ function ProjectsSitesForm({
                       />
                     </div> */}
                     <div className="space-y-2">
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="low">Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="startDate">Start Date</Label>
                       <FormikInput  name="startDate" id="startDate" type="date" />
                     </div>
@@ -279,7 +268,7 @@ function ProjectsSitesForm({
                       {isSubmitting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Adding ...
+                          Saving ...
                         </>
                       ) : (
                         <>

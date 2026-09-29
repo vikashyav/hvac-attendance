@@ -1,60 +1,24 @@
 "use client"
 
-import React from "react";
-import {
-    CheckCircle2,
-    X,
-} from "lucide-react";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { TaskSchedulePageProvider, useTaskSchedulePageContext } from "../use-task-schedule"
+import withHOC from "@/utils/with-hoc"
+import TaskList, { TaskCardSkeleton } from "../task-list"
+import TaskSchedulesForm from "../add-task"
+import TaskAccessStatus from "../access-status"
 
-import { validationSchema } from "../form-helper";
-import { TaskSchedulePageProvider, useTaskSchedulePageContext } from "../use-task-schedule";
-import withHOC from "@/utils/with-hoc";
-import AddForm from "../add-form";
-import TaskList from "../task-list";
-import BackButton from "@/components/ui/back-button";
-
-
-// export default 
-function TaskForm() {
-    const {
-        isAddDrawerOpen,
-        handleCloseDrawer,
-        selectedTaskSchedules, openEditDialog, handleAddTaskSchedules,
-        projectsSitesData,
-        employeeList,
-        attachedFiles, setAttachedFiles, searchParams,
-        TaskSchedulesDetail,
-        router
-    } = useTaskSchedulePageContext();
-console.log(TaskSchedulesDetail);
-
-    return (<>
-        <div className="space-y-3 pb-6">
-            <div className="text-2xl font-semibold flex items-center gap-3">
-                <div className=" bg-blue-100 rounded-lg">
-                    {/* <CheckCircle2 className="h-5 w-5 text-blue-600" /> */}
-                    <BackButton onClick={()=> router.back()}/>
-                </div>
-                Schedule/Task
-            </div>
-            <div className="text-base">
-                Enter the Schedule/Task details below
-            </div>
-        </div>
-        <AddForm
-            selectedTaskSchedules={selectedTaskSchedules}
-            validationSchema={validationSchema}
-            projectsSitesData={projectsSitesData}
-            employeeList={employeeList}
-            attachedFiles={attachedFiles}
-            setAttachedFiles={setAttachedFiles}
-            searchParams={searchParams}
-            handleAddTaskSchedules={handleAddTaskSchedules} />
-
-        SubTasks Lists
-        <TaskList TaskSchedulesData={TaskSchedulesDetail?.data?.subTasks} />
-
-    </>
-    )
+function TaskDetail() {
+  const { tasks, canManage, openEditDialog } = useTaskSchedulePageContext()
+  return <div className="space-y-4">
+    <Link href="/admin/task-manage">Back to tasks</Link>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">Schedule/Task</h1><TaskSchedulesForm /></div>
+    <TaskAccessStatus />
+    {tasks.isPending ? <TaskCardSkeleton /> : tasks.isError ? <div role="alert">Unable to load task.<Button onClick={() => tasks.refetch()}>Retry task</Button></div> : !tasks.data?.data ? <p role="status">Task not found.</p> : <>
+      <TaskList TaskSchedulesData={[tasks.data.data]} showFullDescription canManage={canManage} openEditDialog={openEditDialog} />
+      <h2 className="text-xl font-semibold">Subtasks</h2>
+      <TaskList TaskSchedulesData={tasks.data.data.subTasks || []} canManage={canManage} openEditDialog={openEditDialog} />
+    </>}
+  </div>
 }
-export default withHOC(TaskSchedulePageProvider, TaskForm);
+export default withHOC(TaskSchedulePageProvider, TaskDetail)

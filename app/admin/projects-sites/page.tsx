@@ -26,17 +26,9 @@ import {SiteCardSkeleton} from "./card-sekeleton";
 // export default 
 function JobSitesPage() {
   const {
-    view, setView,
-    searchQuery, setSearchQuery,
-    statusFilter, setStatusFilter,
-    selectedDepartment, setSelectedDepartment,
-    isAddDrawerOpen, setIsAddDrawerOpen,
-    isEditDialogOpen, setIsEditDialogOpen,
-    selectedProjectsSites, setSelectedProjectsSites,
-    projectsSites, setProjectsSites,
-    departments, positions, locations, filteredProjectsSites, handleAddProjectsSites, handleEditProjectsSites, handleDeleteProjectsSites,
-    handleToggleStatus, handleViewDetails, openEditDialog, projectsSitesData, isFetching
-    // handleAttendanceReport
+    searchQuery, setSearchQuery, statusFilter, setStatusFilter,
+    isAddDrawerOpen, setIsAddDrawerOpen, filteredProjectsSites,
+    openEditDialog, canManage, capabilities, projects, saveError, saveSuccess
   } = useProjectsSitesPageContext();
 
   const jobSites = [
@@ -178,9 +170,16 @@ function JobSitesPage() {
           <h1 className="text-3xl font-bold">Projects / Sites</h1>
           <p className="text-muted-foreground">Manage project locations and assignments</p>
         </div>
-        <ProjectsSitesForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} handleAddProjectsSites={handleAddProjectsSites} />
+        {canManage && <ProjectsSitesForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} />}
 
       </div>
+
+      {!canManage && <div role="status">
+        {capabilities.isPending ? "Checking editing permissions…" : capabilities.isError ? "Unable to verify editing permissions." : "You have read-only access to projects."}
+        {capabilities.isError && <Button variant="outline" onClick={() => capabilities.refetch()}>Retry permissions</Button>}
+      </div>}
+      {saveSuccess && <p role="status">{saveSuccess}</p>}
+      {saveError && !isAddDrawerOpen && <p role="alert">{saveError}</p>}
 
       {/* Filters */}
       <div className="flex items-center space-x-4">
@@ -197,10 +196,10 @@ function JobSitesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Planning">Planning</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="On Hold">On Hold</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -209,13 +208,15 @@ function JobSitesPage() {
       <Tabs defaultValue="cards" className="space-y-6">
         <TabsList>
           <TabsTrigger value="cards">Card View</TabsTrigger>
-          <TabsTrigger value="map">Map View</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="map" disabled>Map View</TabsTrigger>
+          <TabsTrigger value="timeline" disabled>Timeline</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cards" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {isFetching &&
+            {projects.isError && <div role="alert"><p>Unable to load projects.</p><Button variant="outline" onClick={() => projects.refetch()}>Retry projects</Button></div>}
+            {projects.isSuccess && filteredProjectsSites.length === 0 && <p role="status">No projects match your filters.</p>}
+            {projects.isPending &&
             <>
             <SiteCardSkeleton />
             <SiteCardSkeleton />
@@ -311,14 +312,11 @@ function JobSitesPage() {
 
                     </a>
 
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => openEditDialog(site)}>
+                    {canManage && <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" aria-label={`Edit ${site.name}`} onClick={() => openEditDialog(site)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" onClick={handleDeleteProjectsSites}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    </div>}
                   </div>
                 </CardContent>
               </Card>

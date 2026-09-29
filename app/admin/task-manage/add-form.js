@@ -28,8 +28,9 @@ import TaskList from "./task-list";
 export default function AddForm({ selectedTaskSchedules, validationSchema, handleAddTaskSchedules,
     projectsSitesData,
     employeeList,
-    attachedFiles, setAttachedFiles, searchParams, openEditDialog, router
+    canManage = false, saveError, onCancel
 }) {
+    if (!canManage) return null;
     return (
         <Formik
             initialValues={selectedTaskSchedules}
@@ -45,14 +46,14 @@ export default function AddForm({ selectedTaskSchedules, validationSchema, handl
                 setFieldValue,
                 resetForm,
             }) => {
-                console.log({ values, errors });
+
                 // const projectsSitesId= searchParams.get("ProjectsSiteId")
                 // if (projectsSitesId) {
                 // setFieldValue("ProjectsSiteId", projectsSitesId)
                 // }
                 return (
                     <Form className="grid grid-cols-1 gap-4 space-y-8">
-                        {/* Personal Information Section */}
+                        {saveError && <p role="alert">{saveError}</p>}
                         <ScrollArea>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className=" space-y-2">
@@ -74,7 +75,7 @@ export default function AddForm({ selectedTaskSchedules, validationSchema, handl
                                         lableString="name"
                                         valueString="id"
                                         options={projectsSitesData?.data || []}
-                                        disabled={searchParams.get("ProjectsSiteId") && true}
+                                        disabled={!!values.parentId}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -181,11 +182,6 @@ export default function AddForm({ selectedTaskSchedules, validationSchema, handl
                                     />
                                 </div>
                             </div>
-                            <FileAttachment
-                                files={attachedFiles}
-                                onFilesChange={setAttachedFiles}
-                            />
-
                             <div className="grid grid-cols-2 gap-4 py-4">
                             </div>
                             <div className="flex justify-end space-x-2">
@@ -194,7 +190,7 @@ export default function AddForm({ selectedTaskSchedules, validationSchema, handl
                                     variant="outline"
                                     onClick={() => {
                                         resetForm();
-                                        // setIsAddDrawerOpen(false);
+                                        onCancel();
                                     }}
                                     className="w-[100px]"
                                 >
@@ -204,12 +200,12 @@ export default function AddForm({ selectedTaskSchedules, validationSchema, handl
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-[14svw] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                                    className="min-w-0 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                                 >
                                     {isSubmitting ? (
                                         <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            Adding ...
+                                            Saving ...
                                         </>
                                     ) : (
                                         <>

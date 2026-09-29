@@ -1,5 +1,4 @@
 import { useCapabilities } from './use-capabilities';
-import constants from "@/constants";
 import { useUserFromStorage } from "./user.context"
 import {
     LayoutDashboard, Clock, Calendar, BarChart3, User, LogOut, Menu, Shield,
@@ -9,9 +8,9 @@ import {
 // import {  LogOut, Menu, Shield } from "lucide-react"
 
 export default function useMenuItems() {
-    const { user, getCookies } = useUserFromStorage();
+    const { user } = useUserFromStorage();
     const capabilities = useCapabilities();
-    const permissions = capabilities.data?.data?.data?.permissions || [];
+    const permissions = capabilities.isSuccess ? capabilities.data?.data?.data?.permissions || [] : [];
     const menuItems = [
         { name: 'Roles & permissions', href: '/admin/roles', icon: Shield, permission: 'access.view', access: [] },
         { name: "Companies & Admins", href: "/admin/companies", icon: Shield, access: ["superAdmin"] },
@@ -68,6 +67,7 @@ export default function useMenuItems() {
         {
             name: "Projects /(Sites)",
             href: "/admin/projects-sites",
+            additionalPermission: "project.manage",
             icon: MapPin,
             access: ["admin", "Project manager"]
         },
@@ -90,7 +90,7 @@ export default function useMenuItems() {
             icon: User,
             access: ["employee"],
         },
-    ].filter((item) => item.permission ? permissions.includes(item.permission) : (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
+    ].filter((item) => item.permission ? permissions.includes(item.permission) : permissions.includes(item.additionalPermission) || (user.role === "superAdmin" && item.access.includes("admin")) || item.access.includes(user.role) || item.access.includes(user?.employee?.position))
 
     return menuItems
 }

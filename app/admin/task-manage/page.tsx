@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Clock, MapPin, Users, CalendarIcon, Edit, Trash2, AlertCircle, Eye, MoreHorizontal, CheckCircle2, MoreVerticalIcon } from "lucide-react"
-import AddForm from "./add-form";
+import TaskAccessStatus from "./access-status";
 import { TaskSchedulePageProvider, useTaskSchedulePageContext } from "./use-task-schedule";
 import withHOC from "@/utils/with-hoc";
 import TaskSchedulesForm from "./add-task";
@@ -53,7 +53,7 @@ const statusColors = {
 function TaskSchedulePage() {
   const router = useRouter();
   const { selectedDate, setSelectedDate, viewMode, setViewMode, events, shifts, TaskSchedulesData,
-    openEditDialog, isFetchingTaskList
+    openEditDialog, isFetchingTaskList, canManage, tasks
   } = useTaskSchedulePageContext()
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -89,51 +89,6 @@ function TaskSchedulePage() {
     (event) => new Date(event.date).toDateString() === (selectedDate || new Date()).toDateString(),
   )
   const cleanHTML = (content) => DOMPurify.sanitize(content);
-  const dropdownMenuItems = (request) => {
-    return <DropdownMenuContent align="end">
-      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-      <DropdownMenuItem onClick={() => {
-        router.push(`?parentId=${request.id}&ProjectsSiteId=${request?.ProjectsSiteId}`)
-        openEditDialog({ ProjectsSiteId: request?.ProjectsSiteId, parentId: request.id })
-      }}>
-        {/* <Eye className="mr-2 h-4 w-4" /> */}
-        <Plus className="mr-2 h-4 w-4" />
-        Add Sub Task
-      </DropdownMenuItem>
-      <DropdownMenuItem >
-        <Eye className="mr-2 h-4 w-4" />
-        View Details
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING"}>
-        <Edit className="mr-2 h-4 w-4" />
-        Edit Request
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={request.status !== "PENDING"}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee record and
-              remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </DropdownMenuContent>
-  }
   return (
     <div className="">
       {/* Header p-6 space-y-6*/}
@@ -149,6 +104,7 @@ function TaskSchedulePage() {
         </div>
       </div>
 
+      <TaskAccessStatus />
       {/* Calendar Tabs */}
       <Tabs defaultValue="events" className="">
         {/* space-y-6 */}
@@ -340,12 +296,12 @@ function TaskSchedulePage() {
             </CardHeader>
             <CardContent>
               {
-                isFetchingTaskList ? <>
+                tasks.isError ? <div role="alert">Unable to load tasks.<Button onClick={() => tasks.refetch()}>Retry tasks</Button></div> : isFetchingTaskList ? <>
                 <TaskCardSkeleton />
                 <TaskCardSkeleton />
                 <TaskCardSkeleton />
                 <TaskCardSkeleton />
-                </>: <TaskList TaskSchedulesData={TaskSchedulesData?.data} openEditDialog={openEditDialog} router={router} />
+                </>: <TaskList TaskSchedulesData={TaskSchedulesData?.data} openEditDialog={openEditDialog} canManage={canManage} />
               }
               
               {/* <div className="space-y-2">

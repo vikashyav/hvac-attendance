@@ -1,27 +1,24 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { User, LogOut, Shield } from "lucide-react"
 import useMenuItems from "@/hooks/use-menu"
 
 interface EmployeeSidebarProps {
   onLogout: () => void
-  userInfo: Object
+  userInfo: { firstName?: string; lastName?: string; role?: string } | string
   className?: string
 }
 
 export function EmployeeSidebar({ onLogout, userInfo, className }: EmployeeSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
   const navigation= useMenuItems()
+  const person = typeof userInfo === "string" ? {} : userInfo
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
@@ -45,12 +42,12 @@ export function EmployeeSidebar({ onLogout, userInfo, className }: EmployeeSideb
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-2">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                   isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
@@ -72,8 +69,8 @@ export function EmployeeSidebar({ onLogout, userInfo, className }: EmployeeSideb
               <User className="h-4 w-4 text-primary" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium"> {`${userInfo.firstName} ${userInfo.lastName}`}</span>
-              <span className="text-xs text-muted-foreground">{userInfo.role}</span>
+              <span className="text-sm font-medium"> {`${person.firstName || ""} ${person.lastName || ""}`}</span>
+              <span className="text-xs text-muted-foreground">{person.role}</span>
             </div>
           </div>
           <ThemeToggle />
@@ -91,27 +88,5 @@ export function EmployeeSidebar({ onLogout, userInfo, className }: EmployeeSideb
     </div>
   )
 
-  return (
-    <>
-      {/* Desktop & Tablet Sidebar */}
-      <div className={cn("hidden sm:flex sm:w-64 sm:flex-col sm:fixed sm:inset-y-0", className)}>
-        <div className="flex flex-col flex-grow bg-card border-r">
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Mobile Sidebar */}
-          <SidebarContent />
-
-      {/* <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="sm:hidden h-10 w-10">
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
-        </SheetContent>
-      </Sheet>1 */}
-    </>
-  )
+  return <div className={cn("h-full bg-card", className)}><SidebarContent /></div>
 }

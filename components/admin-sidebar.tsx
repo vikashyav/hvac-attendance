@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {  Users, LogOut, Shield } from "lucide-react"
 import useMenuItems from "@/hooks/use-menu";
@@ -44,13 +42,13 @@ import useMenuItems from "@/hooks/use-menu";
 // ]
 
 interface AdminSidebarProps {
+  onLogout: () => void
+  userEmail?: string
   className?: string
 }
 
 export function AdminSidebar({ className, onLogout }: AdminSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
   const navigation= useMenuItems()
 
   const handleLogout = () => {
@@ -82,12 +80,12 @@ export function AdminSidebar({ className, onLogout }: AdminSidebarProps) {
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-2">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                   isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
@@ -128,27 +126,5 @@ export function AdminSidebar({ className, onLogout }: AdminSidebarProps) {
     </div>
   )
 
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <div className={cn("hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0", className)}>
-        <div className="flex flex-col flex-grow bg-card border-r">
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Mobile Sidebar */}
-          <SidebarContent />
-
-      {/* <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="lg:hidden fixed top-4 left-4 z-40 h-10 w-10">
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
-        </SheetContent>
-      </Sheet> */}
-    </>
-  )
+  return <div className={cn("h-full bg-card", className)}><SidebarContent /></div>
 }

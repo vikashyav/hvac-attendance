@@ -33,7 +33,7 @@ const statusColors = {
 };
 
 export default function TaskList(props) {
-  const { TaskSchedulesData, openEditDialog, router } = props;
+  const { TaskSchedulesData, openEditDialog, canManage = false, showFullDescription = false } = props;
   const cleanHTML = (content) => DOMPurify.sanitize(content);
 
   const getEventTypeColor = (type) => {
@@ -72,56 +72,11 @@ export default function TaskList(props) {
     urgent: "bg-red-100 text-red-800 border-red-200",
   };
 
-  const dropdownMenuItems = (request) => {
-    return <DropdownMenuContent align="end">
-      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-      <DropdownMenuItem onClick={() => {
-        router.push(`?parentId=${request.id}&ProjectsSiteId=${request?.ProjectsSiteId}`)
-        openEditDialog({ ProjectsSiteId: request?.ProjectsSiteId, parentId: request.id })
-      }}>
-        {/* <Eye className="mr-2 h-4 w-4" /> */}
-        <Plus className="mr-2 h-4 w-4" />
-        Add Sub Task
-      </DropdownMenuItem>
-      <DropdownMenuItem >
-        <Eye className="mr-2 h-4 w-4" />
-        View Details
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => openEditDialog(request)} disabled={request.status !== "PENDING"}>
-        <Edit className="mr-2 h-4 w-4" />
-        Edit Request
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={request.status !== "PENDING"}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee record and
-              remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </DropdownMenuContent>
-  }
   return (
     <div className="space-y-2">
-      {/* space-y-4 */}
+      {!TaskSchedulesData?.length && <p role="status">No tasks to display.</p>}
       {TaskSchedulesData?.map((event) => (
-        <Link href={`/admin/task-manage/${event.id}`}>
+        <div key={event.id}>
 
           <div key={event.id} className="space-y-2 p-2 border rounded-lg hover:shadow-md transition-shadow">
             <div>
@@ -138,7 +93,7 @@ export default function TaskList(props) {
                     <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>
                       #{event.type}
                     </Badge>
-                    {event.title}
+                    <Link href={`/admin/task-manage/${event.id}`}>{event.title}</Link>
                   </h3>
 
                   <samp title={event.priority} className="text-muted-foreground">
@@ -154,13 +109,14 @@ export default function TaskList(props) {
               </div>
 
               {/* Right section: Action buttons (always top right) */}
-              <div
+              {canManage && <div
                 className="flex items-start space-x-2"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Button
                   size="sm"
                   variant="outline"
+                  aria-label={`Edit ${event.title}`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -176,7 +132,6 @@ export default function TaskList(props) {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    router.push(`?parentId=${event.id}&ProjectsSiteId=${event?.ProjectsSiteId}`);
                     openEditDialog({ ProjectsSiteId: event?.ProjectsSiteId, parentId: event.id });
                   }}
                 >
@@ -184,23 +139,14 @@ export default function TaskList(props) {
                   Sub Task
                 </Button>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreVerticalIcon className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  {dropdownMenuItems(event)}
-                </DropdownMenu>
-              </div>
+              </div>}
             </div>
 
             <div className="mb-2 px-2 ">
               <samp className="text-sm">Projects/Sites:{event?.ProjectsSite?.name}</samp>
               <div className="text-sm">Discription:</div>
               <div
-                className="p-2 prose prose-sm text-gray-700 line-clamp-2 bg-gray-100"
+                className={`p-2 prose prose-sm text-gray-700 bg-gray-100 ${showFullDescription ? "" : "line-clamp-2"}`}
                 dangerouslySetInnerHTML={{ __html: cleanHTML(event.taskDescription) }}
               />
             </div>
@@ -240,7 +186,7 @@ export default function TaskList(props) {
               </div>
             </div>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   )
