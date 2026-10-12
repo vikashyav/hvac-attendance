@@ -4,119 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, Clock, Award, CheckCircle, AlertCircle, Calendar, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { TrendingUp, Clock, Award, CheckCircle, AlertCircle, Calendar, Star, RefreshCw, MessageSquare } from "lucide-react"
 import { PerformanceChart } from "@/components/performance-chart"
+import { usePerformance } from "./use-performance"
 
 export default function PerformancePage() {
-  const performanceMetrics = {
-    overall: 88.5,
-    attendance: 95.2,
-    punctuality: 87.3,
-    productivity: 92.1,
-    safety: 96.8,
-    teamwork: 85.4,
-  }
-
-  const monthlyGoals = [
-    {
-      id: 1,
-      title: "Maintain 95%+ Attendance",
-      current: 95.2,
-      target: 95,
-      status: "achieved",
-      description: "Keep consistent attendance throughout the month",
-    },
-    {
-      id: 2,
-      title: "Improve Punctuality to 90%",
-      current: 87.3,
-      target: 90,
-      status: "in-progress",
-      description: "Arrive on time for scheduled shifts",
-    },
-    {
-      id: 3,
-      title: "Complete Safety Training",
-      current: 80,
-      target: 100,
-      status: "in-progress",
-      description: "Finish all required safety certification modules",
-    },
-    {
-      id: 4,
-      title: "Zero Safety Incidents",
-      current: 100,
-      target: 100,
-      status: "achieved",
-      description: "Maintain perfect safety record",
-    },
-  ]
-
-  const achievements = [
-    {
-      id: 1,
-      title: "Perfect Attendance Week",
-      description: "Maintained 100% attendance for the week",
-      date: "2024-01-08",
-      icon: Calendar,
-      color: "text-green-600",
-    },
-    {
-      id: 2,
-      title: "Safety Champion",
-      description: "Completed advanced safety training",
-      date: "2024-01-05",
-      icon: Award,
-      color: "text-blue-600",
-    },
-    {
-      id: 3,
-      title: "Team Player",
-      description: "Helped train new team member",
-      date: "2024-01-03",
-      icon: Users,
-      color: "text-purple-600",
-    },
-    {
-      id: 4,
-      title: "Efficiency Expert",
-      description: "Completed tasks 15% faster than average",
-      date: "2023-12-28",
-      icon: TrendingUp,
-      color: "text-orange-600",
-    },
-  ]
-
-  const recentFeedback = [
-    {
-      id: 1,
-      from: "Mike Johnson",
-      role: "Supervisor",
-      date: "2024-01-12",
-      rating: 4.5,
-      comment:
-        "Excellent work on the downtown project. Your attention to detail and punctuality have improved significantly.",
-      category: "Performance Review",
-    },
-    {
-      id: 2,
-      from: "Sarah Wilson",
-      role: "Team Lead",
-      date: "2024-01-08",
-      rating: 4.8,
-      comment: "Great teamwork during the mall project. You showed excellent problem-solving skills.",
-      category: "Project Feedback",
-    },
-    {
-      id: 3,
-      from: "System",
-      role: "Automated",
-      date: "2024-01-05",
-      rating: 5.0,
-      comment: "Congratulations on completing your safety training with a perfect score!",
-      category: "Training Completion",
-    },
-  ]
+  const {
+    performanceMetrics,
+    chartData,
+    monthlyGoals,
+    achievements,
+    isLoading,
+    isError,
+    refetch,
+    user,
+  } = usePerformance()
 
   const getGoalStatusColor = (status: string) => {
     switch (status) {
@@ -148,15 +52,64 @@ export default function PerformancePage() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+        </div>
+        <Skeleton className="h-80 rounded-lg" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Unable to Load Performance Data
+            </CardTitle>
+            <CardDescription>
+              We encountered an issue fetching your attendance records and performance metrics.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => refetch()} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Performance Dashboard</h1>
-        <p className="text-muted-foreground">Track your performance metrics and achievements</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Performance Dashboard</h1>
+          <p className="text-muted-foreground">
+            Live attendance and efficiency metrics calculated under your active company policy
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2 self-start sm:self-auto">
+          <RefreshCw className="h-4 w-4" />
+          Refresh Stats
+        </Button>
       </div>
 
-      {/* Performance Overview */}
+      {/* Performance Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -165,8 +118,8 @@ export default function PerformancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{performanceMetrics.overall}%</div>
-            <p className="text-xs text-muted-foreground">+2.3% from last month</p>
-            <Progress value={performanceMetrics.overall} className="mt-2" />
+            <p className="text-xs text-muted-foreground">Ratio of delivered work hours to scheduled hours</p>
+            <Progress value={Math.min(100, performanceMetrics.overall)} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -177,27 +130,29 @@ export default function PerformancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{performanceMetrics.attendance}%</div>
-            <p className="text-xs text-muted-foreground">Excellent attendance</p>
-            <Progress value={performanceMetrics.attendance} className="mt-2" />
+            <p className="text-xs text-muted-foreground">
+              {performanceMetrics.daysPresent} present out of {performanceMetrics.totalWorkingDays} working days
+            </p>
+            <Progress value={Math.min(100, performanceMetrics.attendance)} className="mt-2" />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Safety Score</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Punctuality Score</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{performanceMetrics.safety}%</div>
-            <p className="text-xs text-muted-foreground">Outstanding safety record</p>
-            <Progress value={performanceMetrics.safety} className="mt-2" />
+            <div className="text-2xl font-bold text-purple-600">{performanceMetrics.punctuality}%</div>
+            <p className="text-xs text-muted-foreground">On-time check-ins within company grace period</p>
+            <Progress value={Math.min(100, performanceMetrics.punctuality)} className="mt-2" />
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Tabs */}
       <Tabs defaultValue="metrics" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full md:w-auto">
           <TabsTrigger value="metrics">Performance Metrics</TabsTrigger>
           <TabsTrigger value="goals">Goals & Targets</TabsTrigger>
           <TabsTrigger value="achievements">Achievements</TabsTrigger>
@@ -208,58 +163,54 @@ export default function PerformancePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Trends</CardTitle>
-                <CardDescription>Your performance over the last 6 months</CardDescription>
+                <CardTitle>Performance Comparison</CardTitle>
+                <CardDescription>Current performance scores measured against target baselines</CardDescription>
               </CardHeader>
               <CardContent>
-                <PerformanceChart />
+                <PerformanceChart data={chartData} />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Detailed Metrics</CardTitle>
-                <CardDescription>Breakdown of your performance areas</CardDescription>
+                <CardTitle>Detailed Breakdown</CardTitle>
+                <CardDescription>Actual recorded work and attendance statistics</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Attendance</span>
-                    <span className="text-sm text-green-600">{performanceMetrics.attendance}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Attendance Rate</span>
+                    <span className="font-semibold text-green-600">{performanceMetrics.attendance}%</span>
                   </div>
-                  <Progress value={performanceMetrics.attendance} />
+                  <Progress value={Math.min(100, performanceMetrics.attendance)} />
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Punctuality</span>
-                    <span className="text-sm text-blue-600">{performanceMetrics.punctuality}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Punctuality</span>
+                    <span className="font-semibold text-blue-600">{performanceMetrics.punctuality}%</span>
                   </div>
-                  <Progress value={performanceMetrics.punctuality} />
+                  <Progress value={Math.min(100, performanceMetrics.punctuality)} />
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Productivity</span>
-                    <span className="text-sm text-purple-600">{performanceMetrics.productivity}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total Work Hours</span>
+                    <span className="font-semibold text-purple-600">{performanceMetrics.totalHours} hrs</span>
                   </div>
-                  <Progress value={performanceMetrics.productivity} />
+                  <div className="text-xs text-muted-foreground">
+                    Delivered across {performanceMetrics.daysPresent} active working days
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Safety</span>
-                    <span className="text-sm text-orange-600">{performanceMetrics.safety}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Overtime Hours</span>
+                    <span className="font-semibold text-orange-600">{performanceMetrics.totalOvertimeHours} hrs</span>
                   </div>
-                  <Progress value={performanceMetrics.safety} />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Teamwork</span>
-                    <span className="text-sm text-pink-600">{performanceMetrics.teamwork}%</span>
+                  <div className="text-xs text-muted-foreground">
+                    Hours accumulated past company overtime threshold
                   </div>
-                  <Progress value={performanceMetrics.teamwork} />
                 </div>
               </CardContent>
             </Card>
@@ -269,8 +220,8 @@ export default function PerformancePage() {
         <TabsContent value="goals" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Goals</CardTitle>
-              <CardDescription>Track your progress towards monthly performance targets</CardDescription>
+              <CardTitle>Monthly Goals & Targets</CardTitle>
+              <CardDescription>Dynamic progress tracking based on policy benchmarks</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -297,7 +248,7 @@ export default function PerformancePage() {
                         <div className="flex items-center justify-between text-sm">
                           <span>Progress</span>
                           <span className="font-medium">
-                            {goal.current}
+                            {typeof goal.current === "number" ? goal.current.toFixed(1) : goal.current}
                             {goal.title.includes("%") ? "%" : ""} / {goal.target}
                             {goal.title.includes("%") ? "%" : ""}
                           </span>
@@ -315,29 +266,39 @@ export default function PerformancePage() {
         <TabsContent value="achievements" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Achievements</CardTitle>
-              <CardDescription>Your accomplishments and milestones</CardDescription>
+              <CardTitle>Earned Achievements</CardTitle>
+              <CardDescription>Milestones awarded based on your verified attendance record</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {achievements.map((achievement) => {
-                  const Icon = achievement.icon
-                  return (
-                    <div key={achievement.id} className="flex items-start space-x-4 p-4 border rounded-lg">
-                      <div className={`p-2 rounded-full bg-muted ${achievement.color}`}>
-                        <Icon className="h-5 w-5" />
+              {achievements.length > 0 ? (
+                <div className="space-y-4">
+                  {achievements.map((achievement) => {
+                    const Icon = achievement.icon
+                    return (
+                      <div key={achievement.id} className="flex items-start space-x-4 p-4 border rounded-lg">
+                        <div className={`p-2 rounded-full bg-muted ${achievement.color}`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="font-medium">{achievement.title}</h4>
+                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Active as of {new Date(achievement.date).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium">{achievement.title}</h4>
-                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Earned on {new Date(achievement.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Award className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="font-medium">No Milestones Recorded Yet</p>
+                  <p className="text-xs mt-1">
+                    Maintain consistent on-time attendance to unlock performance achievements.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -345,44 +306,18 @@ export default function PerformancePage() {
         <TabsContent value="feedback" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Feedback</CardTitle>
-              <CardDescription>Performance reviews and comments from supervisors</CardDescription>
+              <CardTitle>Supervisor Feedback & Appraisals</CardTitle>
+              <CardDescription>Official reviews and comments from managerial staff</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {recentFeedback.map((feedback) => (
-                  <div key={feedback.id} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium">{feedback.from}</h4>
-                          <Badge variant="outline">{feedback.role}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{feedback.category}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center space-x-1">
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <div
-                              key={i}
-                              className={`w-3 h-3 rounded-full ${
-                                i < Math.floor(feedback.rating)
-                                  ? "bg-yellow-400"
-                                  : i < feedback.rating
-                                    ? "bg-yellow-200"
-                                    : "bg-gray-200"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(feedback.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-sm">{feedback.comment}</p>
-                  </div>
-                ))}
+              <div className="text-center py-10 space-y-3">
+                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                <div className="space-y-1">
+                  <h4 className="font-medium text-base">No Appraisals Published Yet</h4>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Formal performance appraisals and manager review comments will appear here once submitted by your supervisor for the current evaluation period.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

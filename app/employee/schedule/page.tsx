@@ -1,128 +1,57 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MapPin, Clock, User, Navigation, Phone, CalendarIcon, AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { MapPin, Clock, User, CalendarIcon, AlertCircle, CheckCircle2, RefreshCw, Briefcase, ListTodo } from "lucide-react"
+import { useEmployeeSchedule } from "./use-employee-schedule"
+import moment from "moment"
 
 export default function SchedulePage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const {
+    user,
+    selectedDate,
+    setSelectedDate,
+    selectedDateStr,
+    allTasks,
+    todayTasks,
+    selectedDateTasks,
+    upcomingTasks,
+    isLoading,
+    isError,
+    refetch,
+  } = useEmployeeSchedule()
 
-  const todaySchedule = {
-    site: "Downtown Office Complex",
-    address: "123 Business Ave, Downtown, NY 10001",
-    startTime: "8:00 AM",
-    endTime: "5:00 PM",
-    supervisor: "Mike Johnson",
-    supervisorPhone: "(555) 123-4567",
-    tasks: [
-      "HVAC system inspection - Floor 5-8",
-      "Replace air filters in conference rooms",
-      "Check thermostat calibration",
-      "Document maintenance activities",
-    ],
-    notes: "Bring safety equipment for high-altitude work. Client meeting at 2 PM.",
-  }
-
-  const weekSchedule = [
-    {
-      date: "2024-01-15",
-      day: "Monday",
-      site: "Downtown Office Complex",
-      startTime: "8:00 AM",
-      endTime: "5:00 PM",
-      supervisor: "Mike Johnson",
-      status: "confirmed",
-    },
-    {
-      date: "2024-01-16",
-      day: "Tuesday",
-      site: "Shopping Mall Project",
-      startTime: "8:30 AM",
-      endTime: "5:30 PM",
-      supervisor: "Sarah Wilson",
-      status: "confirmed",
-    },
-    {
-      date: "2024-01-17",
-      day: "Wednesday",
-      site: "Residential Complex",
-      startTime: "9:00 AM",
-      endTime: "6:00 PM",
-      supervisor: "Tom Brown",
-      status: "pending",
-    },
-    {
-      date: "2024-01-18",
-      day: "Thursday",
-      site: "Downtown Office Complex",
-      startTime: "8:00 AM",
-      endTime: "5:00 PM",
-      supervisor: "Mike Johnson",
-      status: "confirmed",
-    },
-    {
-      date: "2024-01-19",
-      day: "Friday",
-      site: "Industrial Warehouse",
-      startTime: "7:30 AM",
-      endTime: "4:30 PM",
-      supervisor: "Lisa Garcia",
-      status: "confirmed",
-    },
-  ]
-
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: "Safety Training Session",
-      date: "2024-01-20",
-      time: "9:00 AM",
-      duration: "3 hours",
-      location: "Training Center",
-      type: "training",
-      mandatory: true,
-    },
-    {
-      id: 2,
-      title: "Team Meeting",
-      date: "2024-01-22",
-      time: "10:00 AM",
-      duration: "1 hour",
-      location: "Main Office",
-      type: "meeting",
-      mandatory: false,
-    },
-    {
-      id: 3,
-      title: "Equipment Maintenance",
-      date: "2024-01-25",
-      time: "8:00 AM",
-      duration: "4 hours",
-      location: "Equipment Yard",
-      type: "maintenance",
-      mandatory: true,
-    },
-  ]
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
-      case "confirmed":
-        return "default"
-      case "pending":
-        return "secondary"
-      case "cancelled":
-        return "destructive"
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "in_progress":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "on_hold":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
       default:
-        return "outline"
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
-  const getEventTypeColor = (type: string) => {
+  const getPriorityBadge = (priority?: string) => {
+    switch (priority) {
+      case "urgent":
+        return <Badge variant="destructive">Urgent</Badge>
+      case "normal":
+        return <Badge variant="secondary">Normal</Badge>
+      case "low":
+        return <Badge variant="outline">Low</Badge>
+      default:
+        return <Badge variant="outline">Normal</Badge>
+    }
+  }
+
+  const getEventTypeColor = (type?: string) => {
     switch (type) {
       case "training":
         return "bg-green-100 text-green-800 border-green-200"
@@ -130,266 +59,279 @@ export default function SchedulePage() {
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "maintenance":
         return "bg-orange-100 text-orange-800 border-orange-200"
+      case "schedule_visit":
+        return "bg-purple-100 text-purple-800 border-purple-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Unable to Load Schedule
+            </CardTitle>
+            <CardDescription>
+              We encountered an issue fetching your scheduled tasks and shift assignments.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => refetch()} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-        <Badge variant="destructive" className="w-full whitespace-nowrap">
-          Work Under Progress - we are working on this module
-        </Badge>
-      <div>
-        <h1 className="text-3xl font-bold">My Schedule</h1>
-        <p className="text-muted-foreground">View your work schedule and upcoming assignments</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">My Schedule</h1>
+          <p className="text-muted-foreground">
+            View your scheduled shifts, field visits, and assigned tasks
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2 self-start sm:self-auto">
+          <RefreshCw className="h-4 w-4" />
+          Refresh Schedule
+        </Button>
       </div>
 
-      {/* Today's Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <CalendarIcon className="h-5 w-5 mr-2" />
-            Today's Assignment
-          </CardTitle>
-          <CardDescription>Your schedule for {new Date().toLocaleDateString()}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{todaySchedule.site}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {todaySchedule.address}
-                    </p>
-                  </div>
-                  <Badge variant="default">Today</Badge>
-                </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today's Tasks</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{todayTasks.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {todayTasks.length > 0 ? "Assignments scheduled for today" : "No tasks scheduled for today"}
+            </p>
+          </CardContent>
+        </Card>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center text-sm">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>
-                      {todaySchedule.startTime} - {todaySchedule.endTime}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{todaySchedule.supervisor}</span>
-                  </div>
-                </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Selected Date ({moment(selectedDate).format("MMM D")})</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{selectedDateTasks.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {selectedDateTasks.length > 0 ? "Tasks assigned on selected date" : "Clear schedule for selected date"}
+            </p>
+          </CardContent>
+        </Card>
 
-                <div className="flex space-x-2">
-                  <Button size="sm" className="flex-1">
-                    <Navigation className="h-4 w-4 mr-2" />
-                    Get Directions
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Phone className="h-4 w-4 mr-2" />
-                    Call Supervisor
-                  </Button>
-                </div>
-              </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Assignments</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{upcomingTasks.length}</div>
+            <p className="text-xs text-muted-foreground">Scheduled future assignments and visits</p>
+          </CardContent>
+        </Card>
+      </div>
 
-              {todaySchedule.notes && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{todaySchedule.notes}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-3">Today's Tasks</h4>
-                <div className="space-y-2">
-                  {todaySchedule.tasks.map((task, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-2 border rounded">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">{task}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-3">Contact Information</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Supervisor: {todaySchedule.supervisor}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{todaySchedule.supervisorPhone}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Schedule Tabs */}
-      <Tabs defaultValue="week" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="week">This Week</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-          <TabsTrigger value="events">Upcoming Events</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="week" className="space-y-6">
+      {/* Main Schedule Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Calendar Selection Card */}
+        <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Schedule</CardTitle>
-              <CardDescription>Your assignments for this week</CardDescription>
+              <CardTitle className="text-base font-semibold">Select Date</CardTitle>
+              <CardDescription>Pick a date to inspect scheduled shifts</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {weekSchedule.map((schedule, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="text-center min-w-[60px]">
-                        <p className="font-medium">{new Date(schedule.date).getDate()}</p>
-                        <p className="text-xs text-muted-foreground">{schedule.day}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium">{schedule.site}</h4>
-                          <Badge variant={getStatusColor(schedule.status)}>{schedule.status}</Badge>
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {schedule.startTime} - {schedule.endTime}
-                          </div>
-                          <div className="flex items-center">
-                            <User className="h-3 w-3 mr-1" />
-                            {schedule.supervisor}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Navigation className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => d && setSelectedDate(d)}
+                className="rounded-md border shadow-sm"
+              />
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="calendar" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Schedule Calendar</CardTitle>
-                <CardDescription>View your schedule by date</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border"
-                />
-              </CardContent>
-            </Card>
+        {/* Task Details for Selected Date & Upcoming Tabs */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="day" className="space-y-4">
+            <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+              <TabsTrigger value="day">
+                Day View ({moment(selectedDate).format("MMM D")})
+              </TabsTrigger>
+              <TabsTrigger value="upcoming">
+                All Upcoming ({upcomingTasks.length})
+              </TabsTrigger>
+            </TabsList>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Selected Date</CardTitle>
-                <CardDescription>{selectedDate ? selectedDate.toLocaleDateString() : "Select a date"}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedDate && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="default">Scheduled</Badge>
-                        <span className="text-sm text-muted-foreground">Full Day</span>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Site:</span>
-                          <span className="font-medium">Downtown Office</span>
+            <TabsContent value="day" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Assignments for {moment(selectedDate).format("dddd, MMMM D, YYYY")}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedDateTasks.length} assignment(s) recorded for this day
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedDateTasks.length > 0 ? (
+                    selectedDateTasks.map((task: any) => (
+                      <div key={task.id} className="p-4 border rounded-lg space-y-3 bg-card hover:border-primary/40 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-base">{task.title}</h4>
+                              {getPriorityBadge(task.priority)}
+                              {task.type && (
+                                <Badge className={`text-xs ${getEventTypeColor(task.type)}`}>
+                                  {task.type.replace("_", " ")}
+                                </Badge>
+                              )}
+                            </div>
+                            {task.taskDescription && (
+                              <p className="text-sm text-muted-foreground">{task.taskDescription}</p>
+                            )}
+                          </div>
+                          <Badge className={`text-xs capitalize self-start ${getStatusColor(task.status)}`}>
+                            {(task.status || "pending").replace("_", " ")}
+                          </Badge>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Time:</span>
-                          <span className="font-medium">8:00 AM - 5:00 PM</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Supervisor:</span>
-                          <span className="font-medium">Mike Johnson</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
-        <TabsContent value="events" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
-              <CardDescription>Training sessions, meetings, and special assignments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium">{event.title}</h4>
-                          <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
-                          {event.mandatory && (
-                            <Badge variant="destructive" className="text-xs">
-                              Mandatory
-                            </Badge>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground pt-2 border-t">
+                          {(task.startTime || task.endTime) && (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{task.startTime || "--"} {task.endTime ? `- ${task.endTime}` : ""}</span>
+                            </div>
+                          )}
+                          {task.ProjectsSite && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-primary" />
+                              <span>{task.ProjectsSite.name} {task.ProjectsSite.address ? `(${task.ProjectsSite.address})` : ""}</span>
+                            </div>
+                          )}
+                          {task.createBy && (
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5" />
+                              <span>Assigned by: {task.createBy.fullName || task.createBy.firstName}</span>
+                            </div>
+                          )}
+                          {Array.isArray(task.subTasks) && task.subTasks.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <ListTodo className="h-3.5 w-3.5" />
+                              <span>{task.subTasks.length} subtask(s)</span>
+                            </div>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{event.location}</p>
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="flex items-center text-muted-foreground">
-                        <CalendarIcon className="h-4 w-4 mr-2" />
-                        {new Date(event.date).toLocaleDateString()}
+                        {task.notes && (
+                          <div className="p-2.5 rounded bg-muted/50 text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">Notes: </span>
+                            {task.notes}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <Clock className="h-4 w-4 mr-2" />
-                        {event.time} ({event.duration})
-                      </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {event.location}
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground space-y-2">
+                      <CheckCircle2 className="h-10 w-10 mx-auto text-green-500/70" />
+                      <p className="font-medium text-base">No Assignments Scheduled</p>
+                      <p className="text-xs max-w-sm mx-auto">
+                        You have no job site visits or scheduled tasks on {moment(selectedDate).format("MMMM D, YYYY")}.
+                      </p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="upcoming" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Upcoming Shifts & Tasks</CardTitle>
+                  <CardDescription>All pending and upcoming assignments assigned to you</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {upcomingTasks.length > 0 ? (
+                    upcomingTasks.map((task: any) => (
+                      <div key={task.id} className="p-4 border rounded-lg space-y-2.5 hover:border-primary/40 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-sm">{task.title}</span>
+                              {getPriorityBadge(task.priority)}
+                              {task.type && (
+                                <Badge className={`text-xs ${getEventTypeColor(task.type)}`}>
+                                  {task.type.replace("_", " ")}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              {task.startDate && (
+                                <span className="flex items-center gap-1 font-medium text-foreground">
+                                  <CalendarIcon className="h-3 w-3" />
+                                  {moment(task.startDate).format("ddd, MMM D, YYYY")}
+                                </span>
+                              )}
+                              {task.ProjectsSite && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3 text-primary" />
+                                  {task.ProjectsSite.name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Badge className={`text-xs capitalize self-start ${getStatusColor(task.status)}`}>
+                            {(task.status || "pending").replace("_", " ")}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground space-y-2">
+                      <Briefcase className="h-10 w-10 mx-auto opacity-50" />
+                      <p className="font-medium text-base">No Upcoming Tasks</p>
+                      <p className="text-xs">You currently have no future assignments or visits queued.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   )
 }

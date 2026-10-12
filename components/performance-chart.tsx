@@ -2,7 +2,14 @@
 
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts"
 
-const performanceData = [
+export interface PerformanceMetricItem {
+  metric: string
+  score: number
+  target: number
+  improvement?: string
+}
+
+const defaultPerformanceData: PerformanceMetricItem[] = [
   {
     metric: "Punctuality",
     score: 88,
@@ -35,11 +42,12 @@ const performanceData = [
   },
 ]
 
-export function PerformanceChart() {
+export function PerformanceChart({ data }: { data?: PerformanceMetricItem[] } = {}) {
+  const chartData = data && data.length > 0 ? data : defaultPerformanceData
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
           <XAxis
             dataKey="metric"
