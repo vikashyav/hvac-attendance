@@ -1,7 +1,5 @@
 "use client"
 import React, { useContext, createContext, useEffect, useMemo, useState, useCallback } from "react";
-import { useRouter } from "next/navigation"
-
 import storageService from "../lib/services/storage.service";
 
 import Const from "../constants";
@@ -13,7 +11,6 @@ const UserContext = createContext();
 
 export function UserProvider(props) {
   const { children } = props;
-  const router = useRouter()
   const notificationModal = useNotificationModalContext();
   const { unsubscribeNotification } = useNotificationSubscrption();
 
@@ -82,20 +79,17 @@ export function UserProvider(props) {
     };
   }, []);
 
-  const handleLogout = async () => {
-    notificationModal.progress({ heading: "logging out....Please await!!" });
+  const handleLogout = () => {
+    notificationModal.progress({ heading: "Signing out…" });
+
+    // Push cleanup is best-effort and must never hold the user on a protected page.
+    void unsubscribeNotification().catch(() => undefined);
     storageService.clear();
     removeUser();
-    document.cookie = 'access_token=; path=/; max-age=0';
-    document.cookie = 'userInfo=; path=/; max-age=0';
-    await unsubscribeNotification().finally(() => {
-      window.location.reload(); // to trigger middleware check
-    }).catch(() => {
-      alert("something went wrong!!, unable to unscribe push notification")
-      window.location.reload(); // to trigger middleware check
-    });
-    // window.location.reload(); // to trigger middleware check
-    // router.push("/login")
+    document.cookie = `${Const.CONTEXT_TYPE.TOKEN}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `${Const.CONTEXT_TYPE.USER_INFO}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
+    window.location.replace("/login");
   }
 
   const setCookies = (name, value, days = 30) => {

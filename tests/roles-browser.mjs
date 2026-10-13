@@ -74,7 +74,7 @@ async function intercept(event) {
     if (path.endsWith('/access/me')) return fulfill(event, 200, { data: { companyId, companyName: companyId === 'company-b' ? 'Fixture Company B' : 'Fixture Company A', permissions: scenario === 'task-manager' ? (taskRevoked ? [] : ['task.manage']) : scenario === 'task-viewer' ? [] : scenario === 'project-manager' ? (projectRevoked ? [] : ['project.manage']) : scenario === 'project-viewer' ? [] : scenario === 'applicant' ? [] : scenario === 'approver' ? ['leave.approve'] : scenario === 'denied' ? [] : scenario === 'viewer' ? ['access.view', 'settings.view'] : permissions } });
     if (path.endsWith('/settings')) return fulfill(event, 200, { data: { companyId, revision: 1, settings: { company: { name: 'Fixture Company', industry: 'IT', email: '', phone: '', address: '' }, attendance: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 0, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8, allowNonWorkingDays: false, allowEarlyCheckout: true, requirePhoto: false, locationEnabled: false, geofencingEnabled: false, geofenceRadius: 100 } } } });
     if (path.endsWith('/settings/attendance-policy')) return fulfill(event, 200, { data: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 10, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8 } });
-    if (path.endsWith('/attendance')) return fulfill(event, 200, { data: attendanceRows, daysPresent: 2, totalWorkingDays: 22, attendanceRate: '9.1', punctualityRate: '4.5', totalHours: 16.42, totalOvertimeHours: 0.75 });
+    if (path.endsWith('/attendance')) return fulfill(event, 200, { data: attendanceRows, employeeCount: 4, dailyStatusCounts: { '2026-10-12': { present: 1, late: 0, half_day: 0, absent: 3 }, '2026-10-13': { present: 0, late: 1, half_day: 0, absent: 3 } }, daysPresent: 2, totalWorkingDays: 22, attendanceRate: '9.1', punctualityRate: '4.5', totalHours: 16.42, totalOvertimeHours: 0.75 });
     if (path.endsWith('/leave-request/leave-fixture/admin')) {
       lastDecision = JSON.parse(event.request.postData); leaveStatus = lastDecision.status;
       return fulfill(event, 200, {});
@@ -262,9 +262,14 @@ try {
   await evaluate("document.querySelector('button[aria-label^=\"October 13, 2026\"]').click()");
   await waitFor("document.body.innerText.includes('Late arrival') && document.body.innerText.includes('28.6139, 77.209')", 'late attendance details');
   await navigate('admin', '', '/employee/attendance');
-  await waitFor("document.body.innerText.includes('8h 45m') && document.body.innerText.includes('7h 40m')", 'administrator attendance records');
+  await waitFor("document.body.innerText.includes('8 h 45 m') && document.body.innerText.includes('7 h 40 m')", 'administrator attendance records');
   assert.equal(await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Attendance History')).getAttribute('aria-selected')"), 'true', 'History remains the default administrator tab');
   assert.equal(await evaluate("document.querySelector('nav a[href=\"/employee/attendance\"]').textContent.includes('My Attendance')"), false, 'Administrator menu keeps the Attendance label');
+  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Map')).dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))");
+  await waitFor("document.body.innerText.includes('Daily attendance') && document.body.innerText.includes('Employee locations')", 'administrator map view');
+  assert.equal(await evaluate("document.body.innerText.includes('Present') && document.body.innerText.includes('Late')"), true, 'Calendar shows attendance status counts');
+  assert.equal(await evaluate("(()=>{const a=document.querySelector('[data-admin-attendance-calendar]').getBoundingClientRect();const b=document.querySelector('[data-admin-attendance-map]').getBoundingClientRect();return Math.abs(a.width-b.width)<2;})()"), true, 'Calendar and map share the available width equally');
   projectRows = [{ id: 'project-fixture', name: 'Fixture Site', address: 'Fixture address', clientName: 'Fixture Client', status: 'active', startDate: '2026-10-01', endDate: '2026-10-30', latitude: '20', longitude: '70', clientContact: {} }];
   holdProjectPermissions = true;
   await navigate('project-manager', '', '/admin/projects-sites');
@@ -445,6 +450,11 @@ try {
   await navigate('platform', '?companyId=unavailable', '/admin/roles', false);
   await waitFor("document.body.innerText.includes('This company is unavailable')", 'invalid company link');
   assert.equal(calls.has('/api/v1/access/memberships'), false);
+  await navigate('admin', '', '/admin/task-manage');
+  await clickText('Sign Out');
+  await waitFor("location.pathname === '/login'", 'logout redirects to login');
+  assert.equal(await evaluate("localStorage.getItem('token')"), null, 'Logout clears the stored token');
+  assert.equal(await evaluate("!document.cookie.split('; ').some(value => value.startsWith('token='))"), true, 'Logout clears the authentication cookie');
   assert.deepEqual(errors, []);
   console.log('Browser checks passed: create, assign, effective permissions, cancel/revoke, read-only, denied, empty, retry, company selection, mobile, custom leave approver/applicant, project read-only/granted/revoked access, save failure/retry, create/update, permission retry, empty lists; task permissions, direct details, create/update/subtasks, parent preservation, retries, revocation, missing/empty tasks mobile cancellation, grant-aware navigation, single sidebars, nested active links and mobile navigation dismissal.');
 } finally {

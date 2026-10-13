@@ -1,6 +1,9 @@
 import moment from "moment";
 export function formatTimeDifference(startTime, endTime) {
-  const diffMs = Math.abs(new Date(endTime) - new Date(startTime));
+  const start = new Date(startTime).getTime();
+  const end = new Date(endTime).getTime();
+  const diffMs = end - start;
+  if (!Number.isFinite(diffMs) || diffMs < 0 || diffMs >= 24 * 60 * 60 * 1000) return "—";
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const totalHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

@@ -181,6 +181,62 @@ function Detail({ label, value, hint, wide = false }: { label: string; value: st
   return <div className={cn(wide && "col-span-2")}><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-950">{value}</p><p className="mt-0.5 text-[11px] text-slate-500">{hint}</p></div>
 }
 
+function AdminMapView({ grouped, dailyCounts, selectedDate, setSelectedDate, dateRange }: { grouped: Record<string, any[]>; dailyCounts: Record<string, Record<string, number>>; selectedDate: Date; setSelectedDate: (date: Date) => void; dateRange: { from: Date; to: Date } }) {
+  const month = moment(selectedDate)
+  const start = month.clone().startOf("month").startOf("isoWeek")
+  const end = month.clone().endOf("month").endOf("isoWeek")
+  const days: moment.Moment[] = []
+  for (let day = start.clone(); day.isSameOrBefore(end, "day"); day.add(1, "day")) days.push(day.clone())
+  const selectedKey = month.format("YYYY-MM-DD")
+  const selectedRows = grouped[selectedKey] || []
+  const mappedRows = selectedRows.filter(row => Number.isFinite(Number(row?.checkInLocation?.latitude)) && Number.isFinite(Number(row?.checkInLocation?.longitude)))
+  const moveMonth = (offset: number) => {
+    const next = month.clone().add(offset, "month").startOf("month")
+    if (next.isBefore(moment(dateRange.from), "month") || next.isAfter(moment(dateRange.to), "month")) return
+    setSelectedDate(next.toDate())
+  }
+
+  return <div className="grid gap-5 lg:grid-cols-2">
+    <Card data-admin-attendance-calendar className="overflow-hidden">
+      <CardHeader className="border-b px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div><CardTitle className="text-base">Daily attendance</CardTitle><CardDescription>Select a day to view employee locations.</CardDescription></div>
+          <div className="flex items-center gap-2"><Button variant="outline" size="icon" className="h-8 w-8" aria-label="Previous attendance month" onClick={() => moveMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button><span className="min-w-28 text-center text-sm font-semibold">{month.format("MMMM YYYY")}</span><Button variant="outline" size="icon" className="h-8 w-8" aria-label="Next attendance month" onClick={() => moveMonth(1)}><ChevronRight className="h-4 w-4" /></Button></div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="grid grid-cols-7 border-b bg-slate-50">{WEEKDAYS.map(day => <div key={day} className="px-1 py-2 text-center text-[10px] font-semibold text-slate-500">{day}</div>)}</div>
+        <div className="grid grid-cols-7 gap-px bg-slate-200">{days.map(day => {
+          const key = day.format("YYYY-MM-DD")
+          const rows = grouped[key] || []
+          const counts = dailyCounts[key] || {}
+          const inMonth = day.month() === month.month()
+          const inRange = day.isBetween(moment(dateRange.from).startOf("day"), moment(dateRange.to).endOf("day"), undefined, "[]")
+          return <button key={key} type="button" disabled={!inRange} onClick={() => setSelectedDate(day.toDate())} aria-label={`${day.format("MMMM D, YYYY")}, ${rows.length} attendance records`}
+            className={cn("min-h-24 bg-white p-1.5 text-left transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300", !inMonth && "bg-slate-50 text-slate-400", key === selectedKey && "relative z-10 bg-blue-50 ring-2 ring-inset ring-blue-600")}>
+            <span className="text-xs font-semibold">{day.date()}</span>
+            {inMonth && Object.values(counts).some(count => count > 0) && <div className="mt-1 space-y-1">
+              {counts.present > 0 && <CountPill color="bg-emerald-500" label="Present" count={counts.present} />}
+              {counts.late > 0 && <CountPill color="bg-amber-500" label="Late" count={counts.late} />}
+              {counts.half_day > 0 && <CountPill color="bg-orange-500" label="Half day" count={counts.half_day} />}
+              {counts.absent > 0 && <CountPill color="bg-rose-500" label="Absent" count={counts.absent} />}
+            </div>}
+          </button>
+        })}</div>
+        <div className="flex flex-wrap gap-3 border-t px-4 py-3 text-[11px] text-slate-500">{[["bg-emerald-500", "Present"], ["bg-amber-500", "Late"], ["bg-orange-500", "Half day"], ["bg-rose-500", "Absent"]].map(([color, label]) => <span key={label} className="flex items-center gap-1.5"><i className={cn("h-2 w-2 rounded-full", color)} />{label}</span>)}</div>
+      </CardContent>
+    </Card>
+    <Card data-admin-attendance-map className="overflow-hidden">
+      <CardHeader className="border-b px-4 py-3"><CardTitle className="text-base">Employee locations</CardTitle><CardDescription>{month.format("dddd, DD MMM YYYY")} · {selectedRows.length} attendance record{selectedRows.length === 1 ? "" : "s"}</CardDescription></CardHeader>
+      <CardContent className="p-0"><div className="min-h-[520px] [&_.leaflet-container]:min-h-[520px]"><MapContainer codinateData={mappedRows} /></div></CardContent>
+    </Card>
+  </div>
+}
+
+function CountPill({ color, label, count }: { color: string; label: string; count: number }) {
+  return <span className="flex items-center justify-between gap-1 rounded bg-slate-50 px-1 py-0.5 text-[9px] font-medium text-slate-600"><span className="flex min-w-0 items-center gap-1"><i className={cn("h-1.5 w-1.5 shrink-0 rounded-full", color)} /><span className="truncate">{label}</span></span><b>{count}</b></span>
+}
+
 function AttendancePage() {
   const router = useRouter()
   const useCtx = useAttendancesPageContext as () => any
@@ -225,7 +281,7 @@ function AttendancePage() {
         {(isEmployee || queryParmas?.employee_id) ? <EmpTableCard isAdmin={isAdmin} attendanceHistory={attendanceHistory} isFetching={isFetching} isEmp={isEmployee} /> : <AdminTableCard isAdmin={isAdmin} isFetching={isFetching} attendanceHistoryGroupByDate={grouped} />}
       </CardContent></Card></TabsContent>
       <TabsContent value="calendar">
-        {isEmployee ? <EmployeeCalendarView /> : <Card><CardHeader><CardTitle>Employee attendance map</CardTitle><CardDescription>Select a date to review employee locations.</CardDescription></CardHeader><CardContent><Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} className="mb-4 rounded-md border" disabled={{ after: dateRange.to, before: dateRange.from }} /><MapContainer codinateData={grouped[moment(selectedDate).format("YYYY-MM-DD")]} /></CardContent></Card>}
+        {isEmployee ? <EmployeeCalendarView /> : <AdminMapView grouped={grouped} dailyCounts={attendanceData.dailyStatusCounts || {}} selectedDate={selectedDate} setSelectedDate={setSelectedDate} dateRange={dateRange} />}
       </TabsContent>
       <TabsContent value="analytics" className="grid gap-6 lg:grid-cols-2">
         <Card><CardHeader><CardTitle>Monthly Trends</CardTitle><CardDescription>Attendance and hours worked over time</CardDescription></CardHeader><CardContent className="space-y-3">{(monthlyTrends || []).map((week: any, index: number) => <div key={index} className="flex items-center justify-between rounded-lg bg-gray-50 p-3"><div><p className="font-medium">{week.week}</p><p className="text-sm text-gray-600">{week.totalHours}h worked</p></div><div className="text-right"><p className="font-medium">{week.attendanceRate}%</p><p className="text-sm text-gray-600">Attendance</p></div></div>)}</CardContent></Card>

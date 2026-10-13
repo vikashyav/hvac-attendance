@@ -14,8 +14,10 @@ import { getEmployeeDashboardStats } from "@/lib/api/dashboard-api";
 
 
 import { getAttendancePolicy } from "@/lib/api/settings-api";
+import { useUserFromStorage } from "@/hooks/user.context";
 
 export function useEmployeesDashboard() {
+    const { user } = useUserFromStorage();
     const { data: policyResponse, isError: policyError } = useQuery({ queryKey: ['attendance-policy'], queryFn: getAttendancePolicy, staleTime: 0 });
     const policy = policyResponse?.data?.data;
     const { toast } = useToast()
@@ -30,14 +32,10 @@ export function useEmployeesDashboard() {
     const notificationModal = useNotificationModalContext();
     console.log("iss", isOffline);
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
     const { data: todayCheckData, isSuccess: isFetchedTodayCheckIn, refetch, isFetching } = useQuery({
-        queryKey: { startOfDay, endOfDay }, // Include params in queryKey
+        queryKey: ['today-attendance', user?.id, user?.companyId],
         queryFn: getTodayCheckIn,
+        enabled: Boolean(user?.id),
         onSuccess: (res) => {
             // console.log(res);
 
@@ -209,7 +207,7 @@ export function useEmployeesDashboard() {
     }
 
     const isCheckedOut = todayCheckData?.data?.checkOutTime && true;
-    const workDuration = formatTimeDifference(checkInTime, todayCheckData?.data?.checkOutTime || new Date());
+    const workDuration = checkInTime ? formatTimeDifference(checkInTime, todayCheckData?.data?.checkOutTime || new Date()) : "—";
     let checkInTimeFormat_ = new Date(checkInTime);
     const checkInTimeLocalFormat = checkInTimeFormat_?.toLocaleString('en-US', {
         hour: 'numeric',
