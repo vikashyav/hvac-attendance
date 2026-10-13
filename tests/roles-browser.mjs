@@ -13,9 +13,17 @@ const permissions = ['settings.view', 'settings.manage', 'access.view', 'access.
 let taskRows = [], taskWrites = [], taskSaveStatus = 200, taskRevoked = false;
 let holdProjectPermissions = false, heldPermissionRequests = [];
 let projectRows = [], projectWrites = [], projectSaveStatus = 200, projectRevoked = false, projectPermissionsFail = false;
+let failCompanies = false, emptyCompanies = false, roleSaveStatus = 201, roleRevoked = false;
+const accessRequests = [];
+let companyRows = [{ id: 'company-a', name: 'Fixture Company A', slug: 'fixture-a', industry: 'IT', isActive: true }, { id: 'company-b', name: 'Fixture Company B', slug: 'fixture-b', industry: 'HVAC', isActive: true }];
+let companyAdmins = [{ id: 'company-admin-1', companyId: 'company-a', firstName: 'Company', lastName: 'Admin', email: 'company-admin@example.test', isActive: true }];
+const attendanceRows = [
+  { id: 'attendance-1', employeeId: 'employee-fixture', attendanceDate: '2026-10-12', checkInTime: '2026-10-12T09:00:00.000Z', checkOutTime: '2026-10-12T17:45:00.000Z', checkInLocation: { address: 'Fixture office' }, workHours: 8.75, overtimeHours: 0.75, status: 'present', isLate: false },
+  { id: 'attendance-2', employeeId: 'employee-fixture', attendanceDate: '2026-10-13', checkInTime: '2026-10-13T09:20:00.000Z', checkOutTime: '2026-10-13T17:00:00.000Z', checkInLocation: { latitude: 28.6139, longitude: 77.209 }, workHours: 7.67, overtimeHours: 0, status: 'late', isLate: true },
+];
 let roles, assignments, leaveStatus = 'PENDING', lastDecision;
 function reset() {
-  roles = [{ id: 'role-admin', name: 'Administrator', code: 'administrator', permissions }];
+  roles = [{ id: 'role-admin', name: 'Administrator', code: 'administrator', permissions }, { id: 'role-none', name: 'No access', code: 'no-access', permissions: [] }];
   assignments = [];
 }
 reset();
@@ -51,10 +59,22 @@ async function intercept(event) {
     calls.set(path, (calls.get(path) || 0) + 1);
     const headers = event.request.headers;
     const companyId = headers['X-Company-Id'] || headers['x-company-id'] || 'company-a';
+    if (path.includes('/access/')) accessRequests.push({ path, companyId, method: event.request.method });
+    if (path.endsWith('/companies/admins')) {
+      if (event.request.method === 'POST') { const row = { id: `company-admin-${companyAdmins.length + 1}`, isActive: true, ...JSON.parse(event.request.postData) }; companyAdmins.push(row); return fulfill(event, 201, { data: row }); }
+      return fulfill(event, 200, { data: companyAdmins });
+    }
+    if (path.endsWith('/companies')) {
+      if (event.request.method === 'POST') { const row = { id: `company-${companyRows.length + 1}`, isActive: true, ...JSON.parse(event.request.postData) }; companyRows.push(row); return fulfill(event, 201, { data: row }); }
+      return fulfill(event, failCompanies ? 400 : 200, failCompanies ? { error: 'Fixture company failure' } : { data: emptyCompanies ? [] : companyRows });
+    }
+    if (path.endsWith('/access/me') && roleRevoked) return fulfill(event, 200, { data: { companyId, companyName: 'Fixture Company A', permissions: ['access.view'] } });
     if (path.endsWith('/access/me') && holdProjectPermissions) { heldPermissionRequests.push(event); return; }
     if (path.endsWith('/access/me') && projectPermissionsFail) return fulfill(event, 400, { error: 'Fixture permission failure' });
     if (path.endsWith('/access/me')) return fulfill(event, 200, { data: { companyId, companyName: companyId === 'company-b' ? 'Fixture Company B' : 'Fixture Company A', permissions: scenario === 'task-manager' ? (taskRevoked ? [] : ['task.manage']) : scenario === 'task-viewer' ? [] : scenario === 'project-manager' ? (projectRevoked ? [] : ['project.manage']) : scenario === 'project-viewer' ? [] : scenario === 'applicant' ? [] : scenario === 'approver' ? ['leave.approve'] : scenario === 'denied' ? [] : scenario === 'viewer' ? ['access.view', 'settings.view'] : permissions } });
     if (path.endsWith('/settings')) return fulfill(event, 200, { data: { companyId, revision: 1, settings: { company: { name: 'Fixture Company', industry: 'IT', email: '', phone: '', address: '' }, attendance: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 0, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8, allowNonWorkingDays: false, allowEarlyCheckout: true, requirePhoto: false, locationEnabled: false, geofencingEnabled: false, geofenceRadius: 100 } } } });
+    if (path.endsWith('/settings/attendance-policy')) return fulfill(event, 200, { data: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 10, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8 } });
+    if (path.endsWith('/attendance')) return fulfill(event, 200, { data: attendanceRows, daysPresent: 2, totalWorkingDays: 22, attendanceRate: '9.1', punctualityRate: '4.5', totalHours: 16.42, totalOvertimeHours: 0.75 });
     if (path.endsWith('/leave-request/leave-fixture/admin')) {
       lastDecision = JSON.parse(event.request.postData); leaveStatus = lastDecision.status;
       return fulfill(event, 200, {});
@@ -87,6 +107,7 @@ async function intercept(event) {
     if (path.endsWith('/access/permissions')) return fulfill(event, 200, { data: permissions });
     if (path.endsWith('/access/roles')) {
       if (event.request.method === 'POST') {
+        if (roleSaveStatus !== 201) return fulfill(event, roleSaveStatus, { error: 'Fixture role save denied' });
         const role = { id: 'role-custom', ...JSON.parse(event.request.postData) };
         roles.push(role); return fulfill(event, 201, { data: role });
       }
@@ -98,7 +119,7 @@ async function intercept(event) {
       return fulfill(event, 201, { data: { id: 'assignment-1' } });
     }
     if (path.endsWith('/access/assignments/assignment-1')) { assignments = []; return fulfill(event, 204, null); }
-    if (path.endsWith('/access/memberships')) return fulfill(event, 200, { data: scenario === 'empty' ? [] : [{ id: 'member-1', isActive: true, user: { id: 'staff-1', firstName: 'Staff', lastName: 'Fixture', email: 'staff@example.test', isActive: true }, roles: assignments, permissions: assignments.flatMap(item => roles.find(role => role.id === item.roleId).permissions) }], meta: { pages: 1, total: scenario === 'empty' ? 0 : 1 } });
+    if (path.endsWith('/access/memberships')) return fulfill(event, 200, { data: scenario === 'empty' ? [] : [{ id: 'member-1', isActive: true, user: { id: 'staff-1', firstName: companyId === 'company-b' ? 'Other' : 'Staff', lastName: 'Fixture', email: 'staff@example.test', isActive: true }, roles: assignments, permissions: assignments.flatMap(item => roles.find(role => role.id === item.roleId).permissions) }], meta: { pages: 1, total: scenario === 'empty' ? 0 : 1 } });
     return fulfill(event, 404, { error: 'Unmocked API route' });
   }
   if (url.origin === site || url.protocol === 'data:' || url.protocol === 'about:') return send('Fetch.continueRequest', { requestId: event.requestId });
@@ -109,41 +130,104 @@ ws.addEventListener('message', event => {
   if (message.id) {
     const request = pending.get(message.id); pending.delete(message.id);
     if (message.error) request?.reject(Error(message.error.message)); else request?.resolve(message.result);
-  } else if (message.method === 'Fetch.requestPaused') intercept(message.params).catch(error => errors.push(error.message));
+  } else if (message.method === 'Fetch.requestPaused') intercept(message.params).catch(error => {
+    // A request can disappear between Fetch.requestPaused and fulfillment when
+    // company selection replaces the URL. Chrome reports that navigation race
+    // as Invalid InterceptionId; every other interception failure stays fatal.
+    if (error.message !== 'Invalid InterceptionId.') errors.push(error.message);
+  });
 });
 await send('Page.enable'); await send('Network.enable');
 await send('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
-async function navigate(next, query = '', path = '/admin/roles') {
+async function navigate(next, query = '', path = '/admin/roles', selectCompany = true) {
   scenario = next; calls.clear();
   if (sourceId) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: sourceId });
-  const user = { id: `browser-${next}`, role: ['approver', 'applicant', 'project-manager', 'task-manager'].includes(next) ? 'employee' : query ? 'superAdmin' : 'admin', companyId: 'company-a', firstName: 'Browser', lastName: 'Fixture', email: 'browser@example.test' };
+  const user = { id: `browser-${next}`, role: ['approver', 'applicant', 'project-manager', 'task-manager'].includes(next) ? 'employee' : query || next === 'platform' ? 'superAdmin' : 'admin', companyId: 'company-a', firstName: 'Browser', lastName: 'Fixture', email: 'browser@example.test' };
   const token = { access_token: 'fixture-only' };
   const source = `localStorage.clear(); localStorage.setItem('user', btoa(${JSON.stringify(JSON.stringify(user))})); localStorage.setItem('token', btoa(${JSON.stringify(JSON.stringify(token))}));`;
   sourceId = (await send('Page.addScriptToEvaluateOnNewDocument', { source })).identifier;
   await send('Network.setCookies', { cookies: [{ name: 'token', value: encodeURIComponent(JSON.stringify(token)), url: site }, { name: 'userInfo', value: encodeURIComponent(JSON.stringify(user)), url: site }] });
   await send('Page.navigate', { url: site + path + query });
-  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/settings') ? 'System Settings' : 'Roles & permissions')})`, next);
+  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/employee/attendance') ? 'My Attendance' : path.endsWith('/settings') ? 'System Settings' : path.endsWith('/companies') ? 'Companies & Admins' : 'Roles & permissions')})`, next);
+  if (path === '/admin/roles' && !query && next !== 'denied' && selectCompany) {
+    await waitFor("!!document.querySelector('#roles-company option[value=company-a]')", 'available company');
+    await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='company-a';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await waitFor("location.search.includes('companyId=company-a')", 'company selected');
+  }
 }
 const clickText = text => evaluate(`[...document.querySelectorAll('button')].find(b=>b.getClientRects().length && b.textContent.trim()===${JSON.stringify(text)}).click()`);
 const setInput = (selector, value) => evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(node,${JSON.stringify(value)}); node.dispatchEvent(new Event('input',{bubbles:true}));})()`);
 try {
-  await navigate('admin');
+  await navigate('admin', '', '/admin/roles', false);
+  await waitFor("!!document.querySelector('#roles-company option[value=company-a]')", 'own company available');
+  assert.equal(calls.has('/api/v1/access/memberships'), false, 'No member request before selecting a company');
+  assert.equal(calls.has('/api/v1/companies'), false, 'Company users do not request the platform company list');
+  assert.equal(await evaluate("document.querySelector('#roles-company').options.length"), 2, 'Only own company is selectable');
+  await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='company-a';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
   await waitFor("document.body.innerText.includes('Staff Fixture')", 'members');
   assert.equal(await evaluate("document.querySelectorAll('nav a[href=\"/admin/roles\"]').length"), 1, 'Desktop sidebar renders once');
   assert.equal(await evaluate("[...document.querySelectorAll('h1')].filter(h=>h.textContent==='Roles & permissions').length"), 1, 'Page should mount once');
+  await setInput('[aria-label="Search members on this page"]', 'missing-person');
+  await waitFor("document.body.innerText.includes('No matching members on this page')", 'member search empty');
+  await setInput('[aria-label="Search members on this page"]', 'staff@example.test');
+  await waitFor("document.body.innerText.includes('Staff Fixture')", 'member search match');
+  await setInput('[aria-label="Search members on this page"]', '');
+  assert.equal(await evaluate("!!document.querySelector('#role-name')"), false, 'Role form starts closed');
+  await clickText('Create company role');
+  await waitFor("!!document.querySelector('[role=dialog] #role-name')", 'role drawer opens');
+  await setInput('#role-name', 'Discarded draft');
+  await clickText('Cancel');
+  await waitFor("!document.querySelector('#role-name')", 'role drawer cancels');
+  await clickText('Create company role');
+  await waitFor("!!document.querySelector('#role-name')", 'role drawer reopens');
+  assert.equal(await evaluate("document.querySelector('#role-name').value"), '', 'Cancel clears draft');
   await setInput('#role-name', 'Settings Reviewer'); await setInput('#role-code', 'settings-reviewer');
-  await evaluate("[...document.querySelectorAll('label')].find(l=>l.textContent==='settings.view').querySelector('input').click()");
+  await evaluate("[...document.querySelectorAll('label')].find(l=>l.textContent.endsWith('settings.view')).querySelector('input').click()");
+  roleSaveStatus = 403;
   await clickText('Create role');
-  await waitFor("document.body.innerText.includes('Role created.') && !!document.querySelector('#assign-member-1 option[value=role-custom]') && !document.querySelector('#assign-member-1').disabled", 'create success');
+  await waitFor("document.querySelector('[role=dialog]').innerText.includes('Fixture role save denied')", 'role failure inside drawer');
+  assert.equal(await evaluate("document.querySelector('#role-name').value"), 'Settings Reviewer', 'Failed save keeps draft');
+  roleSaveStatus = 201;
+  await clickText('Create role');
+  await waitFor("document.body.innerText.includes('Role created.') && !document.querySelector('#role-name')", 'create success');
+  await evaluate("document.querySelector('button[aria-label=\"Show company roles\"]').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))");
+  await waitFor("!!document.querySelector('#role-permission-preview')", 'company roles tab');
+  await evaluate("document.querySelector('input[aria-label=\"Preview Settings Reviewer\"]').click()");
+  await waitFor("document.querySelector('#role-permission-preview h3').textContent === 'Settings Reviewer'", 'selected role preview');
+  assert.equal(await evaluate("document.querySelector('#role-permission-preview').innerText.includes('settings.manage')"), false, 'Preview only shows selected role grants');
+  await evaluate("document.querySelector('input[aria-label=\"Preview No access\"]').click()");
+  await waitFor("document.querySelector('#role-permission-preview').innerText.includes('No permissions assigned')", 'role without permissions');
+  await setInput('[aria-label="Search roles on this page"]', 'missing-role');
+  await waitFor("document.body.innerText.includes('No matching roles on this page.')", 'role search empty');
+  assert.equal(await evaluate("!!document.querySelector('#role-permission-preview h3')"), false, 'Search empty hides old details');
+  await clickText('Clear role search');
+  await setInput('[aria-label="Search roles on this page"]', 'settings-reviewer');
+  await waitFor("document.querySelector('#role-permission-preview h3')?.textContent === 'Settings Reviewer'", 'role search by code');
+  await setInput('[aria-label="Search roles on this page"]', '');
+  await evaluate("document.querySelector('input[aria-label=\"Preview Administrator\"]').click(); document.querySelector('input[aria-label=\"Preview Administrator\"]').focus()");
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowDown', code: 'ArrowDown', windowsVirtualKeyCode: 40 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowDown', code: 'ArrowDown', windowsVirtualKeyCode: 40 });
+  await waitFor("document.querySelector('#role-permission-preview h3')?.textContent === 'No access'", 'keyboard role selection');
+  await evaluate("document.querySelector('button[aria-label=\"Show company members\"]').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))");
+  await waitFor("!!document.querySelector('#assign-member-1 option[value=role-custom]') && !document.querySelector('#assign-member-1').disabled", 'company members tab');
   await evaluate("(()=>{const s=document.querySelector('#assign-member-1');s.value='role-custom';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
-  await waitFor("[...document.querySelectorAll('button')].some(b=>b.textContent==='Assign role' && !b.disabled)", 'assignment ready');
-  await clickText('Assign role'); await waitFor("document.body.innerText.includes('Role assigned.')", 'assign success');
-  await waitFor("document.body.innerText.includes('Effective permissions: settings.view')", 'effective permissions');
-  await clickText('Revoke'); await waitFor("!!document.querySelector('[role=alertdialog]')", 'confirmation');
+  await waitFor("[...document.querySelectorAll('button')].some(b=>b.textContent==='Assign' && !b.disabled)", 'assignment ready');
+  await clickText('Assign'); await waitFor("document.body.innerText.includes('Role assigned.')", 'assign success');
+  await waitFor("document.body.innerText.includes('1 effective permission')", 'effective permissions');
+  await evaluate("document.querySelector('button[aria-label^=\"Revoke Settings Reviewer\"]').click()"); await waitFor("!!document.querySelector('[role=alertdialog]')", 'confirmation');
   await clickText('Cancel'); assert.equal(assignments.length, 1);
-  await clickText('Revoke'); await clickText('Confirm revoke');
+  await evaluate("document.querySelector('button[aria-label^=\"Revoke Settings Reviewer\"]').click()"); await clickText('Confirm revoke');
   await waitFor("document.body.innerText.includes('Role revoked.')", 'revoke success');
   assert.equal(assignments.length, 0);
+  await clickText('Create company role');
+  await waitFor("!!document.querySelector('#role-name')", 'drawer before revocation');
+  roleRevoked = true;
+  await evaluate("window.dispatchEvent(new Event('visibilitychange'))");
+  await send('Emulation.setFocusEmulationEnabled', { enabled: false });
+  await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+  await evaluate("document.dispatchEvent(new Event('visibilitychange'))");
+  await waitFor("!document.querySelector('#role-name') && document.body.innerText.includes('read-only access')", 'role drawer closes on revocation');
+  roleRevoked = false;
   await navigate('viewer'); await waitFor("document.body.innerText.includes('read-only access')", 'read only');
   assert.equal(await evaluate("!!document.querySelector('#role-name')"), false);
   await navigate('viewer', '', '/admin/settings');
@@ -155,6 +239,7 @@ try {
   await navigate('denied'); assert.equal(calls.has('/api/v1/access/memberships'), false);
   await navigate('empty'); await waitFor("document.body.innerText.includes('No members on this page.')", 'empty');
   failLists = true; await navigate('admin'); await waitFor("document.body.innerText.includes('Fixture list failure')", 'error');
+  assert.equal(await evaluate("document.body.innerText.includes('No matching members')"), false, 'Failed member requests are not search-empty results');
   failLists = false; await clickText('Retry lists'); await waitFor("document.body.innerText.includes('Staff Fixture')", 'retry');
   await navigate('approver', '', '/employee/leave-request');
   await waitFor("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Approve' && !b.disabled)", 'custom approver');
@@ -168,6 +253,13 @@ try {
   assert.equal(await evaluate("!!document.querySelector('nav a[href=\"/admin/projects-sites\"]')"), false, 'Ordinary employee has no project-management link');
   assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Approve')"), false);
   assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Delete')"), false, 'No fake delete button in leave request view');
+  await navigate('applicant', '', '/employee/attendance');
+  await waitFor("document.body.innerText.includes('October 2026') && document.body.innerText.includes('2 days present')", 'attendance calendar');
+  assert.equal(await evaluate("document.querySelector('nav a[href=\"/employee/attendance\"]').textContent.includes('My Attendance')"), true, 'Attendance menu uses the new name');
+  await evaluate("document.querySelector('button[aria-label^=\"October 12, 2026\"]').click()");
+  await waitFor("document.body.innerText.includes('Fixture office') && document.body.innerText.includes('8h 45m')", 'selected attendance details');
+  await evaluate("document.querySelector('button[aria-label^=\"October 13, 2026\"]').click()");
+  await waitFor("document.body.innerText.includes('Late arrival') && document.body.innerText.includes('28.6139, 77.209')", 'late attendance details');
   projectRows = [{ id: 'project-fixture', name: 'Fixture Site', address: 'Fixture address', clientName: 'Fixture Client', status: 'active', startDate: '2026-10-01', endDate: '2026-10-30', latitude: '20', longitude: '70', clientContact: {} }];
   holdProjectPermissions = true;
   await navigate('project-manager', '', '/admin/projects-sites');
@@ -297,9 +389,57 @@ try {
   await evaluate("document.querySelector('[role=dialog] nav a[href=\"/admin/projects-sites\"]').click()");
   await waitFor("location.pathname === '/admin/projects-sites' && !document.querySelector('[role=dialog]')", 'mobile link navigates and closes drawer');
   await navigate('admin', '?companyId=company-b');
-  await waitFor("document.body.innerText.includes('Company: Fixture Company B') && document.body.innerText.includes('Staff Fixture')", 'company selection/mobile');
+  await waitFor("document.body.innerText.includes('Fixture Company B') && document.body.innerText.includes('Other Fixture')", 'company selection/mobile');
   assert.equal(await evaluate("document.querySelectorAll('h1').length"), 2); // Mobile brand heading plus page heading.
   assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true, 'No horizontal page overflow');
+  await clickText('Create company role');
+  await waitFor("!!document.querySelector('#role-name')", 'mobile role drawer');
+  await waitFor("(()=>{const r=document.querySelector('[role=dialog]').getBoundingClientRect();return r.left>=0 && r.right<=window.innerWidth;})()", 'role drawer fits mobile');
+  assert.equal(await evaluate("document.querySelector('[role=dialog]').scrollWidth <= window.innerWidth"), true, 'No drawer overflow');
+  await clickText('Cancel');
+  await waitFor("!document.querySelector('#role-name')", 'mobile drawer cancelled');
+  await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='company-a';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await waitFor("document.body.innerText.includes('Staff Fixture') && !document.body.innerText.includes('Other Fixture')", 'switch company replaces members');
+  assert.equal(accessRequests.filter(request => request.path.endsWith('/access/memberships')).at(-1).companyId, 'company-a');
+  await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await waitFor("document.body.innerText.includes('Select a company above') && !document.body.innerText.includes('Staff Fixture')", 'clear company hides members');
+  await navigate('platform', '', '/admin/companies', false);
+  await waitFor("document.body.innerText.includes('Fixture Company A') && document.body.innerText.includes('Fixture Company B')", 'companies page');
+  assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true, 'Companies page fits mobile');
+  await setInput('[aria-label="Search companies"]', 'missing-company');
+  await waitFor("document.body.innerText.includes('No matching companies')", 'company search empty');
+  await setInput('[aria-label="Search companies"]', 'fixture-b');
+  await waitFor("document.body.innerText.includes('Fixture Company B') && !document.body.innerText.includes('Fixture Company A')", 'company search by code');
+  await setInput('[aria-label="Search companies"]', '');
+  await clickText('Add company'); await waitFor("!!document.querySelector('#company-name')", 'company drawer');
+  await waitFor("(()=>{const r=document.querySelector('[role=dialog]').getBoundingClientRect();return r.left>=0 && r.right<=window.innerWidth;})()", 'company drawer fits mobile');
+  await setInput('#company-name', 'New Fixture Company'); await setInput('#company-slug', 'new-fixture'); await setInput('#company-industry', 'Consulting');
+  await clickText('Create company');
+  await waitFor("document.body.innerText.includes('Company created with its own attendance settings.') && document.body.innerText.includes('New Fixture Company')", 'company created');
+  await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Administrators')).dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))");
+  await waitFor("document.body.innerText.includes('Company Admin')", 'administrators tab');
+  await setInput('[aria-label="Search administrators"]', 'company-admin@example.test');
+  await waitFor("document.body.innerText.includes('Company Admin')", 'administrator search');
+  await setInput('[aria-label="Search administrators"]', '');
+  await clickText('Add admin'); await waitFor("!!document.querySelector('#admin-company')", 'admin drawer');
+  await evaluate("(()=>{const s=document.querySelector('#admin-company');s.value='company-3';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await setInput('#admin-firstName', 'New'); await setInput('#admin-lastName', 'Administrator'); await setInput('#admin-email', 'new-admin@example.test'); await setInput('#admin-password', 'secure-password-123');
+  await clickText('Create administrator');
+  await waitFor("document.body.innerText.includes('Administrator account created.') && document.body.innerText.includes('New Administrator')", 'administrator created');
+  failCompanies = true;
+  await navigate('platform', '', '/admin/roles', false);
+  await waitFor("document.body.innerText.includes('Fixture company failure')", 'company list failure');
+  assert.equal(calls.has('/api/v1/access/memberships'), false);
+  failCompanies = false;
+  await clickText('Retry companies');
+  await waitFor("!!document.querySelector('#roles-company option[value=company-b]')", 'company list retry');
+  emptyCompanies = true;
+  await navigate('platform', '', '/admin/roles', false);
+  await waitFor("document.body.innerText.includes('No available companies.')", 'empty company list');
+  emptyCompanies = false;
+  await navigate('platform', '?companyId=unavailable', '/admin/roles', false);
+  await waitFor("document.body.innerText.includes('This company is unavailable')", 'invalid company link');
+  assert.equal(calls.has('/api/v1/access/memberships'), false);
   assert.deepEqual(errors, []);
   console.log('Browser checks passed: create, assign, effective permissions, cancel/revoke, read-only, denied, empty, retry, company selection, mobile, custom leave approver/applicant, project read-only/granted/revoked access, save failure/retry, create/update, permission retry, empty lists; task permissions, direct details, create/update/subtasks, parent preservation, retries, revocation, missing/empty tasks mobile cancellation, grant-aware navigation, single sidebars, nested active links and mobile navigation dismissal.');
 } finally {

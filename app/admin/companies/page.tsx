@@ -1,17 +1,22 @@
 "use client"
+
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
+import { Building2, CheckCircle2, ExternalLink, Mail, Plus, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
 import { useUserFromStorage } from '@/hooks/user.context'
 import { getCompanies, createCompany, getCompanyAdmins, createCompanyAdmin } from '@/lib/api/company-api'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-type Company = { id: string; name: string; slug: string; industry: string }
+type Company = { id: string; name: string; slug: string; industry: string; isActive?: boolean }
 type Admin = { id: string; email: string; firstName: string; lastName: string; companyId: string; isActive: boolean }
-const message = (error: any) => error?.response?.data?.error || error?.message || 'Request failed'
+const message = (error: any) => typeof error?.response?.data?.error === 'string' ? error.response.data.error : error?.message || 'Unable to complete the request. Please try again.'
+
 export default function CompaniesPage() {
   const { user } = useUserFromStorage()
   const enabled = user.role === 'superAdmin'
@@ -21,38 +26,60 @@ export default function CompaniesPage() {
   const [company, setCompany] = useState({ name: '', slug: '', industry: '' })
   const [admin, setAdmin] = useState({ companyId: '', email: '', firstName: '', lastName: '', password: '' })
   const [success, setSuccess] = useState('')
+  const [activeTab, setActiveTab] = useState('companies')
+  const [companyOpen, setCompanyOpen] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const companyMutation = useMutation({ mutationFn: createCompany, onSuccess: async () => {
-    setCompany({ name: '', slug: '', industry: '' }); setSuccess('Company created with its own attendance settings.'); await client.invalidateQueries({ queryKey: ['companies'] })
+    setCompany({ name: '', slug: '', industry: '' }); setCompanyOpen(false); setSuccess('Company created with its own attendance settings.'); await client.invalidateQueries({ queryKey: ['companies'] })
   } })
   const adminMutation = useMutation({ mutationFn: createCompanyAdmin, onSuccess: async () => {
-    setAdmin({ companyId: '', email: '', firstName: '', lastName: '', password: '' }); setSuccess('Admin account created. Share the password securely with the administrator.'); await client.invalidateQueries({ queryKey: ['company-admins'] })
+    setAdmin({ companyId: '', email: '', firstName: '', lastName: '', password: '' }); setAdminOpen(false); setSuccess('Administrator account created. Share the password securely.'); await client.invalidateQueries({ queryKey: ['company-admins'] })
   } })
   if (!enabled) return <div className="p-6">Super-admin access is required.</div>
   const rows: Company[] = companies.data?.data?.data || []
   const accounts: Admin[] = admins.data?.data?.data || []
-  return <div className="p-4 md:p-6 space-y-6">
-    <div><h1 className="text-3xl font-bold">Companies & Admins</h1><p className="text-muted-foreground">Create companies and administrators. Each company has its own attendance settings.</p></div>
-    {success && <p role="status" className="text-green-700">{success}</p>}
-    {(companies.isError || admins.isError) && <p role="alert">{message(companies.error || admins.error)}</p>}
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card><CardHeader><CardTitle>Create company</CardTitle></CardHeader><CardContent>
-        <form className="space-y-4" onSubmit={(e: FormEvent) => { e.preventDefault(); setSuccess(''); companyMutation.mutate(company) }}>
-          {([['name','Company name'],['slug','Company code'],['industry','Industry']] as const).map(([key,label]) => <div className="space-y-2" key={key}><Label htmlFor={`company-${key}`}>{label}</Label><Input id={`company-${key}`} required maxLength={key === 'slug' ? 100 : 200} pattern={key === 'slug' ? '[a-z0-9]+(-[a-z0-9]+)*' : undefined} value={company[key]} onChange={e => setCompany({ ...company, [key]: e.target.value })} /></div>)}
-          <p className="text-sm text-muted-foreground">Use a unique lowercase code, such as thermopharm or acme-it.</p>
-          {companyMutation.isError && <p role="alert">{message(companyMutation.error)}</p>}
-          <Button disabled={companyMutation.isPending}>Create company</Button>
-        </form>
-      </CardContent></Card>
-      <Card><CardHeader><CardTitle>Create company admin</CardTitle></CardHeader><CardContent>
-        <form className="space-y-4" onSubmit={(e: FormEvent) => { e.preventDefault(); setSuccess(''); adminMutation.mutate(admin) }}>
-          <div className="space-y-2"><Label htmlFor="admin-company">Company</Label><select id="admin-company" className="w-full border rounded-md p-2 bg-background" required value={admin.companyId} onChange={e => setAdmin({ ...admin, companyId: e.target.value })}><option value="">Select company</option>{rows.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>
-          {([['firstName','First name'],['lastName','Last name'],['email','Login email'],['password','Initial password']] as const).map(([key,label]) => <div className="space-y-2" key={key}><Label htmlFor={`admin-${key}`}>{label}</Label><Input id={`admin-${key}`} type={key === 'password' ? 'password' : key === 'email' ? 'email' : 'text'} minLength={key === 'password' ? 12 : key === 'email' ? undefined : 2} maxLength={key === 'password' ? 72 : key === 'email' ? 254 : 50} autoComplete={key === 'password' ? 'new-password' : 'off'} required value={admin[key]} onChange={e => setAdmin({ ...admin, [key]: e.target.value })} /></div>)}
-          {adminMutation.isError && <p role="alert">{message(adminMutation.error)}</p>}
-          <Button disabled={adminMutation.isPending || !rows.length}>Create admin</Button>
-        </form>
-      </CardContent></Card>
+  const term = search.trim().toLowerCase()
+  const visibleCompanies = rows.filter(row => `${row.name} ${row.slug} ${row.industry}`.toLowerCase().includes(term))
+  const visibleAdmins = accounts.filter(row => `${row.firstName} ${row.lastName} ${row.email} ${rows.find(company => company.id === row.companyId)?.name || ''}`.toLowerCase().includes(term))
+  const activeCompanies = rows.filter(row => row.isActive !== false).length
+  const activeAdmins = accounts.filter(row => row.isActive).length
+  const closeCompany = () => { if (!companyMutation.isPending) { setCompanyOpen(false); companyMutation.reset(); setCompany({ name: '', slug: '', industry: '' }) } }
+  const closeAdmin = () => { if (!adminMutation.isPending) { setAdminOpen(false); adminMutation.reset(); setAdmin({ companyId: '', email: '', firstName: '', lastName: '', password: '' }) } }
+
+  return <div className="mx-auto max-w-7xl space-y-4">
+    <header className="sticky top-0 z-30 flex flex-col justify-between gap-2 border-b bg-background py-2 sm:flex-row sm:items-center">
+      <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Companies & Admins</h1>
+      <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setSuccess(''); companyMutation.reset(); setCompanyOpen(true) }}><Plus className="mr-2 h-4 w-4" aria-hidden="true" />Add company</Button><Button size="sm" onClick={() => { setSuccess(''); adminMutation.reset(); setAdminOpen(true) }} disabled={!rows.length}><UserCog className="mr-2 h-4 w-4" aria-hidden="true" />Add admin</Button></div>
+    </header>
+
+    <div className="grid gap-3 sm:grid-cols-3">
+      {[{ label: 'Companies', value: companies.isSuccess ? rows.length : '—', hint: `${activeCompanies} active`, icon: Building2 }, { label: 'Administrators', value: admins.isSuccess ? accounts.length : '—', hint: `${activeAdmins} active`, icon: UserCog }, { label: 'Managed accounts', value: admins.isSuccess ? accounts.length : '—', hint: 'Company administrator logins', icon: ShieldCheck }].map(item => <div key={item.label} className="flex items-center gap-4 rounded-xl border bg-card p-4"><div className="rounded-xl bg-primary/10 p-3 text-primary"><item.icon className="h-5 w-5" aria-hidden="true" /></div><div><p className="text-sm text-muted-foreground">{item.label}</p><p className="text-2xl font-semibold tracking-tight">{item.value}</p><p className="text-xs text-muted-foreground">{item.hint}</p></div></div>)}
     </div>
-    <Card><CardHeader><CardTitle>Companies</CardTitle></CardHeader><CardContent className="space-y-3">{companies.isPending ? <p>Loading…</p> : rows.map(row => <div className="flex flex-wrap justify-between gap-3 border-b pb-3" key={row.id}><div><p className="font-medium">{row.name}</p><p className="text-sm text-muted-foreground">{row.industry} · {row.slug}</p></div><div className="flex gap-4"><Link className="underline" href={`/admin/roles?companyId=${encodeURIComponent(row.id)}`}>Manage roles</Link><Link className="underline" href={`/admin/settings?companyId=${encodeURIComponent(row.id)}`}>Manage settings</Link></div></div>)}</CardContent></Card>
-    <Card><CardHeader><CardTitle>Company administrators</CardTitle></CardHeader><CardContent className="space-y-3">{admins.isPending ? <p>Loading…</p> : accounts.map(row => <div key={row.id} className="border-b pb-3"><p className="font-medium">{row.firstName} {row.lastName}</p><p className="text-sm break-all">{row.email}</p><p className="text-sm text-muted-foreground">{rows.find(company => company.id === row.companyId)?.name || row.companyId} · {row.isActive ? 'Active' : 'Inactive'}</p></div>)}</CardContent></Card>
+
+    {success && <p role="status" className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"><CheckCircle2 className="h-4 w-4" aria-hidden="true" />{success}</p>}
+    {(companies.isError || admins.isError) && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3"><p role="alert" className="text-sm text-destructive">{message(companies.error || admins.error)}</p><Button variant="outline" size="sm" onClick={() => { companies.refetch(); admins.refetch() }}>Retry lists</Button></div>}
+
+    <Tabs value={activeTab} onValueChange={value => { setActiveTab(value); setSearch('') }} className="space-y-4">
+      <div className="flex flex-col gap-3 border-b sm:flex-row sm:items-end sm:justify-between">
+        <TabsList className="h-auto w-full justify-start gap-1 rounded-none bg-transparent p-0 sm:w-auto">
+          <TabsTrigger value="companies" className="flex-1 gap-2 rounded-none border-b-2 border-transparent px-4 py-3 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none sm:flex-none"><Building2 className="h-4 w-4" aria-hidden="true" />Companies <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{rows.length}</span></TabsTrigger>
+          <TabsTrigger value="admins" className="flex-1 gap-2 rounded-none border-b-2 border-transparent px-4 py-3 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none sm:flex-none"><Users className="h-4 w-4" aria-hidden="true" />Administrators <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{accounts.length}</span></TabsTrigger>
+        </TabsList>
+        <div className="relative mb-2 w-full sm:w-72"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" /><Input className="h-9 pl-9" aria-label={activeTab === 'companies' ? 'Search companies' : 'Search administrators'} placeholder={activeTab === 'companies' ? 'Search companies…' : 'Search administrators…'} value={search} onChange={event => setSearch(event.target.value)} /></div>
+      </div>
+
+      <TabsContent value="companies" className="mt-0"><Card className="overflow-hidden rounded-xl shadow-sm"><CardHeader className="border-b bg-muted/20 px-4 py-3 md:px-5"><CardTitle className="text-base">Companies</CardTitle><p className="text-xs text-muted-foreground">Open a company’s roles or attendance settings.</p></CardHeader><CardContent className="p-0">
+        {companies.isPending ? <p role="status" className="p-5">Loading companies…</p> : companies.isError ? <p className="p-5 text-sm text-muted-foreground">Companies could not be loaded.</p> : !visibleCompanies.length ? <div className="p-8 text-center"><Building2 className="mx-auto mb-2 h-7 w-7 text-muted-foreground" aria-hidden="true" /><p className="text-sm font-medium">{term ? 'No matching companies' : 'No companies yet'}</p><p className="mt-1 text-xs text-muted-foreground">{term ? 'Try another name, code, or industry.' : 'Add a company to begin managing its HRMS workspace.'}</p></div> : <div className="divide-y">{visibleCompanies.map(row => <section key={row.id} className="grid gap-3 px-4 py-3 transition-colors hover:bg-muted/20 md:grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_auto] md:items-center md:px-5"><div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Building2 className="h-4 w-4" aria-hidden="true" /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-sm font-semibold">{row.name}</h3><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${row.isActive === false ? 'bg-muted text-muted-foreground' : 'bg-emerald-50 text-emerald-700'}`}>{row.isActive === false ? 'Inactive' : 'Active'}</span></div><p className="truncate font-mono text-xs text-muted-foreground">{row.slug}</p></div></div><div><p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Industry</p><p className="mt-0.5 truncate text-sm">{row.industry || 'Not specified'}</p></div><div className="flex gap-2 md:justify-end"><Button asChild variant="outline" size="sm"><Link href={`/admin/roles?companyId=${encodeURIComponent(row.id)}`}>Roles <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" /></Link></Button><Button asChild variant="outline" size="sm"><Link href={`/admin/settings?companyId=${encodeURIComponent(row.id)}`}>Settings <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" /></Link></Button></div></section>)}</div>}
+      </CardContent></Card></TabsContent>
+
+      <TabsContent value="admins" className="mt-0"><Card className="overflow-hidden rounded-xl shadow-sm"><CardHeader className="border-b bg-muted/20 px-4 py-3 md:px-5"><CardTitle className="text-base">Company administrators</CardTitle><p className="text-xs text-muted-foreground">Administrators with access to company workspaces.</p></CardHeader><CardContent className="p-0">
+        {admins.isPending ? <p role="status" className="p-5">Loading administrators…</p> : admins.isError ? <p className="p-5 text-sm text-muted-foreground">Administrators could not be loaded.</p> : !visibleAdmins.length ? <div className="p-8 text-center"><UserCog className="mx-auto mb-2 h-7 w-7 text-muted-foreground" aria-hidden="true" /><p className="text-sm font-medium">{term ? 'No matching administrators' : 'No administrators yet'}</p><p className="mt-1 text-xs text-muted-foreground">{term ? 'Try another name, email, or company.' : 'Add an administrator for an existing company.'}</p></div> : <div className="divide-y">{visibleAdmins.map(row => { const company = rows.find(company => company.id === row.companyId); const name = `${row.firstName} ${row.lastName}`; return <section key={row.id} className="grid gap-3 px-4 py-3 transition-colors hover:bg-muted/20 md:grid-cols-[minmax(220px,1.2fr)_minmax(180px,1fr)_auto] md:items-center md:px-5"><div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary" aria-hidden="true">{`${row.firstName?.[0] || ''}${row.lastName?.[0] || ''}`}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-sm font-semibold">{name}</h3><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-muted text-muted-foreground'}`}>{row.isActive ? 'Active' : 'Inactive'}</span></div><p className="flex items-center gap-1 truncate text-xs text-muted-foreground"><Mail className="h-3 w-3 shrink-0" aria-hidden="true" />{row.email}</p></div></div><div><p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Company</p><p className="mt-0.5 truncate text-sm">{company?.name || 'Unavailable company'}</p></div>{company ? <Button asChild variant="outline" size="sm" className="justify-self-start md:justify-self-end"><Link href={`/admin/roles?companyId=${encodeURIComponent(company.id)}`}>Manage access <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" /></Link></Button> : <span className="text-xs text-muted-foreground md:text-right">No company access</span>}</section> })}</div>}
+      </CardContent></Card></TabsContent>
+    </Tabs>
+
+    <Sheet open={companyOpen} onOpenChange={open => open ? setCompanyOpen(true) : closeCompany()}><SheetContent side="right" className="z-[600] flex w-full flex-col p-0 sm:max-w-lg"><SheetHeader className="border-b px-6 py-6 pr-12 text-left"><SheetTitle>Create company</SheetTitle><SheetDescription>Create an isolated HRMS workspace with its own attendance settings.</SheetDescription></SheetHeader><div className="flex-1 overflow-y-auto p-6"><form className="space-y-5" onSubmit={(event: FormEvent) => { event.preventDefault(); setSuccess(''); companyMutation.mutate(company) }}><fieldset disabled={companyMutation.isPending} className="space-y-5">{([['name','Company name','e.g. Acme Technologies'],['slug','Company code','e.g. acme-technologies'],['industry','Industry','e.g. Information technology']] as const).map(([key,label,placeholder]) => <div className="space-y-2" key={key}><Label htmlFor={`company-${key}`}>{label}</Label><Input id={`company-${key}`} placeholder={placeholder} required maxLength={key === 'slug' ? 100 : 200} pattern={key === 'slug' ? '[a-z0-9]+(-[a-z0-9]+)*' : undefined} value={company[key]} onChange={event => setCompany({ ...company, [key]: event.target.value })} />{key === 'slug' && <p className="text-xs text-muted-foreground">Use a unique lowercase code with optional hyphens.</p>}</div>)}{companyMutation.isError && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{message(companyMutation.error)}</p>}<div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={closeCompany}>Cancel</Button><Button type="submit">{companyMutation.isPending ? 'Creating…' : 'Create company'}</Button></div></fieldset></form></div></SheetContent></Sheet>
+
+    <Sheet open={adminOpen} onOpenChange={open => open ? setAdminOpen(true) : closeAdmin()}><SheetContent side="right" className="z-[600] flex w-full flex-col p-0 sm:max-w-lg"><SheetHeader className="border-b px-6 py-6 pr-12 text-left"><SheetTitle>Create company administrator</SheetTitle><SheetDescription>Create a login and connect it to one company workspace.</SheetDescription></SheetHeader><div className="flex-1 overflow-y-auto p-6"><form className="space-y-5" onSubmit={(event: FormEvent) => { event.preventDefault(); setSuccess(''); adminMutation.mutate(admin) }}><fieldset disabled={adminMutation.isPending} className="space-y-5"><div className="space-y-2"><Label htmlFor="admin-company">Company</Label><select id="admin-company" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" required value={admin.companyId} onChange={event => setAdmin({ ...admin, companyId: event.target.value })}><option value="">Select company</option>{rows.filter(row => row.isActive !== false).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>{([['firstName','First name','text'],['lastName','Last name','text'],['email','Login email','email'],['password','Initial password','password']] as const).map(([key,label,type]) => <div className="space-y-2" key={key}><Label htmlFor={`admin-${key}`}>{label}</Label><Input id={`admin-${key}`} type={type} minLength={key === 'password' ? 12 : key === 'email' ? undefined : 2} maxLength={key === 'password' ? 72 : key === 'email' ? 254 : 50} autoComplete={key === 'password' ? 'new-password' : 'off'} required value={admin[key]} onChange={event => setAdmin({ ...admin, [key]: event.target.value })} />{key === 'password' && <p className="text-xs text-muted-foreground">Use at least 12 characters and share it securely.</p>}</div>)}{adminMutation.isError && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{message(adminMutation.error)}</p>}<div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={closeAdmin}>Cancel</Button><Button type="submit">{adminMutation.isPending ? 'Creating…' : 'Create administrator'}</Button></div></fieldset></form></div></SheetContent></Sheet>
   </div>
 }
