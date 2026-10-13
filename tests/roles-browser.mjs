@@ -148,7 +148,7 @@ async function navigate(next, query = '', path = '/admin/roles', selectCompany =
   sourceId = (await send('Page.addScriptToEvaluateOnNewDocument', { source })).identifier;
   await send('Network.setCookies', { cookies: [{ name: 'token', value: encodeURIComponent(JSON.stringify(token)), url: site }, { name: 'userInfo', value: encodeURIComponent(JSON.stringify(user)), url: site }] });
   await send('Page.navigate', { url: site + path + query });
-  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/employee/attendance') ? 'My Attendance' : path.endsWith('/settings') ? 'System Settings' : path.endsWith('/companies') ? 'Companies & Admins' : 'Roles & permissions')})`, next);
+  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/employee/attendance') ? (next === 'applicant' ? 'My Attendance' : 'Attendance Tracking') : path.endsWith('/settings') ? 'System Settings' : path.endsWith('/companies') ? 'Companies & Admins' : 'Roles & permissions')})`, next);
   if (path === '/admin/roles' && !query && next !== 'denied' && selectCompany) {
     await waitFor("!!document.querySelector('#roles-company option[value=company-a]')", 'available company');
     await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='company-a';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
@@ -255,11 +255,16 @@ try {
   assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Delete')"), false, 'No fake delete button in leave request view');
   await navigate('applicant', '', '/employee/attendance');
   await waitFor("document.body.innerText.includes('October 2026') && document.body.innerText.includes('2 days present')", 'attendance calendar');
+  assert.equal(await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Calendar')).getAttribute('aria-selected')"), 'true', 'Calendar is the default employee attendance tab');
   assert.equal(await evaluate("document.querySelector('nav a[href=\"/employee/attendance\"]').textContent.includes('My Attendance')"), true, 'Attendance menu uses the new name');
   await evaluate("document.querySelector('button[aria-label^=\"October 12, 2026\"]').click()");
   await waitFor("document.body.innerText.includes('Fixture office') && document.body.innerText.includes('8h 45m')", 'selected attendance details');
   await evaluate("document.querySelector('button[aria-label^=\"October 13, 2026\"]').click()");
   await waitFor("document.body.innerText.includes('Late arrival') && document.body.innerText.includes('28.6139, 77.209')", 'late attendance details');
+  await navigate('admin', '', '/employee/attendance');
+  await waitFor("document.body.innerText.includes('8h 45m') && document.body.innerText.includes('7h 40m')", 'administrator attendance records');
+  assert.equal(await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Attendance History')).getAttribute('aria-selected')"), 'true', 'History remains the default administrator tab');
+  assert.equal(await evaluate("document.querySelector('nav a[href=\"/employee/attendance\"]').textContent.includes('My Attendance')"), false, 'Administrator menu keeps the Attendance label');
   projectRows = [{ id: 'project-fixture', name: 'Fixture Site', address: 'Fixture address', clientName: 'Fixture Client', status: 'active', startDate: '2026-10-01', endDate: '2026-10-30', latitude: '20', longitude: '70', clientContact: {} }];
   holdProjectPermissions = true;
   await navigate('project-manager', '', '/admin/projects-sites');

@@ -41,7 +41,7 @@ export default function useMenuItems() {
             access: ["admin", "employee"]
         },
         {
-            name: "Attendance",
+            name: user?.role === "employee" ? "My Attendance" : "Attendance",
             href: "/employee/attendance",
             icon: Clock,
             access: ["employee", "admin"]
