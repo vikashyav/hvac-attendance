@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { getTaskSchedulesList } from "@/lib/api/task-schedules-api"
 import { useUserFromStorage } from "@/hooks/user.context"
 import moment from "moment"
+import { assignedEmployeeTasks } from "@/lib/employee-summary.mjs"
 
 export function useEmployeeSchedule() {
   const { user } = useUserFromStorage()
@@ -13,27 +14,18 @@ export function useEmployeeSchedule() {
   const queryKey = [
     "employeeSchedules",
     user?.id,
-    user?.companyId
+    user?.companyId,
+    user?.employee?.id
   ]
 
   const { data: scheduleRes, isLoading, isError, refetch } = useQuery({
     queryKey,
     queryFn: ({ signal }) => getTaskSchedulesList({ signal }),
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!user?.employee?.id,
   })
 
-  const rawTasks = useMemo(() => {
-    if (!scheduleRes?.data) return []
-    const list = Array.isArray(scheduleRes.data) ? scheduleRes.data : []
-    // Filter tasks assigned to this employee or where assignTo matches employee ID
-    const empId = user?.employee?.id
-    if (!empId) return list
-    return list.filter((task) => {
-      const assigned = task.assignTo === empId || task.assignToEmployee?.id === empId
-      // Also show company-wide visits/training or tasks created by or assigned to self
-      return assigned || task.createdBy === user.id
-    })
-  }, [scheduleRes, user])
+  const rawTasks = useMemo(() => assignedEmployeeTasks(scheduleRes?.data, user?.employee?.id),
+    [scheduleRes, user?.employee?.id])
 
   const selectedDateStr = moment(selectedDate).format("YYYY-MM-DD")
   const todayStr = moment().format("YYYY-MM-DD")
@@ -64,6 +56,7 @@ export function useEmployeeSchedule() {
 
   return {
     user,
+    hasEmployee: !!user?.employee?.id,
     selectedDate,
     setSelectedDate,
     selectedDateStr,

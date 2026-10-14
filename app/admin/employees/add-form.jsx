@@ -1,4 +1,7 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getEmployeeOptions } from "@/lib/api/employee-options";
+import { useUserFromStorage } from "@/hooks/user.context";
 import {
   Sheet,
   SheetContent,
@@ -93,41 +96,38 @@ function EmployeeForm({
   handleAddEmployee,
 }) {
   const {selectedEmployee}=useEmployeesPageContext();
-  const departments = fakeData.departments;
-  const positions = fakeData.positions;
+  const { user } = useUserFromStorage();
+  const optionsQuery = useQuery({ queryKey: ['employee-options', user?.id, user?.companyId], queryFn: getEmployeeOptions, enabled: isAddDrawerOpen, retry: false });
+  const options = optionsQuery.data?.data?.data || [];
+  const departments = [...new Set([selectedEmployee.department, ...options.filter(row => row.kind === 'department').map(row => row.name)].filter(Boolean))];
+  const positions = [...new Set([selectedEmployee.position, ...options.filter(row => row.kind === 'job_title').map(row => row.name)].filter(Boolean))];
 
   const locations = fakeData.locations;
   // console.log({selectedEmployee});
   
   return (
     <Sheet open={isAddDrawerOpen} onOpenChange={setIsAddDrawerOpen}>
-      <SheetTrigger asChild>
-        <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
-      </SheetTrigger>
       <SheetContent className="lg:w-1/4 md:w-1/2 sm:w-[600px] overflow-y-auto">
         <SheetHeader className="space-y-3 pb-6">
           <SheetTitle className="text-2xl font-semibold flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <User className="h-5 w-5 text-blue-600" />
             </div>
-            Add New Employee
+            Edit Employee
           </SheetTitle>
           <SheetDescription className="text-base">
-            Fill in the details below to add a new team member to your
-            organization.
+            Update the employee’s recorded details.
           </SheetDescription>
         </SheetHeader>
 
+        {optionsQuery.isError && <div role="alert">Unable to load company options. <Button variant="outline" onClick={() => optionsQuery.refetch()}>Retry options</Button></div>}
         <Formik
           initialValues={selectedEmployee}
           validationSchema={validationSchema}
           onSubmit={handleAddEmployee}
         >
           {({ values, errors, touched, isSubmitting, setFieldValue, resetForm }) => {
-            console.log({values, errors});
+
 
             return (
               <Form className="space-y-8">
@@ -294,10 +294,11 @@ function EmployeeForm({
                         Department <span className="text-red-500">*</span>
                       </Label>
                       <Select
+                        disabled={!optionsQuery.isSuccess}
                         value={values.department}
                         onValueChange={(value) => {
                           setFieldValue("department", value);
-                          setFieldValue("position", ""); // Reset position when department changes
+
                         }}
                       >
                         <SelectTrigger
@@ -336,7 +337,7 @@ function EmployeeForm({
                         onValueChange={(value) =>
                           setFieldValue("position", value)
                         }
-                        disabled={!values.department}
+                        disabled={!optionsQuery.isSuccess}
                       >
                         <SelectTrigger
                           className={`transition-all ${
@@ -355,7 +356,7 @@ function EmployeeForm({
                         </SelectTrigger>
                         <SelectContent>
                           {values.department &&
-                            positions[values.department]?.map((pos) => (
+                            positions.map((pos) => (
                               <SelectItem key={pos} value={pos}>
                                 {pos}
                               </SelectItem>

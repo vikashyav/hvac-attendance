@@ -13,6 +13,7 @@ import moment from "moment"
 export default function SchedulePage() {
   const {
     user,
+    hasEmployee,
     selectedDate,
     setSelectedDate,
     selectedDateStr,
@@ -65,6 +66,8 @@ export default function SchedulePage() {
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
+
+  if (!hasEmployee) return <div className="p-6">No employee profile is linked to this account. Contact your administrator.</div>
 
   if (isLoading) {
     return (

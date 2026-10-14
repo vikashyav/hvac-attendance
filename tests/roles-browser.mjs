@@ -21,6 +21,7 @@ const attendanceRows = [
   { id: 'attendance-1', employeeId: 'employee-fixture', attendanceDate: '2026-10-12', checkInTime: '2026-10-12T09:00:00.000Z', checkOutTime: '2026-10-12T17:45:00.000Z', checkInLocation: { address: 'Fixture office' }, workHours: 8.75, overtimeHours: 0.75, status: 'present', isLate: false },
   { id: 'attendance-2', employeeId: 'employee-fixture', attendanceDate: '2026-10-13', checkInTime: '2026-10-13T09:20:00.000Z', checkOutTime: '2026-10-13T17:00:00.000Z', checkInLocation: { latitude: 28.6139, longitude: 77.209 }, workHours: 7.67, overtimeHours: 0, status: 'late', isLate: true },
 ];
+let personalFailure = '', personalEmpty = false, missingEmployee = false, passwordStatus = 400;
 let roles, assignments, leaveStatus = 'PENDING', lastDecision;
 function reset() {
   roles = [{ id: 'role-admin', name: 'Administrator', code: 'administrator', permissions }, { id: 'role-none', name: 'No access', code: 'no-access', permissions: [] }];
@@ -44,7 +45,7 @@ const waitFor = async (expression, label) => {
     if (await evaluate(`document.body && (${expression})`)) return;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  throw Error(`Timed out: ${label}`);
+  throw Error(`Timed out: ${label}; page: ${await evaluate('document.body.innerText.slice(0, 2500)')}`);
 };
 async function fulfill(event, status, value) {
   return send('Fetch.fulfillRequest', { requestId: event.requestId, responseCode: status,
@@ -73,7 +74,10 @@ async function intercept(event) {
     if (path.endsWith('/access/me') && projectPermissionsFail) return fulfill(event, 400, { error: 'Fixture permission failure' });
     if (path.endsWith('/access/me')) return fulfill(event, 200, { data: { companyId, companyName: companyId === 'company-b' ? 'Fixture Company B' : 'Fixture Company A', permissions: scenario === 'task-manager' ? (taskRevoked ? [] : ['task.manage']) : scenario === 'task-viewer' ? [] : scenario === 'project-manager' ? (projectRevoked ? [] : ['project.manage']) : scenario === 'project-viewer' ? [] : scenario === 'applicant' ? [] : scenario === 'approver' ? ['leave.approve'] : scenario === 'denied' ? [] : scenario === 'viewer' ? ['access.view', 'settings.view'] : permissions } });
     if (path.endsWith('/settings')) return fulfill(event, 200, { data: { companyId, revision: 1, settings: { company: { name: 'Fixture Company', industry: 'IT', email: '', phone: '', address: '' }, attendance: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 0, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8, allowNonWorkingDays: false, allowEarlyCheckout: true, requirePhoto: false, locationEnabled: false, geofencingEnabled: false, geofenceRadius: 100 } } } });
-    if (path.endsWith('/settings/attendance-policy')) return fulfill(event, 200, { data: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 8, halfDayHours: 4, graceMinutes: 10, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8 } });
+    if ((personalFailure === 'policy' && path.endsWith('/settings/attendance-policy')) || (personalFailure === 'attendance' && path.endsWith('/attendance')) || (personalFailure === 'schedule' && path.includes('/schedule_tasks-manage'))) return fulfill(event, 403, { error: 'Fixture unavailable' });
+    if (path.endsWith('/user/change-password')) return fulfill(event, passwordStatus, { message: 'Fixture password response' });
+    if (personalEmpty && path.endsWith('/attendance')) return fulfill(event, 200, { data: [], totalWorkingDays: 0 });
+    if (path.endsWith('/settings/attendance-policy')) return fulfill(event, 200, { data: { timezone: 'UTC', startTime: '09:00', endTime: '17:00', workDays: [1,2,3,4,5], requiredHours: 7.5, halfDayHours: 4, graceMinutes: 10, breakMinutes: 0, overtimeEnabled: true, overtimeAfterHours: 8 } });
     if (path.endsWith('/attendance')) return fulfill(event, 200, { data: attendanceRows, employeeCount: 4, dailyStatusCounts: { '2026-10-12': { present: 1, late: 0, half_day: 0, absent: 3 }, '2026-10-13': { present: 0, late: 1, half_day: 0, absent: 3 } }, daysPresent: 2, totalWorkingDays: 22, attendanceRate: '9.1', punctualityRate: '4.5', totalHours: 16.42, totalOvertimeHours: 0.75 });
     if (path.endsWith('/leave-request/leave-fixture/admin')) {
       lastDecision = JSON.parse(event.request.postData); leaveStatus = lastDecision.status;
@@ -142,13 +146,13 @@ await send('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
 async function navigate(next, query = '', path = '/admin/roles', selectCompany = true) {
   scenario = next; calls.clear();
   if (sourceId) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: sourceId });
-  const user = { id: `browser-${next}`, role: ['approver', 'applicant', 'project-manager', 'task-manager'].includes(next) ? 'employee' : query || next === 'platform' ? 'superAdmin' : 'admin', companyId: 'company-a', firstName: 'Browser', lastName: 'Fixture', email: 'browser@example.test' };
+  const user = { id: `browser-${next}`, role: ['approver', 'applicant', 'project-manager', 'task-manager'].includes(next) ? 'employee' : query || next === 'platform' ? 'superAdmin' : 'admin', companyId: 'company-a', firstName: 'Browser', lastName: 'Fixture', email: 'browser@example.test', employee: missingEmployee ? undefined : { id: 'employee-fixture', skills: [], certifications: [] } };
   const token = { access_token: 'fixture-only' };
-  const source = `localStorage.clear(); localStorage.setItem('user', btoa(${JSON.stringify(JSON.stringify(user))})); localStorage.setItem('token', btoa(${JSON.stringify(JSON.stringify(token))}));`;
+  const source = `if (location.pathname !== '/login') { localStorage.clear(); localStorage.setItem('user', btoa(${JSON.stringify(JSON.stringify(user))})); localStorage.setItem('token', btoa(${JSON.stringify(JSON.stringify(token))})); }`;
   sourceId = (await send('Page.addScriptToEvaluateOnNewDocument', { source })).identifier;
   await send('Network.setCookies', { cookies: [{ name: 'token', value: encodeURIComponent(JSON.stringify(token)), url: site }, { name: 'userInfo', value: encodeURIComponent(JSON.stringify(user)), url: site }] });
   await send('Page.navigate', { url: site + path + query });
-  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/employee/attendance') ? (next === 'applicant' ? 'My Attendance' : 'Attendance Tracking') : path.endsWith('/settings') ? 'System Settings' : path.endsWith('/companies') ? 'Companies & Admins' : 'Roles & permissions')})`, next);
+  await waitFor(`document.body.innerText.includes(${JSON.stringify(next === 'denied' ? 'You do not have permission' : path === '/admin/task-manage' ? 'Calendar & Scheduling' : path.startsWith('/admin/task-manage/') ? 'Schedule/Task' : path.endsWith('/projects-sites') ? 'Projects / Sites' : path.endsWith('/leave-request') ? 'Leave Management' : path.endsWith('/employee/attendance') ? (next === 'applicant' ? 'My Attendance' : 'Attendance Tracking') : path.endsWith('/performance') ? (missingEmployee ? 'No employee profile' : personalFailure ? 'Unable to Load' : 'Performance Dashboard') : path.endsWith('/schedule') ? (missingEmployee ? 'No employee profile' : personalFailure ? 'Unable to Load' : 'My Schedule') : path.endsWith('/profile') ? 'My Profile' : path.endsWith('/settings') ? 'System Settings' : path.endsWith('/companies') ? 'Companies & Admins' : 'Roles & permissions')})`, next);
   if (path === '/admin/roles' && !query && next !== 'denied' && selectCompany) {
     await waitFor("!!document.querySelector('#roles-company option[value=company-a]')", 'available company');
     await evaluate("(()=>{const s=document.querySelector('#roles-company');s.value='company-a';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
@@ -156,8 +160,64 @@ async function navigate(next, query = '', path = '/admin/roles', selectCompany =
   }
 }
 const clickText = text => evaluate(`[...document.querySelectorAll('button')].find(b=>b.getClientRects().length && b.textContent.trim()===${JSON.stringify(text)}).click()`);
+const selectTab = text => evaluate(`[...document.querySelectorAll('[role=tab]')].find(b=>b.textContent.trim()===${JSON.stringify(text)}).dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0}))`);
 const setInput = (selector, value) => evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(node,${JSON.stringify(value)}); node.dispatchEvent(new Event('input',{bubbles:true}));})()`);
 try {
+  await navigate('applicant', '', '/employee/profile');
+  await selectTab('Professional');
+  await waitFor("document.body.innerText.includes('No skills recorded.')", 'profile without sample skills');
+  assert.equal(await evaluate("document.body.innerText.includes('95.2%') || document.body.innerText.includes('Safety Record')"), false);
+  await selectTab('Certifications');
+  await waitFor("document.body.innerText.includes('No certifications recorded.')", 'profile without sample certifications');
+  await selectTab('Settings');
+  assert.equal(await evaluate("[...document.querySelectorAll('input[type=password]')].length"), 3);
+  assert.equal(await evaluate("document.querySelectorAll('[role=switch]').length"), 0);
+  await setInput('#currentPassword', 'fixture-old');
+  await setInput('#newPassword', 'fixture-new');
+  await setInput('#confirmPassword', 'fixture-new');
+  await clickText('Update Password');
+  await waitFor("document.body.innerText.includes('Password update failed')", 'recoverable password failure');
+  assert.equal(await evaluate("!!localStorage.getItem('token')"), true);
+
+  await navigate('applicant', '', '/employee/performance');
+  await selectTab('Goals & Targets');
+  await waitFor("document.body.innerText.includes('165') && document.body.innerText.includes('7.5 required hours')", 'policy hours replace eight-hour assumption');
+  assert.equal(await evaluate("document.body.innerText.includes('95%') || document.body.innerText.includes('90%')"), false);
+  personalEmpty = true;
+  await navigate('applicant', '', '/employee/performance');
+  await selectTab('Goals & Targets');
+  await waitFor("document.body.innerText.includes('No working-hour target')", 'zero-workday goal');
+  personalEmpty = false;
+  for (const failure of ['policy', 'attendance']) {
+    personalFailure = failure;
+    await navigate('applicant', '', '/employee/performance');
+    personalFailure = '';
+    await clickText('Retry');
+    await waitFor("document.body.innerText.includes('Performance Dashboard')", 'performance retry');
+  }
+  const day = new Date().toLocaleDateString('en-CA');
+  taskRows = [{ id: 'assigned', title: 'Assigned only fixture', assignTo: 'employee-fixture', startDate: day },
+    { id: 'created', title: 'Created but not assigned fixture', createdBy: 'browser-applicant', assignTo: 'someone-else', startDate: day }];
+  await navigate('applicant', '', '/employee/schedule');
+  await waitFor("document.body.innerText.includes('Assigned only fixture')", 'assigned schedule');
+  assert.equal(await evaluate("document.body.innerText.includes('Created but not assigned fixture')"), false);
+  personalFailure = 'schedule';
+  await navigate('applicant', '', '/employee/schedule');
+  personalFailure = '';
+  await clickText('Retry');
+  await waitFor("document.body.innerText.includes('Assigned only fixture')", 'schedule retry');
+  taskRows = [];
+  await navigate('applicant', '', '/employee/schedule');
+  await waitFor("document.body.innerText.includes('No Assignments Scheduled')", 'empty schedule');
+  missingEmployee = true;
+  await navigate('applicant', '', '/employee/schedule');
+  assert.equal(calls.has('/api/v1/schedule_tasks-manage'), false);
+  await navigate('applicant', '', '/employee/performance');
+  assert.equal(calls.has('/api/v1/attendance'), false);
+  missingEmployee = false;
+  assert.deepEqual(errors, []);
+  console.log('Personal employee checks passed: profile empty states, masked password inputs and failure recovery, company-policy hours, zero workdays, request retries, assignment filtering and missing employee identity.');
+  if (!process.argv.includes('--personal-only')) {
   await navigate('admin', '', '/admin/roles', false);
   await waitFor("!!document.querySelector('#roles-company option[value=company-a]')", 'own company available');
   assert.equal(calls.has('/api/v1/access/memberships'), false, 'No member request before selecting a company');
@@ -262,6 +322,8 @@ try {
   await evaluate("document.querySelector('button[aria-label^=\"October 13, 2026\"]').click()");
   await waitFor("document.body.innerText.includes('Late arrival') && document.body.innerText.includes('28.6139, 77.209')", 'late attendance details');
   await navigate('admin', '', '/employee/attendance');
+  await waitFor("document.body.innerText.includes('8 h 45 m')", 'first administrator attendance group');
+  await evaluate("[...document.querySelectorAll('button[aria-expanded=false]')].filter(button => button.textContent.includes('Present:')).forEach(button => button.click())");
   await waitFor("document.body.innerText.includes('8 h 45 m') && document.body.innerText.includes('7 h 40 m')", 'administrator attendance records');
   assert.equal(await evaluate("[...document.querySelectorAll('[role=tab]')].find(button=>button.textContent.includes('Attendance History')).getAttribute('aria-selected')"), 'true', 'History remains the default administrator tab');
   assert.equal(await evaluate("document.querySelector('nav a[href=\"/employee/attendance\"]').textContent.includes('My Attendance')"), false, 'Administrator menu keeps the Attendance label');
@@ -451,12 +513,15 @@ try {
   await waitFor("document.body.innerText.includes('This company is unavailable')", 'invalid company link');
   assert.equal(calls.has('/api/v1/access/memberships'), false);
   await navigate('admin', '', '/admin/task-manage');
+  await clickText('Toggle navigation menu');
+  await waitFor("!!document.querySelector('[role=dialog] nav')", 'mobile navigation before logout');
   await clickText('Sign Out');
   await waitFor("location.pathname === '/login'", 'logout redirects to login');
   assert.equal(await evaluate("localStorage.getItem('token')"), null, 'Logout clears the stored token');
   assert.equal(await evaluate("!document.cookie.split('; ').some(value => value.startsWith('token='))"), true, 'Logout clears the authentication cookie');
   assert.deepEqual(errors, []);
   console.log('Browser checks passed: create, assign, effective permissions, cancel/revoke, read-only, denied, empty, retry, company selection, mobile, custom leave approver/applicant, project read-only/granted/revoked access, save failure/retry, create/update, permission retry, empty lists; task permissions, direct details, create/update/subtasks, parent preservation, retries, revocation, missing/empty tasks mobile cancellation, grant-aware navigation, single sidebars, nested active links and mobile navigation dismissal.');
+  }
 } finally {
   await send('Page.close'); ws.close();
 }

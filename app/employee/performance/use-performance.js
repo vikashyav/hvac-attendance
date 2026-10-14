@@ -1,6 +1,8 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { getAttendancePolicy } from "@/lib/api/settings-api"
+import { companyMonthRange, workingHoursGoal } from "@/lib/employee-summary.mjs"
 import { getAttendance } from "@/lib/api/attendance-api"
 import { useUserFromStorage } from "@/hooks/user.context"
 import moment from "moment"
@@ -8,21 +10,26 @@ import { Award, Calendar, Clock, Star, TrendingUp } from "lucide-react"
 
 export function usePerformance() {
   const { user } = useUserFromStorage()
-  const today = moment()
-  const from = moment(today).startOf("month").format("YYYY-MM-DD")
-  const to = moment(today).endOf("day").format("YYYY-MM-DD")
+  const employeeId = user?.employee?.id
+  const policyQuery = useQuery({
+    queryKey: ["attendance-policy", user?.id, user?.companyId],
+    queryFn: getAttendancePolicy,
+    enabled: !!user?.id && !!employeeId,
+  })
+  const policy = policyQuery.data?.data?.data
+  const range = policy ? companyMonthRange(policy.timezone) : {}
 
   const queryKey = [
     "performance",
     user?.id,
     user?.companyId,
-    { from, to }
+    { ...range, employee_id: employeeId }
   ]
 
   const { data: attendanceRes, isLoading, isError, refetch } = useQuery({
     queryKey,
     queryFn: getAttendance,
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!employeeId && !!policy,
   })
 
   const raw = attendanceRes?.data || {}
@@ -50,14 +57,14 @@ export function usePerformance() {
     {
       metric: "Attendance",
       score: attendance,
-      target: 95,
-      improvement: attendance >= 95 ? "+On Target" : `${(attendance - 95).toFixed(1)}%`,
+      target: 100,
+      improvement: `${attendance}% of scheduled days`,
     },
     {
       metric: "Punctuality",
       score: punctuality,
-      target: 90,
-      improvement: punctuality >= 90 ? "+On Target" : `${(punctuality - 90).toFixed(1)}%`,
+      target: 100,
+      improvement: `${punctuality}% of scheduled days`,
     },
     {
       metric: "Performance Index",
@@ -73,40 +80,7 @@ export function usePerformance() {
     },
   ]
 
-  const monthlyGoals = [
-    {
-      id: 1,
-      title: "Maintain 95%+ Attendance",
-      current: attendance,
-      target: 95,
-      status: attendance >= 95 ? "achieved" : "in-progress",
-      description: "Keep consistent check-ins across scheduled working days",
-    },
-    {
-      id: 2,
-      title: "Improve Punctuality to 90%",
-      current: punctuality,
-      target: 90,
-      status: punctuality >= 90 ? "achieved" : "in-progress",
-      description: "Arrive on time within the company grace period",
-    },
-    {
-      id: 3,
-      title: "Complete Working Hours Target",
-      current: totalHours,
-      target: totalWorkingDays > 0 ? Number((totalWorkingDays * 8).toFixed(1)) : 40,
-      status: totalWorkingDays > 0 && totalHours >= totalWorkingDays * 8 ? "achieved" : "in-progress",
-      description: "Deliver required scheduled hours based on active company policy",
-    },
-    {
-      id: 4,
-      title: "100% Performance Efficiency",
-      current: overall,
-      target: 100,
-      status: overall >= 100 ? "achieved" : "in-progress",
-      description: "Achieve optimal ratio of delivered work hours to required schedule",
-    },
-  ]
+  const monthlyGoals = workingHoursGoal(raw, policy)
 
   const achievements = []
   if (totalPerfectWeeks > 0) {
@@ -120,7 +94,7 @@ export function usePerformance() {
     })
   }
 
-  if (punctuality >= 90 && daysPresent > 0) {
+  if (punctuality === 100 && daysPresent > 0) {
     achievements.push({
       id: "punctuality-star",
       title: "Punctuality Star",
@@ -135,7 +109,7 @@ export function usePerformance() {
     achievements.push({
       id: "overtime-contributor",
       title: "Overtime Contributor",
-      description: `Logged ${totalOvertimeHours} hours of authorized overtime support`,
+      description: `Logged ${totalOvertimeHours} hours above the company overtime threshold`,
       date: moment().format("YYYY-MM-DD"),
       icon: TrendingUp,
       color: "text-purple-600",
@@ -158,9 +132,10 @@ export function usePerformance() {
     chartData,
     monthlyGoals,
     achievements,
-    isLoading,
-    isError,
-    refetch,
+    hasEmployee: !!employeeId,
+    isLoading: isLoading || policyQuery.isLoading,
+    isError: isError || policyQuery.isError,
+    refetch: () => { policyQuery.refetch(); if (policy && employeeId) refetch(); },
     user,
   }
 }

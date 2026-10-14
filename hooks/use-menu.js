@@ -2,7 +2,7 @@ import { useCapabilities } from './use-capabilities';
 import { useUserFromStorage } from "./user.context"
 import {
     LayoutDashboard, Clock, Calendar, BarChart3, User, LogOut, Menu, Shield,
-    Users, MapPin, FileText, Settings,
+    Users, MapPin, FileText, Settings, BriefcaseBusiness,
 
 } from "lucide-react"
 // import {  LogOut, Menu, Shield } from "lucide-react"
@@ -12,6 +12,7 @@ export default function useMenuItems() {
     const capabilities = useCapabilities();
     const permissions = capabilities.isSuccess ? capabilities.data?.data?.data?.permissions || [] : [];
     const menuItems = [
+        { name: 'Departments & job titles', href: '/admin/employees/options', icon: BriefcaseBusiness, permission: 'employee.manage', access: [] },
         { name: 'Roles & permissions', href: '/admin/roles', icon: Shield, permission: 'access.view', access: [] },
         { name: "Companies & Admins", href: "/admin/companies", icon: Shield, access: ["superAdmin"] },
         {

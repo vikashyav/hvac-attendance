@@ -2,7 +2,8 @@
 // at top of your page file
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +13,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, Calendar, Award, Bell, Shield, Save, Upload, Edit, AlertCircle } from "lucide-react"
 import { useUserFromStorage } from "@/hooks/user.context"
 import { UserProfileProvider, useUserProfilePageContext } from "./use-profile";
@@ -29,19 +28,11 @@ import withHOC from "@/utils/with-hoc"
 
 // export default 
 function ProfilePage(props: any) {
-  const { user, removeUser } = useUserFromStorage();
+  const { user } = useUserFromStorage();
   const useCtx = useUserProfilePageContext as (p?: any) => any;
   const { handleChangePassword, queryParmas } = useCtx(props);
-  // console.log(user, "user");
   const [activeTab, setActiveTab]=useState("");
-  const [isEditing, setIsEditing] = useState(false)
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    sms: false,
-    scheduleChanges: true,
-    reminders: true,
-  })
+  const isEditing = false
 
   const validationSchema = yup.object({
     currentPassword: yup.string().required('Password is required'),
@@ -55,53 +46,11 @@ function ProfilePage(props: any) {
       .oneOf([yup.ref('newPassword')], 'Passwords must match')
   });
   const employeeData = {
-    id: "EMP001",
-    name: `${user.firstName} ${user.lastName}`,
-    // email: ,
-    // phone: "(555) 123-4567",
-    // address: "123 Main Street, Anytown, NY 12345",
-    // position: "HVAC Technician",
-    // department: "Field Operations",
-    // hireDate: "2023-01-15",
-    // supervisor: "Mike Johnson",
-    // emergencyContact: {
-    //   name: "Jane Smith",
-    //   relationship: "Spouse",
-    //   phone: "(555) 987-6543",
-    // },
-
-    skills: ["HVAC Installation", "System Maintenance", "Troubleshooting", "Safety Protocols", "Customer Service"],
-    certifications: [
-      {
-        name: "EPA Section 608 Certification",
-        issueDate: "2023-02-01",
-        expiryDate: "2026-02-01",
-        status: "Active",
-      },
-      {
-        name: "OSHA 10-Hour Safety Training",
-        issueDate: "2023-01-20",
-        expiryDate: "2026-01-20",
-        status: "Active",
-      },
-      {
-        name: "NATE Certification",
-        issueDate: "2023-03-15",
-        expiryDate: "2025-03-15",
-        status: "Expiring Soon",
-      },
-    ],
     ...user,
     ...user.employee,
-  }
-
-  const performanceStats = {
-    attendanceRate: "95.2%",
-    punctualityScore: "87.3%",
-    safetyRecord: "100%",
-    customerRating: "4.8/5",
-    projectsCompleted: 47,
-    trainingHours: 32,
+    name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Employee",
+    skills: Array.isArray(user.employee?.skills) ? user.employee.skills : [],
+    certifications: Array.isArray(user.employee?.certifications) ? user.employee.certifications : [],
   }
 
   const getCertificationStatusColor = (status: string) => {
@@ -116,20 +65,15 @@ function ProfilePage(props: any) {
         return "outline"
     }
   }
-  console.log(props, "props active tab",props?.searchParams?.acive_tab || queryParmas?.acive_tab || "personal");
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Profile {queryParmas?.acive_tab}</h1>
-          <p className="text-muted-foreground">Manage your personal information and preferences</p>
+          <h1 className="text-3xl font-bold">My Profile</h1>
+          <p className="text-muted-foreground">View your employee record and manage your password</p>
         </div>
-        <Button className="hidden" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-          {isEditing ? "Save Changes" : "Edit Profile"}
-        </Button>
       </div>
 
       {/* Profile Tabs */}
@@ -180,7 +124,7 @@ function ProfilePage(props: any) {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Your basic personal details</CardDescription>
+                <CardDescription>Your recorded details. Contact your administrator to request changes.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -299,17 +243,7 @@ function ProfilePage(props: any) {
 
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <Select disabled={!isEditing}>
-                    <SelectTrigger className={!isEditing ? "bg-muted" : ""}>
-                      <SelectValue placeholder={employeeData.department} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="field">Field Operations</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="training">Training</SelectItem>
-                      <SelectItem value="support">Support</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input id="department" value={employeeData.department || "Not recorded"} disabled className="bg-muted" />
                 </div>
 
                 <div className="space-y-2">
@@ -321,7 +255,7 @@ function ProfilePage(props: any) {
                   <Label htmlFor="hireDate">Hire Date</Label>
                   <Input
                     id="hireDate"
-                    defaultValue={new Date(employeeData.hireDate).toLocaleDateString()}
+                    defaultValue={employeeData.hireDate ? new Date(employeeData.hireDate + "T00:00:00").toLocaleDateString() : "Not recorded"}
                     disabled
                     className="bg-muted"
                   />
@@ -330,6 +264,7 @@ function ProfilePage(props: any) {
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="flex flex-wrap gap-2">
+                    {employeeData.skills.length === 0 && <p className="text-sm text-muted-foreground">No skills recorded.</p>}
                     {employeeData.skills.map((skill: any, index: number) => (
                       <Badge key={index} variant="secondary">
                         {skill}
@@ -346,37 +281,8 @@ function ProfilePage(props: any) {
                 <CardDescription>Your key performance metrics</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">{performanceStats.attendanceRate}</p>
-                    <p className="text-sm text-muted-foreground">Attendance</p>
-                  </div>
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-600">{performanceStats.punctualityScore}</p>
-                    <p className="text-sm text-muted-foreground">Punctuality</p>
-                  </div>
-                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                    <p className="text-2xl font-bold text-purple-600">{performanceStats.safetyRecord}</p>
-                    <p className="text-sm text-muted-foreground">Safety Record</p>
-                  </div>
-                  <div className="text-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                    <p className="text-2xl font-bold text-orange-600">{performanceStats.customerRating}</p>
-                    <p className="text-sm text-muted-foreground">Customer Rating</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Projects Completed:</span>
-                    <span className="font-medium">{performanceStats.projectsCompleted}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Training Hours:</span>
-                    <span className="font-medium">{performanceStats.trainingHours}</span>
-                  </div>
-                </div>
+                <p className="text-sm text-muted-foreground">View your current attendance, punctuality, and recorded working hours.</p>
+                <Button asChild variant="outline"><Link href="/employee/performance">View Attendance Performance</Link></Button>
               </CardContent>
             </Card>
           </div>
@@ -396,6 +302,7 @@ function ProfilePage(props: any) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {employeeData.certifications.length === 0 && <p className="text-sm text-muted-foreground">No certifications recorded.</p>}
                 {employeeData.certifications.map((cert: any, index: number) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="flex items-start justify-between mb-3">
@@ -433,79 +340,6 @@ function ProfilePage(props: any) {
             You have sign in from default password, Please change it.
           </Badge>}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="h-5 w-5 mr-2" />
-                  Notification Preferences
-                </CardTitle>
-                <CardDescription>Configure how you receive notifications</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                    </div>
-                    <Switch
-                      checked={notifications.email}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive browser notifications</p>
-                    </div>
-                    <Switch
-                      checked={notifications.push}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>SMS Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive text message alerts</p>
-                    </div>
-                    <Switch
-                      checked={notifications.sms}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, sms: checked })}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Notification Types</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Schedule Changes</Label>
-                        <p className="text-sm text-muted-foreground">When your schedule is updated</p>
-                      </div>
-                      <Switch
-                        checked={notifications.scheduleChanges}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, scheduleChanges: checked })}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Reminders</Label>
-                        <p className="text-sm text-muted-foreground">Shift and task reminders</p>
-                      </div>
-                      <Switch
-                        checked={notifications.reminders}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, reminders: checked })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader>
@@ -538,7 +372,9 @@ function ProfilePage(props: any) {
                               as={Input}
                               id="currentPassword"
                               name="currentPassword"
-                              placeholder="Enter first name"
+                              type="password"
+                              autoComplete="current-password"
+                              placeholder="Current password"
                               className={`transition-all ${errors.currentPassword && touched.currentPassword
                                   ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                                   : "focus:border-blue-500 focus:ring-blue-500"
@@ -560,7 +396,9 @@ function ProfilePage(props: any) {
                               as={Input}
                               id="newPassword"
                               name="newPassword"
-                              placeholder="Enter first name"
+                              type="password"
+                              autoComplete="new-password"
+                              placeholder="New password"
                               className={`transition-all ${errors.newPassword && touched.newPassword
                                   ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                                   : "focus:border-blue-500 focus:ring-blue-500"
@@ -582,7 +420,9 @@ function ProfilePage(props: any) {
                               as={Input}
                               id="confirmPassword"
                               name="confirmPassword"
-                              placeholder="Enter first name"
+                              type="password"
+                              autoComplete="new-password"
+                              placeholder="Confirm new password"
                               className={`transition-all ${errors.confirmPassword && touched.confirmPassword
                                   ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                                   : "focus:border-blue-500 focus:ring-blue-500"
@@ -597,37 +437,13 @@ function ProfilePage(props: any) {
                               )}
                             </ErrorMessage>
                           </div>
-                          <Button className="w-full">Update Password</Button>
+                          <Button type="submit" disabled={isSubmitting} className="w-full">{isSubmitting ? "Updating…" : "Update Password"}</Button>
                         </Form>)
                     }}
                   </Formik>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Two-Factor Authentication</h4>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Enable 2FA</Label>
-                      <p className="text-sm text-muted-foreground">Add extra security to your account</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Privacy Settings</h4>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Location Tracking</Label>
-                      <p className="text-sm text-muted-foreground">Allow location tracking for attendance</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
+                <p className="text-sm text-muted-foreground">Two-factor authentication and notification preferences are not available yet. Attendance location requirements are managed by your company.</p>
               </CardContent>
             </Card>
           </div>

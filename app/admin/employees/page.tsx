@@ -172,7 +172,11 @@ function EmployeesPage() {
           <p className="text-muted-foreground">Manage your team members and their information</p>
         </div>
         {canManage && (
-          <EmployeeForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} handleAddEmployee={handleAddEmployee} />
+          <>
+            <Button variant="outline" onClick={() => router.push("/admin/employees/options")}>Departments & job titles</Button>
+            <Button onClick={() => router.push("/admin/employees/add")}><Plus className="mr-2 h-4 w-4" />Add New Employee</Button>
+            <EmployeeForm isAddDrawerOpen={isAddDrawerOpen} setIsAddDrawerOpen={setIsAddDrawerOpen} handleAddEmployee={handleAddEmployee} />
+          </>
         )}
       </div>
 

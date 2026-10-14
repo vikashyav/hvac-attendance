@@ -20,6 +20,7 @@ export default function PerformancePage() {
     isError,
     refetch,
     user,
+    hasEmployee,
   } = usePerformance()
 
   const getGoalStatusColor = (status: string) => {
@@ -51,6 +52,8 @@ export default function PerformancePage() {
         return Clock
     }
   }
+
+  if (!hasEmployee) return <div className="p-6">No employee profile is linked to this account. Contact your administrator.</div>
 
   if (isLoading) {
     return (
@@ -164,7 +167,7 @@ export default function PerformancePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Performance Comparison</CardTitle>
-                <CardDescription>Current performance scores measured against target baselines</CardDescription>
+                <CardDescription>100% represents full scheduled attendance or required hours; these are reference values, not configured appraisal targets.</CardDescription>
               </CardHeader>
               <CardContent>
                 <PerformanceChart data={chartData} />
@@ -220,11 +223,12 @@ export default function PerformancePage() {
         <TabsContent value="goals" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Goals & Targets</CardTitle>
-              <CardDescription>Dynamic progress tracking based on policy benchmarks</CardDescription>
+              <CardTitle>Month-to-date Work Hours</CardTitle>
+              <CardDescription>Required hours calculated from the current company policy. Custom appraisal targets are not configured.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {monthlyGoals.length === 0 && <p className="text-sm text-muted-foreground">No working-hour target for this period.</p>}
                 {monthlyGoals.map((goal) => {
                   const StatusIcon = getGoalStatusIcon(goal.status)
                   const progress = Math.min((goal.current / goal.target) * 100, 100)
@@ -313,9 +317,9 @@ export default function PerformancePage() {
               <div className="text-center py-10 space-y-3">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
                 <div className="space-y-1">
-                  <h4 className="font-medium text-base">No Appraisals Published Yet</h4>
+                  <h4 className="font-medium text-base">Appraisals Are Not Available</h4>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    Formal performance appraisals and manager review comments will appear here once submitted by your supervisor for the current evaluation period.
+                    Formal supervisor reviews are not implemented yet. The metrics shown here summarize attendance only.
                   </p>
                 </div>
               </div>

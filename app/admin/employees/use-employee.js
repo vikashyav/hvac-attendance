@@ -29,7 +29,6 @@ export function useEmployees() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(getIntialValues({}))
 
-  const departments = fakeData.departments
   const positions = fakeData.positions
   const locations = fakeData.locations
 
@@ -114,7 +113,7 @@ export function useEmployees() {
     isAddDrawerOpen, setIsAddDrawerOpen,
     isEditDialogOpen, setIsEditDialogOpen,
     selectedEmployee, setSelectedEmployee,
-    departments, positions, locations, filteredEmployees,
+    departments: [...new Set((employeeData?.data?.data || []).map(employee => employee.department).filter(Boolean))], positions, locations, filteredEmployees,
     handleAddEmployee, handleViewDetails, openEditDialog,
     employeeData: employeeData?.data,
     isFetching, isLoading, isError, refetch,

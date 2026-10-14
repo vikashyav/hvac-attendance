@@ -1,1214 +1,191 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { Formik, Form, Field, ErrorMessage } from "formik"
-import * as Yup from "yup"
-import {
-  Users,
-  Plus,
-  Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  UserCheck,
-  UserX,
-  Grid3X3,
-  List,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  TrendingUp,
-  Briefcase,
-  User,
-  AlertCircle,
-  CheckCircle2,
-  X,
-} from "lucide-react"
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Formik, Form, getIn, useFormikContext } from 'formik'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, ClipboardCheck, BriefcaseBusiness, UserRound, HeartHandshake, Loader2, ShieldCheck } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
+import { useCapabilities } from '@/hooks/use-capabilities'
+import { useUserFromStorage } from '@/hooks/user.context'
+import { getEmployeeOptions } from '@/lib/api/employee-options'
+import { employeeRegistration } from '@/lib/api/employee'
+import { initialOnboardingValues, onboardingPayload, onboardingSchema, type OnboardingValues } from './onboarding-schema'
 
-interface Employee {
-  id: string
-  name: string
-  email: string
-  phone: string
-  department: string
-  position: string
-  status: "active" | "inactive"
-  joinDate: string
-  location: string
-  performance: number
-  avatar?: string
-  emergencyContact?: string
-  address?: string
-  salary?: number
+const steps = [
+  { title: 'Personal details', description: 'Identity & contact', icon: UserRound, fields: ['firstName', 'lastName', 'email', 'phone', 'address'] },
+  { title: 'Employment', description: 'Role & joining details', icon: BriefcaseBusiness, fields: ['department', 'position', 'hireDate', 'salary', 'skills', 'notes'] },
+  { title: 'Emergency contact', description: 'Someone we can reach', icon: HeartHandshake, fields: ['emergencyContact.name', 'emergencyContact.relationship', 'emergencyContact.phone'] },
+  { title: 'Review & create', description: 'Check before saving', icon: ClipboardCheck, fields: [] },
+]
+
+function OnboardingField({ name, label, hint, multiline = false, optional = false, ...props }: {
+  name: string; label: string; hint?: string; multiline?: boolean; optional?: boolean
+  type?: string; autoComplete?: string; placeholder?: string; maxLength?: number
+}) {
+  const form = useFormikContext<OnboardingValues>()
+  const error = getIn(form.touched, name) && getIn(form.errors, name)
+  const id = name.replaceAll('.', '-')
+  const attributes = { ...form.getFieldProps(name), ...props, id, 'aria-invalid': Boolean(error), 'aria-required': !optional,
+    'aria-describedby': `${id}-hint ${id}-error`, className: `bg-background ${error ? 'border-destructive' : ''}` }
+  return <div className="space-y-2">
+    <Label htmlFor={id}>{label} {optional ? <span className="font-normal text-muted-foreground">(optional)</span> : <span className="text-destructive" aria-hidden="true">*</span>}</Label>
+    {multiline ? <Textarea {...attributes} rows={3} /> : <Input {...attributes} />}
+    {hint && <p id={`${id}-hint`} className="text-xs leading-relaxed text-muted-foreground">{hint}</p>}
+    {error && <p id={`${id}-error`} role="alert" className="text-sm text-destructive">{String(error)}</p>}
+  </div>
 }
 
-interface AddEmployeeFormValues {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  department: string
-  position: string
-  location: string
-  address: string
-  emergencyContact: string
-  emergencyPhone: string
-  salary: string
-  startDate: string
-  notes: string
-}
+function OnboardingForm({ companyName, saving, saveError }: { companyName: string; saving: boolean; saveError: string }) {
+  const form = useFormikContext<OnboardingValues>()
+  const router = useRouter()
+  const [step, setStep] = useState(0)
+  const [discard, setDiscard] = useState(false)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const { values } = form
+  const { user } = useUserFromStorage()
+  const optionsQuery = useQuery({ queryKey: ['employee-options', user?.id, user?.companyId], queryFn: getEmployeeOptions, retry: false })
+  const options = optionsQuery.data?.data?.data || []
+  useEffect(() => {
+    if (!form.dirty || saving) return
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [form.dirty, saving])
+  useEffect(() => { heading.current?.focus() }, [step])
 
-const validationSchema = Yup.object({
-  firstName: Yup.string()
-    .min(2, "First name must be at least 2 characters")
-    .max(50, "First name must be less than 50 characters")
-    .required("First name is required"),
-  lastName: Yup.string()
-    .min(2, "Last name must be at least 2 characters")
-    .max(50, "Last name must be less than 50 characters")
-    .required("Last name is required"),
-  email: Yup.string().email("Invalid email address").required("Email is required"),
-  phone: Yup.string()
-    .matches(/^[+]?[1-9][\d]{0,15}$/, "Invalid phone number")
-    .required("Phone number is required"),
-  department: Yup.string().required("Department is required"),
-  position: Yup.string().required("Position is required"),
-  location: Yup.string().required("Work location is required"),
-  address: Yup.string().required("Address is required"),
-  emergencyContact: Yup.string().required("Emergency contact name is required"),
-  emergencyPhone: Yup.string()
-    .matches(/^[+]?[1-9][\d]{0,15}$/, "Invalid emergency phone number")
-    .required("Emergency phone is required"),
-  salary: Yup.number().positive("Salary must be positive").required("Salary is required"),
-  startDate: Yup.date().min(new Date(), "Start date cannot be in the past").required("Start date is required"),
-  notes: Yup.string().max(500, "Notes must be less than 500 characters"),
-})
-
-export default function EmployeesPage() {
-  const { toast } = useToast()
-  const [view, setView] = useState<"grid" | "table">("table")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
-
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: "EMP001",
-      name: "John Smith",
-      email: "john.smith@hvacpro.com",
-      phone: "+1 (555) 123-4567",
-      department: "Installation",
-      position: "Senior Technician",
-      status: "active",
-      joinDate: "2023-01-15",
-      location: "Downtown Office",
-      performance: 92,
-    },
-    {
-      id: "EMP002",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@hvacpro.com",
-      phone: "+1 (555) 234-5678",
-      department: "Maintenance",
-      position: "Lead Technician",
-      status: "active",
-      joinDate: "2022-08-20",
-      location: "North Branch",
-      performance: 88,
-    },
-    {
-      id: "EMP003",
-      name: "Mike Wilson",
-      email: "mike.wilson@hvacpro.com",
-      phone: "+1 (555) 345-6789",
-      department: "Installation",
-      position: "Technician",
-      status: "active",
-      joinDate: "2023-03-10",
-      location: "South Branch",
-      performance: 85,
-    },
-    {
-      id: "EMP004",
-      name: "Emily Davis",
-      email: "emily.davis@hvacpro.com",
-      phone: "+1 (555) 456-7890",
-      department: "Repair",
-      position: "Emergency Technician",
-      status: "inactive",
-      joinDate: "2022-11-05",
-      location: "Downtown Office",
-      performance: 90,
-    },
-    {
-      id: "EMP005",
-      name: "David Brown",
-      email: "david.brown@hvacpro.com",
-      phone: "+1 (555) 567-8901",
-      department: "Maintenance",
-      position: "Technician",
-      status: "active",
-      joinDate: "2023-06-12",
-      location: "East Branch",
-      performance: 87,
-    },
-  ])
-
-  const departments = ["Installation", "Maintenance", "Repair", "Sales", "Administration"]
-  const positions = {
-    Installation: ["Technician", "Senior Technician", "Lead Installer", "Installation Manager"],
-    Maintenance: ["Maintenance Technician", "Senior Maintenance Tech", "Maintenance Supervisor"],
-    Repair: ["Repair Technician", "Emergency Technician", "Senior Repair Specialist"],
-    Sales: ["Sales Representative", "Sales Manager", "Account Executive"],
-    Administration: ["Office Manager", "HR Coordinator", "Administrative Assistant"],
-  }
-
-  const locations = ["Downtown Office", "North Branch", "South Branch", "East Branch", "West Branch"]
-
-  const filteredEmployees = employees.filter((employee) => {
-    const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment
-    return matchesSearch && matchesDepartment
-  })
-
-  const handleAddEmployee = (values: AddEmployeeFormValues, { setSubmitting, resetForm }: any) => {
-    // Simulate API call
-    setTimeout(() => {
-      const employee: Employee = {
-        id: `EMP${String(employees.length + 1).padStart(3, "0")}`,
-        name: `${values.firstName} ${values.lastName}`,
-        email: values.email,
-        phone: values.phone,
-        department: values.department,
-        position: values.position,
-        status: "active",
-        joinDate: values.startDate,
-        location: values.location,
-        performance: 0,
-        emergencyContact: values.emergencyContact,
-        address: values.address,
-        salary: Number.parseFloat(values.salary),
+  const next = async () => {
+    const errors = await form.validateForm()
+    if (step === 1) {
+      if (!optionsQuery.isSuccess) return
+      for (const [field, kind] of [['department', 'department'], ['position', 'job_title']]) {
+        if (!options.some((option: any) => option.kind === kind && option.name === getIn(form.values, field))) {
+          form.setFieldError(field, 'Select a configured company option'); form.setFieldTouched(field, true, false); return
+        }
       }
-
-      setEmployees([...employees, employee])
-      resetForm()
-      setIsAddDrawerOpen(false)
-      setSubmitting(false)
-
-      toast({
-        title: "Success!",
-        description: `${employee.name} has been added to your team.`,
-        duration: 5000,
-      })
-    }, 1000)
+    }
+    const fields = steps[step].fields
+    await Promise.all(fields.map(name => form.setFieldTouched(name, true, false)))
+    const invalid = fields.find(name => getIn(errors, name))
+    if (invalid) { document.getElementById(invalid.replaceAll('.', '-'))?.focus(); return }
+    setStep(current => current + 1)
   }
-
-  const handleEditEmployee = () => {
-    if (!selectedEmployee) return
-
-    setEmployees(employees.map((emp) => (emp.id === selectedEmployee.id ? selectedEmployee : emp)))
-    setIsEditDialogOpen(false)
-    setSelectedEmployee(null)
-
-    toast({
-      title: "Success",
-      description: "Employee updated successfully.",
-    })
-  }
-
-  const handleDeleteEmployee = (employeeId: string) => {
-    setEmployees(employees.filter((emp) => emp.id !== employeeId))
-    toast({
-      title: "Success",
-      description: "Employee deleted successfully.",
-    })
-  }
-
-  const handleToggleStatus = (employeeId: string) => {
-    setEmployees(
-      employees.map((emp) =>
-        emp.id === employeeId ? { ...emp, status: emp.status === "active" ? "inactive" : "active" } : emp,
-      ),
-    )
-
-    const employee = employees.find((emp) => emp.id === employeeId)
-    const newStatus = employee?.status === "active" ? "inactive" : "active"
-
-    toast({
-      title: "Success",
-      description: `Employee ${newStatus === "active" ? "activated" : "deactivated"} successfully.`,
-    })
-  }
-
-  const handleViewDetails = (employee: Employee) => {
-    toast({
-      title: "Employee Details",
-      description: `Viewing details for ${employee.name} (${employee.id})`,
-    })
-  }
-
-  const openEditDialog = (employee: Employee) => {
-    setSelectedEmployee({ ...employee })
-    setIsEditDialogOpen(true)
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Employee Management</h1>
-          <p className="text-muted-foreground">Manage your team members and their information</p>
+  const cancel = () => form.dirty ? setDiscard(true) : router.push('/admin/employees')
+  const review = [
+    { title: 'Personal details', step: 0, rows: [['Full name', `${values.firstName} ${values.lastName}`], ['Email', values.email], ['Phone', values.phone], ['Home address', values.address]] },
+    { title: 'Employment', step: 1, rows: [['Department', values.department], ['Job title', values.position], ['Joining date', values.hireDate], ['Annual salary', values.salary || 'Not provided'], ['Skills', values.skills || 'Not provided'], ['Notes', values.notes || 'Not provided']] },
+    { title: 'Emergency contact', step: 2, rows: [['Contact name', values.emergencyContact.name], ['Relationship', values.emergencyContact.relationship], ['Contact phone', values.emergencyContact.phone]] },
+  ]
+  return <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+    <aside className="space-y-6">
+      <nav aria-label="Onboarding progress" className="rounded-xl border bg-card p-3 lg:p-4">
+        <ol className="grid grid-cols-4 gap-1 lg:grid-cols-1 lg:gap-3">
+          {steps.map((item, index) => <li key={item.title}>
+            <button type="button" disabled={index > step || saving} onClick={() => setStep(index)} aria-current={step === index ? 'step' : undefined}
+              className={`flex w-full flex-col items-center gap-2 rounded-lg p-2 text-left lg:flex-row lg:gap-3 lg:p-3 ${step === index ? 'bg-primary/10 text-primary' : index < step ? 'text-foreground' : 'text-muted-foreground'} disabled:cursor-default`}>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold ${step === index ? 'border-primary bg-primary text-primary-foreground' : ''}`}>{index < step ? <Check className="h-4 w-4" /> : index + 1}</span>
+              <span><span className="block text-center text-xs font-medium lg:text-left lg:text-sm">{item.title}</span><span className="hidden text-xs text-muted-foreground lg:block">{item.description}</span></span>
+            </button>
+          </li>)}
+        </ol>
+      </nav>
+      <div className="hidden rounded-xl border border-dashed p-5 text-sm lg:block">
+        <ShieldCheck className="mb-3 h-5 w-5 text-primary" /><p className="font-medium">A good start, all in one place.</p>
+        <p className="mt-2 leading-relaxed text-muted-foreground">Keep the employee’s contact and joining details ready. You can review everything before creating their record.</p>
+      </div>
+    </aside>
+    <Form noValidate onKeyDown={event => { if (event.key === 'Enter' && step < 3 && event.target instanceof HTMLInputElement) { event.preventDefault(); void next() } }} className="min-w-0">
+      <Card className="overflow-hidden shadow-sm">
+        <div className="border-b px-5 py-6 sm:px-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Step {step + 1} of 4</p>
+          <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none sm:text-2xl">{steps[step].title}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{['Start with the details that identify and connect you with your new team member.', 'Set up where they belong and when their journey begins.', 'Add a trusted person to contact in an emergency.', 'Confirm these details. Creating the employee also creates their portal account.'][step]}</p>
         </div>
-        <Sheet open={isAddDrawerOpen} onOpenChange={setIsAddDrawerOpen}>
-          <SheetTrigger asChild>
-            <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:w-[600px] overflow-y-auto">
-            <SheetHeader className="space-y-3 pb-6">
-              <SheetTitle className="text-2xl font-semibold flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600" />
-                </div>
-                Add New Employee
-              </SheetTitle>
-              <SheetDescription className="text-base">
-                Fill in the details below to add a new team member to your organization.
-              </SheetDescription>
-            </SheetHeader>
-
-            <Formik
-              initialValues={{
-                firstName: "",
-                lastName: "",
-                email: "",
-                phone: "",
-                department: "",
-                position: "",
-                location: "",
-                address: "",
-                emergencyContact: "",
-                emergencyPhone: "",
-                salary: "",
-                startDate: "",
-                notes: "",
-              }}
-              validationSchema={validationSchema}
-              onSubmit={handleAddEmployee}
-            >
-              {({ values, errors, touched, isSubmitting, setFieldValue }) => (
-                <Form className="space-y-8">
-                  {/* Personal Information Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-border">
-                      <User className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-semibold text-lg">Personal Information</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName" className="text-sm font-medium">
-                            First Name <span className="text-red-500">*</span>
-                          </Label>
-                          <Field
-                            as={Input}
-                            id="firstName"
-                            name="firstName"
-                            placeholder="Enter first name"
-                            className={`transition-all ${
-                              errors.firstName && touched.firstName
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          />
-                          <ErrorMessage name="firstName">
-                            {(msg) => (
-                              <div className="text-red-500 text-sm flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {msg}
-                              </div>
-                            )}
-                          </ErrorMessage>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName" className="text-sm font-medium">
-                            Last Name <span className="text-red-500">*</span>
-                          </Label>
-                          <Field
-                            as={Input}
-                            id="lastName"
-                            name="lastName"
-                            placeholder="Enter last name"
-                            className={`transition-all ${
-                              errors.lastName && touched.lastName
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          />
-                          <ErrorMessage name="lastName">
-                            {(msg) => (
-                              <div className="text-red-500 text-sm flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {msg}
-                              </div>
-                            )}
-                          </ErrorMessage>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium">
-                          Email Address <span className="text-red-500">*</span>
-                        </Label>
-                        <Field
-                          as={Input}
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="Enter email address"
-                          className={`transition-all ${
-                            errors.email && touched.email
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                              : "focus:border-blue-500 focus:ring-blue-500"
-                          }`}
-                        />
-                        <ErrorMessage name="email">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-sm font-medium">
-                          Phone Number <span className="text-red-500">*</span>
-                        </Label>
-                        <Field
-                          as={Input}
-                          id="phone"
-                          name="phone"
-                          placeholder="+1 (555) 123-4567"
-                          className={`transition-all ${
-                            errors.phone && touched.phone
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                              : "focus:border-blue-500 focus:ring-blue-500"
-                          }`}
-                        />
-                        <ErrorMessage name="phone">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="address" className="text-sm font-medium">
-                          Home Address <span className="text-red-500">*</span>
-                        </Label>
-                        <Field
-                          as={Textarea}
-                          id="address"
-                          name="address"
-                          placeholder="Enter full address"
-                          rows={3}
-                          className={`transition-all resize-none ${
-                            errors.address && touched.address
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                              : "focus:border-blue-500 focus:ring-blue-500"
-                          }`}
-                        />
-                        <ErrorMessage name="address">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Work Information Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-border">
-                      <Briefcase className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-semibold text-lg">Work Information</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="department" className="text-sm font-medium">
-                          Department <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={values.department}
-                          onValueChange={(value) => {
-                            setFieldValue("department", value)
-                            setFieldValue("position", "") // Reset position when department changes
-                          }}
-                        >
-                          <SelectTrigger
-                            className={`transition-all ${
-                              errors.department && touched.department
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          >
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept} value={dept}>
-                                {dept}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <ErrorMessage name="department">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="position" className="text-sm font-medium">
-                          Position <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={values.position}
-                          onValueChange={(value) => setFieldValue("position", value)}
-                          disabled={!values.department}
-                        >
-                          <SelectTrigger
-                            className={`transition-all ${
-                              errors.position && touched.position
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          >
-                            <SelectValue
-                              placeholder={values.department ? "Select position" : "Select department first"}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {values.department &&
-                              positions[values.department as keyof typeof positions]?.map((pos) => (
-                                <SelectItem key={pos} value={pos}>
-                                  {pos}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <ErrorMessage name="position">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="location" className="text-sm font-medium">
-                          Work Location <span className="text-red-500">*</span>
-                        </Label>
-                        <Select value={values.location} onValueChange={(value) => setFieldValue("location", value)}>
-                          <SelectTrigger
-                            className={`transition-all ${
-                              errors.location && touched.location
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          >
-                            <SelectValue placeholder="Select work location" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((loc) => (
-                              <SelectItem key={loc} value={loc}>
-                                {loc}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <ErrorMessage name="location">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="startDate" className="text-sm font-medium">
-                            Start Date <span className="text-red-500">*</span>
-                          </Label>
-                          <Field
-                            as={Input}
-                            id="startDate"
-                            name="startDate"
-                            type="date"
-                            className={`transition-all ${
-                              errors.startDate && touched.startDate
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          />
-                          <ErrorMessage name="startDate">
-                            {(msg) => (
-                              <div className="text-red-500 text-sm flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {msg}
-                              </div>
-                            )}
-                          </ErrorMessage>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="salary" className="text-sm font-medium">
-                            Annual Salary (USD) <span className="text-red-500">*</span>
-                          </Label>
-                          <Field
-                            as={Input}
-                            id="salary"
-                            name="salary"
-                            type="number"
-                            placeholder="50000"
-                            className={`transition-all ${
-                              errors.salary && touched.salary
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : "focus:border-blue-500 focus:ring-blue-500"
-                            }`}
-                          />
-                          <ErrorMessage name="salary">
-                            {(msg) => (
-                              <div className="text-red-500 text-sm flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {msg}
-                              </div>
-                            )}
-                          </ErrorMessage>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Emergency Contact Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-border">
-                      <Phone className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-semibold text-lg">Emergency Contact</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="emergencyContact" className="text-sm font-medium">
-                          Contact Name <span className="text-red-500">*</span>
-                        </Label>
-                        <Field
-                          as={Input}
-                          id="emergencyContact"
-                          name="emergencyContact"
-                          placeholder="Enter emergency contact name"
-                          className={`transition-all ${
-                            errors.emergencyContact && touched.emergencyContact
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                              : "focus:border-blue-500 focus:ring-blue-500"
-                          }`}
-                        />
-                        <ErrorMessage name="emergencyContact">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="emergencyPhone" className="text-sm font-medium">
-                          Contact Phone <span className="text-red-500">*</span>
-                        </Label>
-                        <Field
-                          as={Input}
-                          id="emergencyPhone"
-                          name="emergencyPhone"
-                          placeholder="+1 (555) 987-6543"
-                          className={`transition-all ${
-                            errors.emergencyPhone && touched.emergencyPhone
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                              : "focus:border-blue-500 focus:ring-blue-500"
-                          }`}
-                        />
-                        <ErrorMessage name="emergencyPhone">
-                          {(msg) => (
-                            <div className="text-red-500 text-sm flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {msg}
-                            </div>
-                          )}
-                        </ErrorMessage>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Notes Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-border">
-                      <Edit className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-semibold text-lg">Additional Information</h3>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="notes" className="text-sm font-medium">
-                        Notes (Optional)
-                      </Label>
-                      <Field
-                        as={Textarea}
-                        id="notes"
-                        name="notes"
-                        placeholder="Any additional notes about the employee..."
-                        rows={4}
-                        className="transition-all resize-none focus:border-blue-500 focus:ring-blue-500"
-                      />
-                      <ErrorMessage name="notes">
-                        {(msg) => (
-                          <div className="text-red-500 text-sm flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            {msg}
-                          </div>
-                        )}
-                      </ErrorMessage>
-                      <p className="text-xs text-muted-foreground">{values.notes.length}/500 characters</p>
-                    </div>
-                  </div>
-
-                  {/* Form Actions */}
-                  <div className="flex flex-col gap-3 pt-6 border-t border-border">
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Adding Employee...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Add Employee
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsAddDrawerOpen(false)}
-                      className="w-full"
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{employees.length}</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{employees.filter((e) => e.status === "active").length}</div>
-            <p className="text-xs text-muted-foreground">Currently working</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
-            <UserX className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{employees.filter((e) => e.status === "inactive").length}</div>
-            <p className="text-xs text-muted-foreground">On leave or inactive</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Performance</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(employees.reduce((acc, emp) => acc + emp.performance, 0) / employees.length)}%
-            </div>
-            <p className="text-xs text-muted-foreground">Team average</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters and View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search employees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 w-full sm:w-[300px]"
-            />
+        <CardContent className="p-5 sm:p-8">
+          <fieldset disabled={saving} className="min-w-0 space-y-6">
+            {step === 0 && <>
+              <div className="grid gap-5 sm:grid-cols-2"><OnboardingField name="firstName" label="First name" autoComplete="given-name" maxLength={50} /><OnboardingField name="lastName" label="Last name" autoComplete="family-name" maxLength={50} /></div>
+              <div className="grid gap-5 sm:grid-cols-2"><OnboardingField name="email" label="Email address" type="email" autoComplete="email" hint="Used to sign in to the employee portal." /><OnboardingField name="phone" label="Phone number" type="tel" autoComplete="tel" hint="Include country code, without spaces or punctuation." /></div>
+              <OnboardingField name="address" label="Home address" multiline autoComplete="street-address" maxLength={1000} hint="Include street, city, state or region, postal code, and country." />
+            </>}
+            {step === 1 && <>
+              <div className="rounded-lg border bg-muted/30 p-4 text-sm">Choose from your company’s configured options. <Link href="/admin/employees/options" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline">Manage departments & job titles (new tab)</Link><Button type="button" size="sm" variant="ghost" onClick={() => optionsQuery.refetch()}>Refresh options</Button></div>
+              {optionsQuery.isLoading && <p role="status">Loading company options…</p>}
+              {optionsQuery.isError && <p role="alert" className="text-destructive">Unable to load options. Use Refresh options to try again.</p>}
+              <div className="grid gap-5 sm:grid-cols-2">{[['department', 'department', 'Department'], ['position', 'job_title', 'Job title']].map(([field, kind, label]) => <div key={field} className="space-y-2"><Label htmlFor={field}>{label} <span className="text-destructive">*</span></Label><select id={field} {...form.getFieldProps(field)} disabled={!optionsQuery.isSuccess || saving} aria-required="true" aria-invalid={Boolean(getIn(form.touched, field) && getIn(form.errors, field))} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="">Select {label.toLowerCase()}</option>{options.filter((row: any) => row.kind === kind).map((row: any) => <option key={row.id} value={row.name}>{row.name}</option>)}</select>{getIn(form.touched, field) && getIn(form.errors, field) && <p role="alert" className="text-sm text-destructive">{getIn(form.errors, field)}</p>}{optionsQuery.isSuccess && !options.some((row: any) => row.kind === kind) && <p className="text-xs text-muted-foreground">No {label.toLowerCase()} options yet. Add one using Manage departments & job titles.</p>}</div>)}</div>
+              <div className="grid gap-5 sm:grid-cols-2"><OnboardingField name="hireDate" label="Joining date" type="date" /><OnboardingField name="salary" label="Annual salary" optional type="text" hint="If available, enter the amount in your company’s payroll currency." /></div>
+              <OnboardingField name="skills" label="Skills" optional maxLength={1000} placeholder="e.g. Project coordination, Excel, Customer support" hint="Separate skills with commas." />
+              <OnboardingField name="notes" label="Onboarding notes" optional multiline maxLength={500} hint="Include any useful joining information. Up to 500 characters." />
+            </>}
+            {step === 2 && <>
+              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">Ask the employee for a contact who can be reached if they need assistance.</div>
+              <div className="grid gap-5 sm:grid-cols-2"><OnboardingField name="emergencyContact.name" label="Contact full name" maxLength={100} /><OnboardingField name="emergencyContact.relationship" label="Relationship" placeholder="e.g. Parent, Spouse, Friend" maxLength={100} /></div>
+              <div className="sm:max-w-sm"><OnboardingField name="emergencyContact.phone" label="Contact phone number" type="tel" hint="Include country code, without spaces or punctuation." /></div>
+            </>}
+            {step === 3 && <div className="space-y-5">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">This employee will be added to <strong>{companyName}</strong>.</div>
+              {review.map(section => <section key={section.title} className="rounded-lg border p-4 sm:p-5">
+                <div className="mb-4 flex items-center justify-between"><h3 className="font-semibold">{section.title}</h3><Button type="button" variant="ghost" size="sm" onClick={() => setStep(section.step)} aria-label={`Edit ${section.title.toLowerCase()}`}>Edit</Button></div>
+                <dl className="grid gap-4 sm:grid-cols-2">{section.rows.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{value}</dd></div>)}</dl>
+              </section>)}
+              <p className="text-xs leading-relaxed text-muted-foreground">Details are saved when you select Create employee. No invitation email is sent by this form.</p>
+            </div>}
+          </fieldset>
+          {saveError && <div role="alert" className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{saveError}</div>}
+        </CardContent>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-5 py-4 sm:px-8">
+          <Button type="button" variant="ghost" onClick={cancel} disabled={saving}>Cancel</Button>
+          <div className="flex gap-2">
+            {step > 0 && <Button type="button" variant="outline" onClick={() => setStep(step - 1)} disabled={saving}><ArrowLeft className="mr-2 h-4 w-4" />Back</Button>}
+            {step < 3 ? <Button type="button" onClick={next}>Continue<ArrowRight className="ml-2 h-4 w-4" /></Button> : <Button type="submit" disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}{saving ? 'Creating…' : 'Create employee'}</Button>}
           </div>
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
-        <div className="flex gap-2">
-          <Button variant={view === "table" ? "default" : "outline"} size="sm" onClick={() => setView("table")}>
-            <List className="h-4 w-4" />
-          </Button>
-          <Button variant={view === "grid" ? "default" : "outline"} size="sm" onClick={() => setView("grid")}>
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      </Card>
+      <p className="mt-4 text-xs text-muted-foreground">* Required fields · Unsaved details stay only on this page.</p>
+      <AlertDialog open={discard} onOpenChange={setDiscard}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard this onboarding?</AlertDialogTitle><AlertDialogDescription>The employee has not been created. Your unsaved details will be lost.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel><AlertDialogAction onClick={() => router.push('/admin/employees')}>Discard details</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    </Form>
+  </div>
+}
 
-      {/* Content */}
-      <Tabs value={view} onValueChange={(value) => setView(value as "grid" | "table")}>
-        <TabsContent value="table" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Employee List</CardTitle>
-              <CardDescription>A comprehensive list of all employees with their details and actions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Performance</TableHead>
-                      <TableHead>Join Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
-                                {employee.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-medium">{employee.name}</div>
-                              <div className="text-sm text-muted-foreground">{employee.email}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{employee.department}</TableCell>
-                        <TableCell>{employee.position}</TableCell>
-                        <TableCell>
-                          <Badge variant={employee.status === "active" ? "default" : "secondary"}>
-                            {employee.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 bg-muted rounded-full h-2">
-                              <div
-                                className="bg-primary h-2 rounded-full"
-                                style={{ width: `${employee.performance}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">{employee.performance}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{new Date(employee.joinDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleViewDetails(employee)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openEditDialog(employee)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Employee
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
-                                {employee.status === "active" ? (
-                                  <>
-                                    <UserX className="mr-2 h-4 w-4" />
-                                    Deactivate
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    Activate
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Employee
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the employee record and
-                                      remove all associated data.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+function Onboarding({ companyName, scope, recheck }: { companyName: string; scope: string[]; recheck: () => unknown }) {
+  const queryClient = useQueryClient()
+  const [saveError, setSaveError] = useState('')
+  const [created, setCreated] = useState('')
+  const mutation = useMutation({ mutationFn: employeeRegistration })
+  const savingRef = useRef(false)
+  if (created) return <Card className="mx-auto max-w-2xl text-center"><CardContent className="space-y-5 px-6 py-12"><CheckCircle2 className="mx-auto h-14 w-14 text-emerald-600" /><h2 className="text-2xl font-semibold">Employee created</h2><p className="text-muted-foreground"><strong className="text-foreground">{created}</strong> has been added to {companyName}. Their employee record and portal account are ready.</p><div className="flex flex-wrap justify-center gap-3"><Button asChild><Link href="/admin/employees">View employees</Link></Button><Button variant="outline" onClick={() => { setCreated(''); setSaveError('') }}>Add another employee</Button></div></CardContent></Card>
+  return <Formik initialValues={initialOnboardingValues} validationSchema={onboardingSchema} onSubmit={async values => {
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaveError('')
+    try {
+      await mutation.mutateAsync(onboardingPayload(values))
+      void queryClient.invalidateQueries({ queryKey: ['employees', ...scope] })
+      void queryClient.invalidateQueries({ queryKey: ['taskEmployees', ...scope] })
+      setCreated(`${values.firstName.trim()} ${values.lastName.trim()}`)
+    } catch (error: any) {
+      if (error?.response?.status === 403) { setSaveError('Your permission to create employees has changed. Contact your administrator.'); recheck() }
+      else if ([409, 400, 422].includes(error?.response?.status)) setSaveError('Unable to create the employee. Check the details and whether this email is already registered, then try again.')
+      else setSaveError('The employee could not be created. Your details are still here. Check the employee list before retrying if the connection was interrupted.')
+    } finally { savingRef.current = false }
+  }}><OnboardingForm companyName={companyName} saving={mutation.isPending} saveError={saveError} /></Formik>
+}
 
-        <TabsContent value="grid" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
-              <Card key={employee.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
-                          {employee.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{employee.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{employee.id}</p>
-                      </div>
-                    </div>
-                    <Badge variant={employee.status === "active" ? "default" : "secondary"}>{employee.status}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{employee.email}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{employee.phone}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{employee.location}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>Joined {new Date(employee.joinDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Department:</span>
-                      <span className="font-medium">{employee.department}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Position:</span>
-                      <span className="font-medium">{employee.position}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Performance:</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-12 bg-muted rounded-full h-2">
-                          <div className="bg-primary h-2 rounded-full" style={{ width: `${employee.performance}%` }} />
-                        </div>
-                        <span className="font-medium">{employee.performance}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => handleViewDetails(employee)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => openEditDialog(employee)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
-                          {employee.status === "active" ? (
-                            <>
-                              <UserX className="mr-2 h-4 w-4" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the employee record and
-                                remove all associated data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteEmployee(employee.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Edit Employee Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Employee</DialogTitle>
-            <DialogDescription>Update the employee information below.</DialogDescription>
-          </DialogHeader>
-          {selectedEmployee && (
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Full Name</Label>
-                <Input
-                  id="edit-name"
-                  value={selectedEmployee.name}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, name: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={selectedEmployee.email}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, email: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-phone">Phone</Label>
-                <Input
-                  id="edit-phone"
-                  value={selectedEmployee.phone}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-department">Department</Label>
-                <Select
-                  value={selectedEmployee.department}
-                  onValueChange={(value) => setSelectedEmployee({ ...selectedEmployee, department: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-position">Position</Label>
-                <Input
-                  id="edit-position"
-                  value={selectedEmployee.position}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, position: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-location">Location</Label>
-                <Input
-                  id="edit-location"
-                  value={selectedEmployee.location}
-                  onChange={(e) => setSelectedEmployee({ ...selectedEmployee, location: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button type="submit" onClick={handleEditEmployee}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
+export default function EmployeeOnboardingPage() {
+  const { user } = useUserFromStorage()
+  const capabilities = useCapabilities(undefined)
+  const access = capabilities.data?.data?.data
+  const allowed = capabilities.isSuccess && (user?.role === 'superAdmin' || access?.permissions?.includes('employee.manage'))
+  return <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+    <header className="space-y-4"><Link href="/admin/employees" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Employees</Link>
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Employee onboarding</p><h1 className="text-3xl font-bold tracking-tight">Add new employee</h1><p className="mt-2 text-sm text-muted-foreground">A thoughtful first step for your newest team member.</p></div>{access?.companyName && <span className="rounded-full border bg-card px-3 py-1.5 text-sm font-medium">{access.companyName}</span>}</div>
+    </header>
+    {!user?.id || capabilities.isLoading ? <div role="status" className="flex items-center gap-3 rounded-xl border p-8"><Loader2 className="h-5 w-5 animate-spin" />Checking employee management access…</div> : capabilities.isError ? <div role="alert" className="rounded-xl border p-6"><p>Unable to verify employee management permissions.</p><Button className="mt-4" variant="outline" onClick={() => capabilities.refetch()}>Retry permissions</Button></div> : !allowed ? <div role="alert" className="rounded-xl border p-6">You do not have permission to create employees. Contact your company administrator.</div> : <Onboarding key={`${user.id}:${user.companyId}`} companyName={access?.companyName || 'your company'} scope={[user.id, user.companyId]} recheck={capabilities.refetch} />}
+  </div>
 }
